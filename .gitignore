@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+web-build/
+*.log
+.DS_Store
+
+# Extração local do zip do protótipo (Downloads) — não é código-fonte,
+# fica de fora do repositório.
+.prototype-extract/
+
+# Nunca commitar segredos (seção 108)
+.env
+.env.local
