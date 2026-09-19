@@ -15,6 +15,8 @@ export const colors = {
     // Trilha de anéis/barras de progresso — mais escura que `card` de propósito,
     // pra permanecer visível quando o componente é usado dentro de um Card.
     track: '#E9E6EF',
+    // Mensagens de erro/validação (formulários de auth e onboarding).
+    danger: '#B42338',
     protein: '#B42338',
     carbs: '#B45309',
     fat: '#15803D',
@@ -29,6 +31,7 @@ export const colors = {
     primary: '#C4ADF9',
     ring: '#8B5CF6',
     track: '#2E2A38',
+    danger: '#F0808F',
     protein: '#F0808F',
     carbs: '#E9A23B',
     fat: '#4EC17A',

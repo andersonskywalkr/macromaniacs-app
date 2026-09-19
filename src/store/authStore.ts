@@ -5,6 +5,14 @@ import { USE_MOCK } from '@/api/config';
 
 const ACCESS_TOKEN_KEY = 'macromaniacs:access-token';
 const REFRESH_TOKEN_KEY = 'macromaniacs:refresh-token';
+// Flag local — não sensível, então sempre em AsyncStorage (como a
+// preferência de tema). O backend ainda não expõe se o onboarding foi
+// concluído (não há esse campo no Swagger/seção 120.2 ainda), então isso é
+// um controle só do cliente: true logo após cadastro, false ao concluir o
+// wizard (ver OnboardingScreen). Login normal não mexe nesse valor —
+// preserva o estado anterior, então um cadastro interrompido retoma o
+// onboarding no próximo login.
+const NEEDS_ONBOARDING_KEY = 'macromaniacs:needs-onboarding';
 
 /**
  * Em modo mock, usamos AsyncStorage em vez de expo-secure-store.
@@ -39,24 +47,34 @@ interface AuthStore {
   // tela autenticada antes da checagem terminar (seção 118.3).
   status: 'loading' | 'authenticated' | 'unauthenticated';
   accessToken: string | null;
+  needsOnboarding: boolean;
 
   bootstrap: () => Promise<void>;
-  signIn: (tokens: { accessToken: string; refreshToken: string }) => Promise<void>;
+  signIn: (
+    tokens: { accessToken: string; refreshToken: string },
+    options?: { needsOnboarding?: boolean },
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   updateAccessToken: (accessToken: string) => void;
+  completeOnboarding: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   status: 'loading',
   accessToken: null,
+  needsOnboarding: false,
 
   bootstrap: async () => {
     try {
-      const token = await tokenStorage.getItem(ACCESS_TOKEN_KEY);
+      const [token, needsOnboardingRaw] = await Promise.all([
+        tokenStorage.getItem(ACCESS_TOKEN_KEY),
+        AsyncStorage.getItem(NEEDS_ONBOARDING_KEY),
+      ]);
       // Nota: aqui cabe futuramente validar expiração do token (decodificar
       // exp do JWT) antes de decidir authenticated vs unauthenticated.
       set({
         accessToken: token,
+        needsOnboarding: needsOnboardingRaw === 'true',
         status: token ? 'authenticated' : 'unauthenticated',
       });
     } catch (error) {
@@ -64,11 +82,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
       // NUNCA deve ficar preso em 'loading' pra sempre — cai pra
       // 'unauthenticated' e deixa o usuário logar de novo.
       console.warn('Falha ao ler o token salvo, indo para a tela de login:', error);
-      set({ accessToken: null, status: 'unauthenticated' });
+      set({ accessToken: null, needsOnboarding: false, status: 'unauthenticated' });
     }
   },
 
-  signIn: async ({ accessToken, refreshToken }) => {
+  signIn: async ({ accessToken, refreshToken }, options) => {
     try {
       await tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
       await tokenStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
@@ -77,7 +95,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
       // disso — segue autenticado usando o token só em memória.
       console.warn('Falha ao salvar o token (login seguiu em memória):', error);
     }
-    set({ accessToken, status: 'authenticated' });
+
+    const needsOnboarding = options?.needsOnboarding ?? get().needsOnboarding;
+    if (options?.needsOnboarding !== undefined) {
+      await AsyncStorage.setItem(NEEDS_ONBOARDING_KEY, String(options.needsOnboarding)).catch(() => {});
+    }
+    set({ accessToken, needsOnboarding, status: 'authenticated' });
   },
 
   signOut: async () => {
@@ -93,6 +116,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
   updateAccessToken: (accessToken) => {
     tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken).catch(() => {});
     set({ accessToken });
+  },
+
+  completeOnboarding: async () => {
+    await AsyncStorage.setItem(NEEDS_ONBOARDING_KEY, 'false').catch(() => {});
+    set({ needsOnboarding: false });
   },
 }));
 

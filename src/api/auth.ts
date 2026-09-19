@@ -30,7 +30,10 @@ export interface RegisterInput {
   email: string;
   username: string;
   password: string;
-  displayName: string;
+  // Nome completo real, usado pelo backend pra registrar a conta — não
+  // confundir com o "como gostaria de ser chamado" coletado no onboarding
+  // (esse vira UserProfile.displayName, usado só na UI).
+  fullName: string;
 }
 
 export async function register(input: RegisterInput): Promise<AuthTokens> {

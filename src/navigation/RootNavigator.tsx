@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { AuthStackNavigator } from './AuthStack';
+import { OnboardingStackNavigator } from './OnboardingStack';
 import { AppTabsNavigator } from './AppTabs';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -20,6 +21,7 @@ import { useTheme } from '@/theme/ThemeProvider';
  */
 export function RootNavigator() {
   const status = useAuthStore((s) => s.status);
+  const needsOnboarding = useAuthStore((s) => s.needsOnboarding);
   const bootstrap = useAuthStore((s) => s.bootstrap);
   const { tokens } = useTheme();
 
@@ -37,7 +39,15 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {status === 'authenticated' ? <AppTabsNavigator /> : <AuthStackNavigator />}
+      {status === 'authenticated' ? (
+        needsOnboarding ? (
+          <OnboardingStackNavigator />
+        ) : (
+          <AppTabsNavigator />
+        )
+      ) : (
+        <AuthStackNavigator />
+      )}
     </NavigationContainer>
   );
 }

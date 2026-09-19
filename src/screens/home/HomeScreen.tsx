@@ -121,14 +121,21 @@ export function HomeScreen({ navigation }: Props) {
           <View style={styles.summaryRow}>
             <View style={styles.summarySide}>
               <Text style={[styles.summarySideValue, { color: tokens.text }]}>{consumedCalories}</Text>
-              <Text style={[styles.summarySideLabel, { color: tokens.textSecondary }]}>consumidas</Text>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                style={[styles.summarySideLabel, { color: tokens.textSecondary }]}
+              >
+                consumidas
+              </Text>
             </View>
 
             <View style={styles.ringWrap}>
               <ProgressRing
                 progress={calorieProgress}
                 size={152}
-                strokeWidth={14}
+                strokeWidth={10}
                 color={tokens.ring}
                 trackColor={tokens.track}
                 accessibilityLabel="Progresso de calorias do dia"
@@ -141,7 +148,14 @@ export function HomeScreen({ navigation }: Props) {
 
             <View style={styles.summarySide}>
               <Text style={[styles.summarySideValue, { color: tokens.text }]}>{goalCalories}</Text>
-              <Text style={[styles.summarySideLabel, { color: tokens.textSecondary }]}>meta</Text>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                style={[styles.summarySideLabel, { color: tokens.textSecondary }]}
+              >
+                meta
+              </Text>
             </View>
           </View>
 
@@ -360,7 +374,13 @@ const styles = StyleSheet.create({
   },
   ringLabel: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginTop: 4 },
   ringValue: { fontFamily: 'PlusJakartaSans', fontSize: 40, fontWeight: '800', lineHeight: 44 },
-  ringWrap: { alignItems: 'center', height: 152, justifyContent: 'center', width: 152 },
+  ringWrap: {
+    alignItems: 'center',
+    height: 152,
+    justifyContent: 'center',
+    marginHorizontal: spacing.sm,
+    width: 152,
+  },
   scrollContent: {
     gap: spacing.lg,
     paddingBottom: spacing.xl,

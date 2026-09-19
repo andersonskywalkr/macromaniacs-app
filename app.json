@@ -5,7 +5,9 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.macromaniacs.app"
@@ -13,6 +15,11 @@
     "android": {
       "package": "com.macromaniacs.app"
     },
-    "plugins": ["expo-secure-store", "expo-camera"]
+    "plugins": [
+      "expo-secure-store",
+      "expo-camera",
+      "expo-font",
+      "expo-sqlite"
+    ]
   }
 }

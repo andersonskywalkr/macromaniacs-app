@@ -91,6 +91,15 @@ export interface UserProfile {
   currentWeightKg: number | null;
   goal: string | null;
   activityLevel: string | null;
+  // Sexo biológico, usado no cálculo de taxa metabólica basal (onboarding,
+  // etapa "Sexo biológico") — ainda não documentado no Swagger real,
+  // seguindo o mesmo código provisório do resto deste arquivo.
+  sex: 'FEMALE' | 'MALE' | null;
+  // Onboarding, etapa "Últimos detalhes" (seção já fechada com backend/DB) —
+  // os três campos abaixo são opcionais, o usuário pode pular a etapa.
+  targetWeightKg: number | null;
+  targetTimeframe: string | null;
+  dietaryRestrictions: string | null;
 }
 
 // Formato de erro padronizado — seção 67

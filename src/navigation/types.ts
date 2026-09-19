@@ -40,7 +40,12 @@ export type AppTabsParamList = {
   ProfileTab: NavigatorScreenParams<ProfileStackParamList>;
 };
 
+export type OnboardingStackParamList = {
+  Onboarding: undefined;
+};
+
 export type RootStackParamList = {
   AuthStack: undefined;
+  OnboardingStack: undefined;
   AppTabs: undefined;
 };

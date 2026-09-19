@@ -8,6 +8,7 @@ web-build/
 # Extração local do zip do protótipo (Downloads) — não é código-fonte,
 # fica de fora do repositório.
 .prototype-extract/
+prototype-reference/
 
 # Nunca commitar segredos (seção 108)
 .env

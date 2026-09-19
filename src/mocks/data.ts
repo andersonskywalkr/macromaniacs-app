@@ -34,6 +34,10 @@ export const mockUserProfile: UserProfile = {
   currentWeightKg: 82,
   goal: 'LOSE_WEIGHT',
   activityLevel: 'MODERATE',
+  sex: 'MALE',
+  targetWeightKg: 75,
+  targetTimeframe: '3 meses',
+  dietaryRestrictions: null,
 };
 
 export const mockFoods: FoodItem[] = [
