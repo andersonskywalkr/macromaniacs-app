@@ -18,7 +18,8 @@ import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { MascotIllustration } from '@/components/MascotIllustration';
 import { GoogleIcon } from '@/components/icons';
-import { register } from '@/api/auth';
+import { register, login } from '@/api/auth';
+import { useAuthStore } from '@/store/authStore';
 import { getAuthErrorMessage } from '@/api/authErrors';
 import { validateRegister } from '@/validation/auth';
 
@@ -62,17 +63,21 @@ export function RegisterScreen({ navigation }: Props) {
 
     setLoading(true);
     try {
+      const email = form.email.trim().toLowerCase();
       await register({
-        email: form.email.trim().toLowerCase(),
+        email,
         username: form.username.trim().toLowerCase(),
         password: form.password,
         termsAccepted: true,
       });
-      Alert.alert(
-        'Conta criada',
-        'Cadastro concluído. Agora entre com seu usuário ou e-mail.',
-        [{ text: 'Entrar', onPress: () => navigation.replace('Login') }],
-      );
+
+      // Loga com a credencial recém-criada em vez de devolver pro Login —
+      // a pessoa já preencheu tudo, não faz sentido pedir de novo.
+      // RootNavigator troca de tela sozinho (onboarding, já que a conta é
+      // nova) assim que signIn() atualiza o status — não precisa
+      // navigate() manual aqui.
+      const { accessToken } = await login({ identifier: email, password: form.password });
+      await useAuthStore.getState().signIn(accessToken);
     } catch (err) {
       setError(getAuthErrorMessage(err, 'register'));
     } finally {
