@@ -8,7 +8,11 @@ export function Card({ style, children, ...rest }: ViewProps) {
 
   return (
     <View
-      style={[styles.base, { backgroundColor: tokens.card }, style]}
+      style={[
+        styles.base,
+        { backgroundColor: tokens.card, shadowColor: tokens.shadow },
+        style,
+      ]}
       {...rest}
     >
       {children}
@@ -19,12 +23,11 @@ export function Card({ style, children, ...rest }: ViewProps) {
 const styles = StyleSheet.create({
   base: {
     borderRadius: radius.card,
+    elevation: 2,
     padding: spacing.md,
     // Sombra suave conforme seção 121.3 — sem borda de acento
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 2,
   },
 });

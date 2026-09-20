@@ -28,16 +28,36 @@ export const mockUserProfile: UserProfile = {
   email: 'anderson@example.com',
   username: 'anderson',
   displayName: 'Anderson',
-  avatarUrl: null,
-  birthDate: '1998-04-12',
-  heightCm: 178,
-  currentWeightKg: 82,
+  dateOfBirth: '1998-04-12',
+  biologicalSex: 'MALE',
   goal: 'LOSE_WEIGHT',
   activityLevel: 'MODERATE',
-  sex: 'MALE',
   targetWeightKg: 75,
-  targetTimeframe: '3 meses',
+  targetDate: '2027-03-01',
   dietaryRestrictions: null,
+  onboardingCompleted: true,
+  onboardingCompletedAt: new Date(0).toISOString(),
+  currentMeasurement: {
+    id: 'measurement-1',
+    heightCm: 178,
+    weightKg: 82,
+    measuredAt: new Date(0).toISOString(),
+  },
+  measurements: [
+    {
+      id: 'measurement-1',
+      heightCm: 178,
+      weightKg: 82,
+      measuredAt: new Date(0).toISOString(),
+    },
+  ],
+  nutrition: {
+    ageYears: 28,
+    bmrKcalPerDay: 1800,
+    tdeeKcalPerDay: 2790,
+    calorieTargetKcalPerDay: 2511,
+    calculatedAt: new Date(0).toISOString(),
+  },
 };
 
 export const mockFoods: FoodItem[] = [

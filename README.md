@@ -12,7 +12,7 @@ pnpm install
 
 # 1.1. Depois de instalar, rode este comando pra garantir que todas as
 # libs nativas (câmera, secure-store, etc.) estão na versão certa pro
-# Expo SDK 54 — corrige sozinho qualquer divergência de versão:
+# Expo SDK 57 — corrige sozinho qualquer divergência de versão:
 npx expo install --fix
 
 # 2. Copie o .env de exemplo
@@ -25,10 +25,9 @@ npx expo start
 Abra no celular com o app **Expo Go**, ou pressione `a` / `i` no terminal
 para emulador Android/iOS (se configurado na sua máquina).
 
-> Este projeto foi montado num ambiente sem Node/emulador disponível —
-> ele **não foi executado** ainda. É esperado que `pnpm install` revele
-> pequenos ajustes de versão entre as libs. Rode `npx expo-doctor` se
-> algo não subir de primeira.
+O projeto possui validação automatizada de tipos, lint, testes e exportação
+Expo. Rode `npx expo-doctor` se o ambiente local ou o Expo Go indicar
+divergência de versões.
 
 ## A flag mais importante: `EXPO_PUBLIC_USE_MOCK`
 
@@ -39,15 +38,27 @@ EXPO_PUBLIC_USE_MOCK=true   # usa dados fake, não precisa do backend rodando
 EXPO_PUBLIC_USE_MOCK=false  # chama a API real (preencha EXPO_PUBLIC_API_URL)
 ```
 
-Com `true`, todas as telas funcionam usando os dados em `src/mocks/data.ts`
-(baseados nos valores reais que já apareciam no protótipo HTML — 2200 kcal
-de meta, ranking do "Los Maniacs", etc.). Quando o backend do time subir,
-muda pra `false` e nenhuma tela ou hook precisa ser alterado — só os
-arquivos em `src/api/*.ts`, que já sabem alternar sozinhos.
+Para apresentar a autenticação real enquanto os demais módulos ainda usam
+dados demonstrativos:
+
+```env
+EXPO_PUBLIC_USE_MOCK=true
+EXPO_PUBLIC_USE_AUTH_MOCK=false
+EXPO_PUBLIC_API_URL=http://10.0.2.2:3000
+```
+
+Use `10.0.2.2` no emulador Android, `localhost` no simulador iOS/web ou o IP
+local da máquina em um celular físico. A URL não deve conter `/api/v1`; o
+cliente usa diretamente `/v1/auth/register`, `/v1/auth/login`,
+`/v1/auth/me` e `/v1/users/me`.
+
+Com `EXPO_PUBLIC_USE_AUTH_MOCK=false`, autenticação, perfil, onboarding e os
+valores nutricionais da Home sempre usam a API real. Os outros módulos podem
+continuar com `EXPO_PUBLIC_USE_MOCK=true` até seus endpoints existirem.
 
 ## Compatibilidade com o Expo Go
 
-O projeto está fixado no **Expo SDK 54**. O app Expo Go instalado no celular precisa ser da
+O projeto está fixado no **Expo SDK 57**. O app Expo Go instalado no celular precisa ser da
 mesma versão de SDK — se aparecer um erro dizendo que o projeto só é compatível com outro SDK,
 duas soluções:
 
@@ -63,29 +74,27 @@ duas soluções:
 | Config (tsconfig, eslint, env) | raiz | ✅ pronto |
 | Design tokens (cores, radius, fontes) | `src/theme/tokens.ts` | ✅ pronto, extraído do documento |
 | Tema claro/escuro | `src/theme/ThemeProvider.tsx` | ✅ pronto |
-| Autenticação (store + telas) | `src/store/authStore.ts`, `src/screens/auth/` | ✅ Login e Cadastro funcionais (mock) |
+| Autenticação (store + telas) | `src/store/authStore.ts`, `src/screens/auth/` | ✅ Cadastro, login, perfil, restauração e logout local |
 | Camada de API (mock/real) | `src/api/*.ts` | ✅ pronto pros domínios P0 |
 | Queries (TanStack Query) | `src/queries/*.ts` | ✅ pronto pros domínios P0 |
 | Offline (outbox + sync) | `src/offline/*.ts` | ✅ pronto |
 | Componentes base | `src/components/*.tsx` | ✅ Card, Button, ProgressRing, Badge, Avatar, EmptyState |
-| Navegação completa | `src/navigation/*.tsx` | ✅ pronto, com guarda de autenticação |
-| Telas de conteúdo (Home, Refeições, Grupos, Perfil...) | `src/screens/**` | 🟡 placeholders — ver abaixo |
+| Onboarding | `src/screens/onboarding/` | ✅ valida, persiste no backend e conclui somente após confirmação |
+| Navegação completa | `src/navigation/*.tsx` | ✅ auth loading, login, onboarding e aplicação |
+| Home nutricional | `src/screens/home/HomeScreen.tsx` | ✅ TMB, TDEE e meta calórica reais; demais domínios continuam isolados |
+| Outras telas de conteúdo | `src/screens/**` | 🟡 mocks/placeholders conforme disponibilidade dos endpoints |
 
 ## O que falta (próximos passos, nessa ordem)
 
-1. **Rodar `pnpm install` e `npx expo start` de verdade** — validar que o
-   projeto sobe, ajustar versões de dependência se necessário.
-2. **Copiar os assets do protótipo** (`mascote.png`, `fire.svg`, medalhas,
+1. **Copiar os assets do protótipo** (`mascote.png`, `fire.svg`, medalhas,
    `perfil.jpg` etc.) do zip do Netlify para `assets/`, e referenciá-los
    nos componentes (`Avatar`, `EmptyState` já esperam esses arquivos).
-3. **Adicionar a fonte Plus Jakarta Sans** de verdade em `assets/fonts/` e
+2. **Adicionar a fonte Plus Jakarta Sans** de verdade em `assets/fonts/` e
    descomentar o `Font.loadAsync` em `src/app/App.tsx`.
-4. **Substituir os placeholders em `src/screens/`** pelo conteúdo real de
-   cada tela `.dc.html` do protótipo (Home, Refeições, Busca de Alimento,
-   Grupos, Perfil, Ranking, Histórico) — a estrutura de dados e os hooks
-   de API já estão prontos, é "só" desenhar em cima.
-5. Quando o backend estiver rodando: trocar `EXPO_PUBLIC_USE_MOCK=false`
-   e `EXPO_PUBLIC_API_URL` no `.env`, e testar cada tela de novo.
+3. **Substituir os mocks remanescentes** somente quando Refeições, Grupos,
+   Ranking e Gamificação tiverem endpoints reais no backend.
+4. Em um celular físico, configure `EXPO_PUBLIC_API_URL` com o IP local da
+   máquina e mantenha backend, PostgreSQL e Metro em execução.
 
 ## Decisões já tomadas (não precisa redebater)
 
@@ -95,7 +104,7 @@ time:
 
 - Expo managed workflow (não é RN CLI puro)
 - TanStack Query pra dados de servidor, Zustand pra estado local de UI
-- axios com interceptors de refresh de token
+- axios com Bearer token centralizado e encerramento local da sessão em 401
 - Tokens de segurança (JWT) em `expo-secure-store`, nunca em AsyncStorage
 - `StyleSheet.create` + tokens, sem NativeWind/Tailwind
 - Tipos de domínio em `src/api/types/domain.ts` até o backend publicar o

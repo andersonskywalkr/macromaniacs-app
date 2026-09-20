@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { AuthStackNavigator } from './AuthStack';
-import { OnboardingStackNavigator } from './OnboardingStack';
 import { AppTabsNavigator } from './AppTabs';
+import { OnboardingStackNavigator } from './OnboardingStack';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /**
@@ -21,7 +21,7 @@ import { useTheme } from '@/theme/ThemeProvider';
  */
 export function RootNavigator() {
   const status = useAuthStore((s) => s.status);
-  const needsOnboarding = useAuthStore((s) => s.needsOnboarding);
+  const user = useAuthStore((s) => s.user);
   const bootstrap = useAuthStore((s) => s.bootstrap);
   const { tokens } = useTheme();
 
@@ -31,7 +31,7 @@ export function RootNavigator() {
 
   if (status === 'loading') {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.background }}>
+      <View style={[styles.loading, { backgroundColor: tokens.background }]}>
         <ActivityIndicator color={tokens.primary} size="large" />
       </View>
     );
@@ -39,15 +39,17 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {status === 'authenticated' ? (
-        needsOnboarding ? (
-          <OnboardingStackNavigator />
-        ) : (
-          <AppTabsNavigator />
-        )
-      ) : (
-        <AuthStackNavigator />
+      {status === 'unauthenticated' && <AuthStackNavigator />}
+      {status === 'authenticated' && !user?.onboardingCompleted && (
+        <OnboardingStackNavigator />
+      )}
+      {status === 'authenticated' && user?.onboardingCompleted && (
+        <AppTabsNavigator />
       )}
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+});

@@ -33,23 +33,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
   },
+  description: {
+    fontFamily: 'PlusJakartaSans',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
   mascote: {
-    width: 120,
     height: 120,
     marginBottom: spacing.md,
     resizeMode: 'contain',
+    width: 120,
   },
   title: {
     fontFamily: 'PlusJakartaSans',
-    fontWeight: '700',
     fontSize: 18,
+    fontWeight: '700',
     textAlign: 'center',
-  },
-  description: {
-    fontFamily: 'PlusJakartaSans',
-    fontWeight: '500',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: spacing.xs,
   },
 });

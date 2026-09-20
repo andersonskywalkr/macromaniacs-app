@@ -1,68 +1,56 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type AxiosInstance } from 'axios';
 import { API_BASE_URL } from './config';
 import { ApiError } from './ApiError';
-import { useAuthStore, getRefreshToken } from '@/store/authStore';
 import type { ApiErrorShape } from './types/domain';
+import {
+  getApiAccessToken,
+  handleApiUnauthorized,
+} from './authSession';
 
-export const httpClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10_000, // toda chamada externa precisa de timeout (seção 95)
-});
+function createClient(): AxiosInstance {
+  return axios.create({
+    baseURL: API_BASE_URL,
+    timeout: 10_000,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
-// Injeta o access token em toda requisição autenticada
+function mapApiErrors(client: AxiosInstance, clearSessionOn401: boolean): void {
+  client.interceptors.response.use(
+    (response) => response,
+    async (error: AxiosError<ApiErrorShape>) => {
+      if (
+        clearSessionOn401 &&
+        error.response?.status === 401 &&
+        getApiAccessToken()
+      ) {
+        await handleApiUnauthorized();
+      }
+
+      if (error.response?.data) {
+        return Promise.reject(new ApiError(error.response.data));
+      }
+
+      return Promise.reject(
+        new ApiError({ message: 'Não foi possível conectar ao servidor.' }),
+      );
+    },
+  );
+}
+
+// Cadastro e login nunca recebem um token antigo por engano.
+export const publicHttpClient = createClient();
+mapApiErrors(publicHttpClient, false);
+
+// Demais chamadas usam o token centralmente e invalidam a sessão em 401.
+export const httpClient = createClient();
 httpClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
+  const token = getApiAccessToken();
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
-
-let isRefreshing = false;
-let pendingQueue: Array<() => void> = [];
-
-// Fluxo de refresh de token — seção 120.4:
-// 401 -> tenta refresh uma única vez -> repete a requisição original
-// -> se o refresh falhar, limpa sessão e deixa o RootNavigator redirecionar
-httpClient.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError<ApiErrorShape>) => {
-    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
-
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      if (isRefreshing) {
-        // Já existe um refresh em andamento — enfileira e espera
-        await new Promise<void>((resolve) => pendingQueue.push(resolve));
-        originalRequest._retry = true;
-        return httpClient(originalRequest);
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const refreshToken = await getRefreshToken();
-        if (!refreshToken) throw new Error('Sem refresh token disponível');
-
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-        useAuthStore.getState().updateAccessToken(data.accessToken);
-
-        pendingQueue.forEach((resolve) => resolve());
-        pendingQueue = [];
-
-        return httpClient(originalRequest);
-      } catch (refreshError) {
-        pendingQueue = [];
-        await useAuthStore.getState().signOut();
-        return Promise.reject(new ApiError({ message: 'Sessão expirada' }));
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    if (error.response?.data) {
-      return Promise.reject(new ApiError(error.response.data));
-    }
-    return Promise.reject(new ApiError({ message: error.message || 'Erro de rede' }));
-  },
-);
+mapApiErrors(httpClient, true);

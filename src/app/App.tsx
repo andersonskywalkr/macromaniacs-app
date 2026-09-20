@@ -1,20 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as Font from 'expo-font';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { startOfflineSync } from '@/offline/sync';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1, // evitar retries excessivos (seção 96)
-    },
-  },
-});
+import { queryClient } from '@/queries/queryClient';
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -40,7 +33,7 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={styles.loading}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -57,3 +50,7 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+});

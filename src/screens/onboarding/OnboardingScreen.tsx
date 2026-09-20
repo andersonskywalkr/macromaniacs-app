@@ -7,7 +7,11 @@ import { Button } from '@/components/Button';
 import { ChevronRightIcon } from '@/components/icons';
 import { useAuthStore } from '@/store/authStore';
 import { useUpdateProfile } from '@/queries/useUpdateProfile';
-import { ApiError } from '@/api/ApiError';
+import { getProfileErrorMessage } from '@/api/authErrors';
+import {
+  buildOnboardingRequest,
+  validateOnboardingStep,
+} from '@/validation/onboarding';
 import { INITIAL_ONBOARDING_DATA, type OnboardingData } from './types';
 import { StepBasicInfo } from './steps/StepBasicInfo';
 import { StepSex } from './steps/StepSex';
@@ -41,18 +45,12 @@ export function OnboardingScreen() {
   }
 
   function validateStep(): string | null {
-    if (step === 0) {
-      if (!data.displayName.trim() || !data.birthDate.trim() || !data.heightCm.trim() || !data.weightKg.trim()) {
-        return 'Preencha todos os campos para continuar.';
-      }
-    }
-    if (step === 1 && !data.sex) return 'Selecione uma opção para continuar.';
-    if (step === 2 && !data.goal) return 'Selecione uma opção para continuar.';
-    if (step === 3 && !data.activityLevel) return 'Selecione uma opção para continuar.';
-    return null;
+    return validateOnboardingStep(step, data);
   }
 
   async function handleContinue() {
+    if (updateProfile.isPending) return;
+
     const validationError = validateStep();
     if (validationError) {
       setError(validationError);
@@ -66,25 +64,17 @@ export function OnboardingScreen() {
     }
 
     try {
-      await updateProfile.mutateAsync({
-        displayName: data.displayName.trim(),
-        birthDate: data.birthDate.trim(),
-        heightCm: Number(data.heightCm) || null,
-        currentWeightKg: Number(data.weightKg.replace(',', '.')) || null,
-        sex: data.sex,
-        goal: data.goal,
-        activityLevel: data.activityLevel,
-        targetWeightKg: Number(data.targetWeightKg.replace(',', '.')) || null,
-        targetTimeframe: data.targetTimeframe.trim() || null,
-        dietaryRestrictions: data.dietaryRestrictions.trim() || null,
-      });
-      await completeOnboarding();
+      const profile = await updateProfile.mutateAsync(
+        buildOnboardingRequest(data),
+      );
+      if (!profile.onboardingCompleted) {
+        throw new Error('Backend did not complete onboarding');
+      }
+      completeOnboarding(profile);
       // Após completeOnboarding(), o RootNavigator troca pra AppTabs
       // automaticamente (mesmo padrão do login) — não precisa navigate().
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Não foi possível salvar seus dados. Tente novamente.';
-      setError(message);
+      setError(getProfileErrorMessage(err));
     }
   }
 

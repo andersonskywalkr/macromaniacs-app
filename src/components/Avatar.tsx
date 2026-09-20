@@ -35,7 +35,7 @@ export function Avatar({ uri, displayName, size = 48, streakCount }: AvatarProps
             { width: size, height: size, borderRadius: size / 2, backgroundColor: tokens.primary },
           ]}
         >
-          <Text style={styles.initials}>{initials}</Text>
+          <Text style={[styles.initials, { color: tokens.onPrimary }]}>{initials}</Text>
         </View>
       )}
       {streakCount != null && streakCount > 0 && (
@@ -48,21 +48,20 @@ export function Avatar({ uri, displayName, size = 48, streakCount }: AvatarProps
 }
 
 const styles = StyleSheet.create({
-  image: {
-    resizeMode: 'cover',
-  },
   fallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  image: {
+    resizeMode: 'cover',
+  },
   initials: {
-    color: '#FFFFFF',
-    fontWeight: '700',
     fontFamily: 'PlusJakartaSans',
+    fontWeight: '700',
   },
   streakBadge: {
-    position: 'absolute',
     bottom: -2,
+    position: 'absolute',
     right: -2,
   },
   streakText: {

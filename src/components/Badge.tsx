@@ -25,15 +25,15 @@ export function Badge({ label, color }: BadgeProps) {
 
 const styles = StyleSheet.create({
   base: {
+    alignSelf: 'flex-start',
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs / 2,
-    alignSelf: 'flex-start',
   },
   label: {
     fontFamily: 'PlusJakartaSans',
-    fontWeight: '600',
     fontSize: 12,
+    fontWeight: '600',
   },
 });

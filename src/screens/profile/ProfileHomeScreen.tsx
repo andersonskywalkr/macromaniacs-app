@@ -11,13 +11,14 @@ import { useAuthStore } from '@/store/authStore';
 // autenticada pra testar Login/Cadastro de novo).
 export function ProfileHomeScreen() {
   const { tokens } = useTheme();
+  const user = useAuthStore((state) => state.user);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: tokens.text }]}>Perfil</Text>
         <Text style={[styles.subtitle, { color: tokens.textSecondary }]}>
-          Tela ainda não implementada
+          {user ? `${user.username} · ${user.email}` : 'Sessão autenticada'}
         </Text>
         <Button
           label="Sair"
