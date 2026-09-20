@@ -31,7 +31,7 @@ export function StepSummary({ data }: Props) {
       ),
     },
     { label: 'Peso-meta', value: data.targetWeightKg ? `${data.targetWeightKg} kg` : '—' },
-    { label: 'Prazo desejado', value: data.targetTimeframe || '—' },
+    { label: 'Data-meta', value: data.targetDate || '—' },
     { label: 'Restrições alimentares', value: data.dietaryRestrictions || '—' },
   ];
 

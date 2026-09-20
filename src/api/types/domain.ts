@@ -80,33 +80,73 @@ export interface RankingEntry {
   points: number;
 }
 
+export type BiologicalSex = 'FEMALE' | 'MALE';
+export type NutritionGoal =
+  | 'LOSE_WEIGHT'
+  | 'GAIN_MUSCLE'
+  | 'GAIN_STRENGTH'
+  | 'MAINTAIN'
+  | 'PERFORMANCE';
+export type ActivityLevel =
+  | 'SEDENTARY'
+  | 'LIGHT'
+  | 'MODERATE'
+  | 'INTENSE'
+  | 'VERY_INTENSE';
+
+export interface BodyMeasurement {
+  id: string;
+  heightCm: number;
+  weightKg: number;
+  measuredAt: string;
+}
+
+export interface NutritionMetrics {
+  ageYears: number;
+  bmrKcalPerDay: number;
+  tdeeKcalPerDay: number;
+  calorieTargetKcalPerDay: number;
+  calculatedAt: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
   username: string;
-  displayName: string;
-  avatarUrl: string | null;
-  birthDate: string | null;
-  heightCm: number | null;
-  currentWeightKg: number | null;
-  goal: string | null;
-  activityLevel: string | null;
-  // Sexo biológico, usado no cálculo de taxa metabólica basal (onboarding,
-  // etapa "Sexo biológico") — ainda não documentado no Swagger real,
-  // seguindo o mesmo código provisório do resto deste arquivo.
-  sex: 'FEMALE' | 'MALE' | null;
-  // Onboarding, etapa "Últimos detalhes" (seção já fechada com backend/DB) —
-  // os três campos abaixo são opcionais, o usuário pode pular a etapa.
+  displayName: string | null;
+  dateOfBirth: string | null;
+  biologicalSex: BiologicalSex | null;
+  goal: NutritionGoal | null;
+  activityLevel: ActivityLevel | null;
   targetWeightKg: number | null;
-  targetTimeframe: string | null;
+  targetDate: string | null;
   dietaryRestrictions: string | null;
+  onboardingCompleted: boolean;
+  onboardingCompletedAt: string | null;
+  currentMeasurement: BodyMeasurement | null;
+  measurements: BodyMeasurement[];
+  nutrition: NutritionMetrics | null;
+}
+
+export interface CurrentUser {
+  id: string;
+  email: string;
+  username: string;
+  termsAccepted: boolean;
+  termsAcceptedAt: string;
+  createdAt: string;
+  profile: {
+    id: string;
+    onboardingCompleted: boolean;
+  };
 }
 
 // Formato de erro padronizado — seção 67
 export interface ApiErrorShape {
   statusCode: number;
-  code: string;
-  message: string;
+  error?: string;
+  code?: string;
+  message: string | string[];
   timestamp: string;
   path: string;
 }

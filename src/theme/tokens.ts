@@ -11,6 +11,8 @@ export const colors = {
     text: '#17141F',
     textSecondary: '#6E6880',
     primary: '#5B21B6',
+    onPrimary: '#FFFFFF',
+    shadow: '#000000',
     ring: '#6D28D9',
     // Trilha de anéis/barras de progresso — mais escura que `card` de propósito,
     // pra permanecer visível quando o componente é usado dentro de um Card.
@@ -29,6 +31,8 @@ export const colors = {
     text: '#F5F3F8',
     textSecondary: '#A29CB0',
     primary: '#C4ADF9',
+    onPrimary: '#FFFFFF',
+    shadow: '#000000',
     ring: '#8B5CF6',
     track: '#2E2A38',
     danger: '#F0808F',

@@ -12,12 +12,16 @@ export class ApiError extends Error {
   readonly path?: string;
 
   constructor(shape: ApiErrorShape | { message: string }) {
-    super(shape.message);
+    const message = Array.isArray(shape.message)
+      ? shape.message.join(' ')
+      : shape.message;
+
+    super(message);
     this.name = 'ApiError';
 
     if ('statusCode' in shape) {
       this.statusCode = shape.statusCode;
-      this.code = shape.code;
+      this.code = shape.code ?? shape.error ?? 'HTTP_ERROR';
       this.path = shape.path;
     } else {
       // Erro de rede/timeout, sem resposta estruturada do backend

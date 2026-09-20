@@ -20,8 +20,9 @@ import { MascotIllustration } from '@/components/MascotIllustration';
 import { GoogleIcon } from '@/components/icons';
 import { login } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
-import { ApiError } from '@/api/ApiError';
-import { USE_MOCK } from '@/api/config';
+import { USE_AUTH_MOCK } from '@/api/config';
+import { getAuthErrorMessage } from '@/api/authErrors';
+import { validateLogin } from '@/validation/auth';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -40,30 +41,34 @@ function handleSocialLogin(provider: string) {
 
 export function LoginScreen({ navigation }: Props) {
   const { tokens } = useTheme();
-  const [identifier, setIdentifier] = useState(USE_MOCK ? MOCK_USER : '');
-  const [password, setPassword] = useState(USE_MOCK ? MOCK_PASSWORD : '');
+  const [identifier, setIdentifier] = useState(USE_AUTH_MOCK ? MOCK_USER : '');
+  const [password, setPassword] = useState(USE_AUTH_MOCK ? MOCK_PASSWORD : '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sessionRestoreError = useAuthStore((state) => state.sessionRestoreError);
 
   async function handleLogin() {
+    if (loading) return;
+
     setError(null);
 
-    // Validação básica de campo (seção 126.1, item 1) — o backend ainda
-    // valida de novo, isso é só feedback imediato de UI (seção 5.3/RNF-02).
-    if (!identifier.trim() || !password.trim()) {
-      setError('Preencha usuário e senha.');
+    const validationError = validateLogin({ identifier, password });
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setLoading(true);
     try {
-      const tokens = await login(identifier.trim(), password);
-      await useAuthStore.getState().signIn(tokens);
+      const response = await login({
+        identifier: identifier.trim().toLowerCase(),
+        password,
+      });
+      await useAuthStore.getState().signIn(response.accessToken);
       // RootNavigator troca de tela automaticamente ao detectar
       // status === 'authenticated' — não precisa navigate() manual aqui.
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Não foi possível entrar. Tente novamente.';
-      setError(message);
+      setError(getAuthErrorMessage(err, 'login'));
     } finally {
       setLoading(false);
     }
@@ -108,9 +113,9 @@ export function LoginScreen({ navigation }: Props) {
             <Text style={[styles.forgotPasswordLabel, { color: tokens.primary }]}>Esqueceu a senha?</Text>
           </Pressable>
 
-          {error && (
+          {(error || sessionRestoreError) && (
             <Text accessibilityRole="alert" style={[styles.error, { color: tokens.danger }]}>
-              {error}
+              {error ?? 'Não foi possível validar a sessão salva. Entre novamente ou tente mais tarde.'}
             </Text>
           )}
 

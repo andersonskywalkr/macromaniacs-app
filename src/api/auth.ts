@@ -1,53 +1,76 @@
-import { httpClient } from './client';
-import { USE_MOCK, MOCK_LATENCY_MS } from './config';
+import { httpClient, publicHttpClient } from './client';
+import { MOCK_LATENCY_MS, USE_AUTH_MOCK } from './config';
+import type { CurrentUser } from './types/domain';
 
 function delay<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), MOCK_LATENCY_MS));
+  return new Promise((resolve) =>
+    setTimeout(() => resolve(value), MOCK_LATENCY_MS),
+  );
 }
 
-export interface AuthTokens {
+export interface LoginRequest {
+  identifier: string;
+  password: string;
+}
+
+export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
 }
 
-// POST /api/v1/auth/login — seção 48, UC-02
-export async function login(email: string, password: string): Promise<AuthTokens> {
-  if (USE_MOCK) {
-    // No mock, qualquer email/senha não vazios "funcionam" — é só pra
-    // desenvolver a UI sem backend. A validação real (senha errada,
-    // usuário não existe) só existe quando USE_MOCK=false.
-    if (!email || !password) {
-      throw new Error('Email e senha são obrigatórios');
-    }
-    return delay({ accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token' });
-  }
-  const { data } = await httpClient.post<AuthTokens>('/auth/login', { email, password });
-  return data;
-}
-
-// POST /api/v1/auth/register — seção 48, UC-01
-export interface RegisterInput {
+export interface RegisterRequest {
   email: string;
   username: string;
   password: string;
-  // Nome completo real, usado pelo backend pra registrar a conta — não
-  // confundir com o "como gostaria de ser chamado" coletado no onboarding
-  // (esse vira UserProfile.displayName, usado só na UI).
-  fullName: string;
+  termsAccepted: true;
 }
 
-export async function register(input: RegisterInput): Promise<AuthTokens> {
-  if (USE_MOCK) {
-    return delay({ accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token' });
+export type RegisterResponse = CurrentUser;
+
+const mockCurrentUser: CurrentUser = {
+  id: 'mock-user-id',
+  email: 'teste@macromaniacs.com',
+  username: 'teste',
+  termsAccepted: true,
+  termsAcceptedAt: new Date(0).toISOString(),
+  createdAt: new Date(0).toISOString(),
+  profile: { id: 'mock-profile-id', onboardingCompleted: true },
+};
+
+export async function login(input: LoginRequest): Promise<LoginResponse> {
+  if (USE_AUTH_MOCK) {
+    return delay({ accessToken: 'mock-access-token' });
   }
-  const { data } = await httpClient.post<AuthTokens>('/auth/register', input);
+
+  const { data } = await publicHttpClient.post<LoginResponse>(
+    '/v1/auth/login',
+    input,
+  );
   return data;
 }
 
-// POST /api/v1/auth/logout — seção 48
-export async function logout(): Promise<void> {
-  if (USE_MOCK) {
-    return delay(undefined);
+export async function register(
+  input: RegisterRequest,
+): Promise<RegisterResponse> {
+  if (USE_AUTH_MOCK) {
+    return delay({
+      ...mockCurrentUser,
+      email: input.email,
+      username: input.username,
+    });
   }
-  await httpClient.post('/auth/logout');
+
+  const { data } = await publicHttpClient.post<RegisterResponse>(
+    '/v1/auth/register',
+    input,
+  );
+  return data;
+}
+
+export async function getMe(): Promise<CurrentUser> {
+  if (USE_AUTH_MOCK) {
+    return delay(mockCurrentUser);
+  }
+
+  const { data } = await httpClient.get<CurrentUser>('/v1/auth/me');
+  return data;
 }

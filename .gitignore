@@ -1,4 +1,5 @@
 node_modules/
+.pnpm-store/
 .expo/
 dist/
 web-build/
@@ -12,4 +13,5 @@ prototype-reference/
 
 # Nunca commitar segredos (seção 108)
 .env
-.env.local
+.env.*
+!.env.example

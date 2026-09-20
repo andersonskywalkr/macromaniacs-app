@@ -4,6 +4,13 @@ import { TextField } from '@/components/TextField';
 import { spacing } from '@/theme/tokens';
 import type { OnboardingData } from '../types';
 
+function formatDate(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)]
+    .filter(Boolean)
+    .join('/');
+}
+
 interface Props {
   data: OnboardingData;
   onChange: (patch: Partial<OnboardingData>) => void;
@@ -21,10 +28,12 @@ export function StepGoalDetails({ data, onChange }: Props) {
         keyboardType="decimal-pad"
       />
       <TextField
-        accessibilityLabel="Prazo desejado"
-        placeholder="Prazo desejado"
-        value={data.targetTimeframe}
-        onChangeText={(v) => onChange({ targetTimeframe: v })}
+        accessibilityLabel="Data-meta, formato dia, mês, ano"
+        placeholder="Data-meta (dd/mm/aaaa)"
+        value={data.targetDate}
+        onChangeText={(v) => onChange({ targetDate: formatDate(v) })}
+        keyboardType="number-pad"
+        maxLength={10}
       />
       <TextField
         accessibilityLabel="Restrições alimentares"

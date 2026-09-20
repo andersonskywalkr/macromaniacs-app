@@ -5,21 +5,20 @@
 // store do zustand.
 export interface OnboardingData {
   // Apelido/preferência de como chamar o usuário na UI (ex.: saudação da
-  // Home) — distinto do nome completo já coletado no cadastro
-  // (RegisterInput.fullName), que serve só pro registro da conta.
+  // Home). O backend atual ainda não recebe esse campo no cadastro.
   displayName: string;
   birthDate: string;
   heightCm: string;
   weightKg: string;
   // Sexo biológico (não identidade de gênero) — só as duas opções que
   // entram na fórmula de taxa metabólica basal.
-  sex: 'FEMALE' | 'MALE' | null;
-  goal: string | null;
-  activityLevel: string | null;
+  sex: BiologicalSex | null;
+  goal: NutritionGoal | null;
+  activityLevel: ActivityLevel | null;
   // Etapa "Últimos detalhes" — todos opcionais, formato já fechado com
   // backend/DB (peso-meta, prazo desejado, restrições alimentares).
   targetWeightKg: string;
-  targetTimeframe: string;
+  targetDate: string;
   dietaryRestrictions: string;
 }
 
@@ -32,7 +31,7 @@ export const INITIAL_ONBOARDING_DATA: OnboardingData = {
   goal: null,
   activityLevel: null,
   targetWeightKg: '',
-  targetTimeframe: '',
+  targetDate: '',
   dietaryRestrictions: '',
 };
 
@@ -43,7 +42,7 @@ export const SEX_OPTIONS: { label: string; value: OnboardingData['sex'] }[] = [
   { label: 'Masculino', value: 'MALE' },
 ];
 
-export const GOAL_OPTIONS: { label: string; value: string }[] = [
+export const GOAL_OPTIONS: { label: string; value: NutritionGoal }[] = [
   { label: 'Emagrecimento', value: 'LOSE_WEIGHT' },
   { label: 'Ganho de massa', value: 'GAIN_MUSCLE' },
   { label: 'Ganho de força', value: 'GAIN_STRENGTH' },
@@ -53,7 +52,7 @@ export const GOAL_OPTIONS: { label: string; value: string }[] = [
 
 export interface ActivityOption {
   label: string;
-  value: string;
+  value: ActivityLevel;
   description: string;
   criteria: string;
 }
@@ -94,3 +93,8 @@ export const ACTIVITY_OPTIONS: ActivityOption[] = [
 export function findLabel(options: { label: string; value: string | null }[], value: string | null): string {
   return options.find((o) => o.value === value)?.label ?? '—';
 }
+import type {
+  ActivityLevel,
+  BiologicalSex,
+  NutritionGoal,
+} from '@/api/types/domain';

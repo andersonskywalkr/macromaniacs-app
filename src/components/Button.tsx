@@ -32,7 +32,13 @@ export function Button({
 
   const backgroundColor =
     variant === 'primary' ? tokens.primary : variant === 'dark' ? tokens.text : 'transparent';
-  const contentColor = variant === 'primary' ? '#FFFFFF' : variant === 'dark' ? tokens.background : tokens.primary;
+  const contentColor = variant === 'primary' ? tokens.onPrimary : variant === 'dark' ? tokens.background : tokens.primary;
+  const buttonStateStyle = {
+    backgroundColor,
+    borderColor: tokens.primary,
+    borderWidth: variant === 'secondary' ? 1 : 0,
+    opacity: isDisabled ? 0.6 : 1,
+  };
 
   return (
     <Pressable
@@ -45,12 +51,7 @@ export function Button({
       hitSlop={8}
       style={[
         styles.base,
-        {
-          backgroundColor,
-          borderWidth: variant === 'secondary' ? 1 : 0,
-          borderColor: tokens.primary,
-          opacity: isDisabled ? 0.6 : 1,
-        },
+        buttonStateStyle,
         style,
       ]}
       {...rest}

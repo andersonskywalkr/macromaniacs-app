@@ -19,8 +19,8 @@ import { TextField } from '@/components/TextField';
 import { MascotIllustration } from '@/components/MascotIllustration';
 import { GoogleIcon } from '@/components/icons';
 import { register } from '@/api/auth';
-import { useAuthStore } from '@/store/authStore';
-import { ApiError } from '@/api/ApiError';
+import { getAuthErrorMessage } from '@/api/authErrors';
+import { validateRegister } from '@/validation/auth';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -32,59 +32,49 @@ function handleSocialLogin(provider: string) {
 export function RegisterScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const [form, setForm] = useState({
-    fullName: '',
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
+    termsAccepted: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const checkboxColor = {
+    backgroundColor: form.termsAccepted ? tokens.primary : tokens.background,
+    borderColor: tokens.primary,
+  };
 
-  function setField(field: keyof typeof form, value: string) {
+  function setField(field: keyof typeof form, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
   async function handleRegister() {
+    if (loading) return;
+
     setError(null);
 
-    if (
-      !form.email.trim() ||
-      !form.username.trim() ||
-      !form.password.trim() ||
-      !form.fullName.trim() ||
-      !form.confirmPassword.trim()
-    ) {
-      setError('Preencha todos os campos.');
-      return;
-    }
-    // Regra de senha real (tamanho mínimo etc.) deve ser confirmada com o
-    // backend e validada lá também — o frontend nunca é a única barreira
-    // (seção 5.3 do documento).
-    if (form.password.length < 8) {
-      setError('A senha deve ter pelo menos 8 caracteres.');
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError('As senhas não coincidem.');
+    const validationError = validateRegister(form);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setLoading(true);
     try {
-      const tokens = await register({
-        email: form.email.trim(),
-        username: form.username.trim(),
+      await register({
+        email: form.email.trim().toLowerCase(),
+        username: form.username.trim().toLowerCase(),
         password: form.password,
-        fullName: form.fullName.trim(),
+        termsAccepted: true,
       });
-      // needsOnboarding: true -> RootNavigator leva pro wizard de onboarding
-      // logo após o cadastro, antes de liberar o app (AppTabs).
-      await useAuthStore.getState().signIn(tokens, { needsOnboarding: true });
+      Alert.alert(
+        'Conta criada',
+        'Cadastro concluído. Agora entre com seu usuário ou e-mail.',
+        [{ text: 'Entrar', onPress: () => navigation.replace('Login') }],
+      );
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Não foi possível criar a conta. Tente novamente.';
-      setError(message);
+      setError(getAuthErrorMessage(err, 'register'));
     } finally {
       setLoading(false);
     }
@@ -104,12 +94,6 @@ export function RegisterScreen({ navigation }: Props) {
           </Text>
 
           <View style={styles.form}>
-            <TextField
-              accessibilityLabel="Nome completo"
-              placeholder="Nome completo"
-              value={form.fullName}
-              onChangeText={(v) => setField('fullName', v)}
-            />
             <TextField
               accessibilityLabel="Nome de usuário"
               placeholder="Usuário"
@@ -139,6 +123,25 @@ export function RegisterScreen({ navigation }: Props) {
               onChangeText={(v) => setField('confirmPassword', v)}
               secureTextEntry
             />
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: form.termsAccepted }}
+              accessibilityLabel="Aceitar os termos de uso"
+              onPress={() => setField('termsAccepted', !form.termsAccepted)}
+              style={styles.termsRow}
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  checkboxColor,
+                ]}
+              >
+                {form.termsAccepted && (
+                  <Text style={[styles.checkmark, { color: tokens.background }]}>✓</Text>
+                )}
+              </View>
+              <Text style={[styles.termsLabel, { color: tokens.text }]}>Aceito os termos de uso</Text>
+            </Pressable>
           </View>
 
           {error && (
@@ -179,6 +182,15 @@ export function RegisterScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  checkbox: {
+    alignItems: 'center',
+    borderRadius: 5,
+    borderWidth: 2,
+    height: 22,
+    justifyContent: 'center',
+    width: 22,
+  },
+  checkmark: { fontSize: 14, fontWeight: '800' },
   container: { flex: 1 },
   dividerLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600' },
   dividerLine: { flex: 1, height: 1 },
@@ -201,5 +213,7 @@ const styles = StyleSheet.create({
   },
   socialRow: { flexDirection: 'row', gap: spacing.md - 2, justifyContent: 'center', marginTop: spacing.lg - 2 },
   subtitle: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '600', marginTop: spacing.xs + 4 },
+  termsLabel: { flex: 1, fontFamily: 'PlusJakartaSans', fontSize: 14, fontWeight: '600' },
+  termsRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, minHeight: 44 },
   title: { fontFamily: 'PlusJakartaSans', fontSize: 30, fontWeight: '800', lineHeight: 36 },
 });

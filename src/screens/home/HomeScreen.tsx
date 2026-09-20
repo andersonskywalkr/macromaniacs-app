@@ -11,12 +11,11 @@ import { Avatar } from '@/components/Avatar';
 import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
 import { BellIcon, ThemeToggleIcon, PlusIcon, ChevronRightIcon, TrendingUpIcon, FireIcon, MedalIcon } from '@/components/icons';
-import { useProgressToday } from '@/queries/useProgressToday';
 import { useGamificationStats } from '@/queries/useGamificationStats';
-import { useMyProfile } from '@/queries/useMyProfile';
 import { useMyGroups } from '@/queries/useMyGroups';
 import { useGroupRanking } from '@/queries/useGroupRanking';
 import { formatFriendlyDate } from '@/utils/formatDate';
+import { useAuthStore } from '@/store/authStore';
 
 type Props = BottomTabScreenProps<AppTabsParamList, 'HomeTab'>;
 
@@ -26,15 +25,14 @@ type Props = BottomTabScreenProps<AppTabsParamList, 'HomeTab'>;
 export function HomeScreen({ navigation }: Props) {
   const { tokens, mode, setMode } = useTheme();
 
-  const progress = useProgressToday();
   const gamification = useGamificationStats();
-  const profile = useMyProfile();
+  const currentUser = useAuthStore((state) => state.user);
   const groups = useMyGroups();
   const primaryGroup = groups.data?.[0];
   const ranking = useGroupRanking(primaryGroup?.id);
 
-  const isLoading = progress.isLoading || gamification.isLoading || profile.isLoading;
-  const hasError = progress.isError || gamification.isError || profile.isError;
+  const isLoading = gamification.isLoading || !currentUser;
+  const hasError = gamification.isError || !currentUser?.nutrition;
 
   if (isLoading) {
     return (
@@ -59,14 +57,8 @@ export function HomeScreen({ navigation }: Props) {
     );
   }
 
-  const progressData = progress.data!;
   const gamificationData = gamification.data!;
-  const profileData = profile.data!;
-
-  const consumedCalories = Math.round(progressData.calories.consumed);
-  const goalCalories = progressData.calories.goal;
-  const remainingCalories = Math.max(0, goalCalories - consumedCalories);
-  const calorieProgress = goalCalories > 0 ? consumedCalories / goalCalories : 0;
+  const nutrition = currentUser.nutrition!;
   const todayLabel = formatFriendlyDate(new Date());
 
   const rankingEntries = (ranking.data ?? []).slice(0, 3);
@@ -76,10 +68,10 @@ export function HomeScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={[styles.profilePill, { backgroundColor: tokens.card }]}>
-            <Avatar uri={profileData.avatarUrl} displayName={profileData.displayName} size={44} />
+            <Avatar uri={null} displayName={currentUser.displayName ?? currentUser.username} size={44} />
             <View style={styles.profileTextWrap}>
               <Text numberOfLines={1} style={[styles.greeting, { color: tokens.text }]}>
-                Olá, {profileData.displayName}
+                Olá, {currentUser.displayName ?? currentUser.username}
               </Text>
               <Text numberOfLines={1} style={[styles.dateText, { color: tokens.textSecondary }]}>
                 {todayLabel}
@@ -120,74 +112,54 @@ export function HomeScreen({ navigation }: Props) {
         <Card style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.summarySide}>
-              <Text style={[styles.summarySideValue, { color: tokens.text }]}>{consumedCalories}</Text>
+              <Text style={[styles.summarySideValue, { color: tokens.text }]}>
+                {nutrition.bmrKcalPerDay}
+              </Text>
               <Text
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.8}
                 style={[styles.summarySideLabel, { color: tokens.textSecondary }]}
               >
-                consumidas
+                TMB
               </Text>
             </View>
 
             <View style={styles.ringWrap}>
               <ProgressRing
-                progress={calorieProgress}
+                progress={0}
                 size={152}
                 strokeWidth={10}
                 color={tokens.ring}
                 trackColor={tokens.track}
-                accessibilityLabel="Progresso de calorias do dia"
+                accessibilityLabel="Meta energética diária"
               />
               <View style={styles.ringCenter} pointerEvents="none">
-                <Text style={[styles.ringValue, { color: tokens.text }]}>{remainingCalories}</Text>
-                <Text style={[styles.ringLabel, { color: tokens.textSecondary }]}>kcal restantes</Text>
+                <Text style={[styles.ringValue, { color: tokens.text }]}>
+                  {nutrition.calorieTargetKcalPerDay}
+                </Text>
+                <Text style={[styles.ringLabel, { color: tokens.textSecondary }]}>meta kcal/dia</Text>
               </View>
             </View>
 
             <View style={styles.summarySide}>
-              <Text style={[styles.summarySideValue, { color: tokens.text }]}>{goalCalories}</Text>
+              <Text style={[styles.summarySideValue, { color: tokens.text }]}>
+                {nutrition.tdeeKcalPerDay}
+              </Text>
               <Text
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.8}
                 style={[styles.summarySideLabel, { color: tokens.textSecondary }]}
               >
-                meta
+                TDEE
               </Text>
             </View>
           </View>
 
-          <View style={styles.macrosList}>
-            <MacroBar
-              label="Carboidratos"
-              dotColor={tokens.carbs}
-              trackColor={tokens.track}
-              textColor={tokens.text}
-              valueColor={tokens.textSecondary}
-              consumed={progressData.carbohydrates.consumed}
-              goal={progressData.carbohydrates.goal}
-            />
-            <MacroBar
-              label="Proteínas"
-              dotColor={tokens.protein}
-              trackColor={tokens.track}
-              textColor={tokens.text}
-              valueColor={tokens.textSecondary}
-              consumed={progressData.protein.consumed}
-              goal={progressData.protein.goal}
-            />
-            <MacroBar
-              label="Gorduras"
-              dotColor={tokens.fat}
-              trackColor={tokens.track}
-              textColor={tokens.text}
-              valueColor={tokens.textSecondary}
-              consumed={progressData.fat.consumed}
-              goal={progressData.fat.goal}
-            />
-          </View>
+          <Text style={[styles.nutritionNotice, { color: tokens.textSecondary }]}>
+            O consumo e os macronutrientes aparecerão quando o diário alimentar estiver disponível.
+          </Text>
         </Card>
 
         <Button
@@ -229,7 +201,7 @@ export function HomeScreen({ navigation }: Props) {
             ) : (
               <View style={styles.rankingList}>
                 {rankingEntries.map((entry) => {
-                  const isYou = entry.userId === profileData.id;
+                  const isYou = entry.userId === currentUser.id;
                   const pointsColor = isYou ? tokens.primary : entry.position === 1 ? tokens.gold : tokens.textSecondary;
                   return (
                     <View key={entry.userId} style={styles.rankingRow}>
@@ -259,42 +231,6 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
-function MacroBar({
-  label,
-  dotColor,
-  trackColor,
-  textColor,
-  valueColor,
-  consumed,
-  goal,
-}: {
-  label: string;
-  dotColor: string;
-  trackColor: string;
-  textColor: string;
-  valueColor: string;
-  consumed: number;
-  goal: number;
-}) {
-  const ratio = goal > 0 ? Math.min(consumed / goal, 1) : 0;
-  return (
-    <View>
-      <View style={styles.macroHeaderRow}>
-        <View style={styles.macroLabelRow}>
-          <View style={[styles.macroDot, { backgroundColor: dotColor }]} />
-          <Text style={[styles.macroLabel, { color: textColor }]}>{label}</Text>
-        </View>
-        <Text style={[styles.macroValue, { color: valueColor }]}>
-          {Math.round(consumed)} / {Math.round(goal)} g
-        </Text>
-      </View>
-      <View style={[styles.macroTrack, { backgroundColor: trackColor }]}>
-        <View style={[styles.macroFill, { backgroundColor: dotColor, width: `${ratio * 100}%` }]} />
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   centerFill: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   container: { flex: 1 },
@@ -314,15 +250,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 44,
   },
-  macroDot: { borderRadius: 4, height: 8, width: 8 },
-  macroFill: { borderRadius: 999, height: '100%' },
-  macroHeaderRow: { alignItems: 'baseline', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
-  macroLabel: { fontFamily: 'PlusJakartaSans', fontSize: 13.5, fontWeight: '700' },
-  macroLabelRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs },
-
-  macroTrack: { borderRadius: 999, height: 6, overflow: 'hidden' },
-  macroValue: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600' },
-  macrosList: { gap: spacing.md, marginTop: spacing.lg + spacing.xs },
+  nutritionNotice: {
+    fontFamily: 'PlusJakartaSans',
+    fontSize: 12.5,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginTop: spacing.lg,
+    textAlign: 'center',
+  },
   performanceIcon: {
     alignItems: 'center',
     borderRadius: radius.card / 2 - 2,
