@@ -29,3 +29,13 @@ export const API_BASE_URL = configuredApiUrl ?? '';
 // Delay artificial só no modo mock, pra UI já nascer tratando estados de
 // loading corretamente em vez de assumir resposta instantânea.
 export const MOCK_LATENCY_MS = 400;
+
+// Flag temporária pra apresentação: mostra a MaintenanceScreen no lugar do
+// AppTabs de verdade depois do login/onboarding, já que Home/Refeições/
+// Grupo/Perfil ainda são telas com dado mock (ver README). Desligar
+// setando EXPO_PUBLIC_SHOW_MAINTENANCE_SCREEN=false no .env quando o app
+// estiver pronto pra mostrar as telas reais.
+export const SHOW_MAINTENANCE_SCREEN = process.env.EXPO_PUBLIC_SHOW_MAINTENANCE_SCREEN !== 'false';
+
+// URL da landing page oficial, aberta pelo botão da MaintenanceScreen.
+export const LANDING_PAGE_URL = process.env.EXPO_PUBLIC_LANDING_PAGE_URL ?? '';

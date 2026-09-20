@@ -5,7 +5,9 @@ import { useAuthStore } from '@/store/authStore';
 import { AuthStackNavigator } from './AuthStack';
 import { AppTabsNavigator } from './AppTabs';
 import { OnboardingStackNavigator } from './OnboardingStack';
+import { MaintenanceScreen } from '@/screens/MaintenanceScreen';
 import { useTheme } from '@/theme/ThemeProvider';
+import { SHOW_MAINTENANCE_SCREEN } from '@/api/config';
 
 /**
  * Guarda de navegação — seção 118.3.
@@ -44,7 +46,7 @@ export function RootNavigator() {
         <OnboardingStackNavigator />
       )}
       {status === 'authenticated' && user?.onboardingCompleted && (
-        <AppTabsNavigator />
+        SHOW_MAINTENANCE_SCREEN ? <MaintenanceScreen /> : <AppTabsNavigator />
       )}
     </NavigationContainer>
   );

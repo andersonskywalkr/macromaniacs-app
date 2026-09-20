@@ -1,10 +1,8 @@
 import React from 'react';
 import { Image, StyleProp, ViewStyle } from 'react-native';
 import { SvgUri } from 'react-native-svg';
-import mascotAsset from '../../assets/mascote/login.svg';
-
-// Proporção real do arquivo assets/mascote/login.svg (227×267).
-const MASCOT_ASPECT_RATIO = 227 / 267;
+import loginAsset from '../../assets/mascote/login.svg';
+import maintenanceAsset from '../../assets/mascote/maintenance.svg';
 
 // SVG (não PNG) por pedido explícito — a ilustração em PNG ficava borrada
 // ao ser exibida maior que sua resolução nativa. Um .svg importado assim é
@@ -12,20 +10,22 @@ const MASCOT_ASPECT_RATIO = 227 / 267;
 // SvgUri (já vem com react-native-svg, sem lib nova) busca esse asset pela
 // URI resolvida e desenha o vetor — evita depender de um transformer de SVG
 // no Metro só pra isso.
-const mascotSource = Image.resolveAssetSource(mascotAsset);
+const MASCOTS = {
+  login: { asset: loginAsset, aspectRatio: 227 / 267 },
+  maintenance: { asset: maintenanceAsset, aspectRatio: 430 / 430 },
+} as const;
+
+type MascotVariant = keyof typeof MASCOTS;
 
 interface MascotIllustrationProps {
+  variant?: MascotVariant;
   width: number;
   style?: StyleProp<ViewStyle>;
 }
 
-export function MascotIllustration({ width, style }: MascotIllustrationProps) {
-  return (
-    <SvgUri
-      uri={mascotSource.uri}
-      width={width}
-      height={width / MASCOT_ASPECT_RATIO}
-      style={style}
-    />
-  );
+export function MascotIllustration({ variant = 'login', width, style }: MascotIllustrationProps) {
+  const { asset, aspectRatio } = MASCOTS[variant];
+  const uri = Image.resolveAssetSource(asset).uri;
+
+  return <SvgUri uri={uri} width={width} height={width / aspectRatio} style={style} />;
 }
