@@ -1,6 +1,7 @@
 import { httpClient, publicHttpClient } from './client';
 import { MOCK_LATENCY_MS, USE_AUTH_MOCK } from './config';
 import type { CurrentUser } from './types/domain';
+import { getMockOnboardingCompleted, setMockOnboardingCompleted } from '@/mocks/mockSession';
 
 function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) =>
@@ -26,15 +27,17 @@ export interface RegisterRequest {
 
 export type RegisterResponse = CurrentUser;
 
-const mockCurrentUser: CurrentUser = {
-  id: 'mock-user-id',
-  email: 'teste@macromaniacs.com',
-  username: 'teste',
-  termsAccepted: true,
-  termsAcceptedAt: new Date(0).toISOString(),
-  createdAt: new Date(0).toISOString(),
-  profile: { id: 'mock-profile-id', onboardingCompleted: true },
-};
+function buildMockCurrentUser(): CurrentUser {
+  return {
+    id: 'mock-user-id',
+    email: 'teste@macromaniacs.com',
+    username: 'teste',
+    termsAccepted: true,
+    termsAcceptedAt: new Date(0).toISOString(),
+    createdAt: new Date(0).toISOString(),
+    profile: { id: 'mock-profile-id', onboardingCompleted: getMockOnboardingCompleted() },
+  };
+}
 
 export async function login(input: LoginRequest): Promise<LoginResponse> {
   if (USE_AUTH_MOCK) {
@@ -52,8 +55,10 @@ export async function register(
   input: RegisterRequest,
 ): Promise<RegisterResponse> {
   if (USE_AUTH_MOCK) {
+    // Cadastro novo -> onboarding pendente, igual ao backend real.
+    setMockOnboardingCompleted(false);
     return delay({
-      ...mockCurrentUser,
+      ...buildMockCurrentUser(),
       email: input.email,
       username: input.username,
     });
@@ -68,7 +73,7 @@ export async function register(
 
 export async function getMe(): Promise<CurrentUser> {
   if (USE_AUTH_MOCK) {
-    return delay(mockCurrentUser);
+    return delay(buildMockCurrentUser());
   }
 
   const { data } = await httpClient.get<CurrentUser>('/v1/auth/me');

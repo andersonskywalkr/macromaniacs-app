@@ -1,6 +1,7 @@
 import { httpClient } from './client';
 import { USE_AUTH_MOCK, MOCK_LATENCY_MS } from './config';
 import { mockUserProfile } from '@/mocks/data';
+import { getMockOnboardingCompleted, setMockOnboardingCompleted } from '@/mocks/mockSession';
 import type { UserProfile } from './types/domain';
 
 export type UpdateMyProfileRequest = {
@@ -24,7 +25,7 @@ function delay<T>(value: T): Promise<T> {
 // GET /api/v1/users/me — seção 49
 export async function getMyProfile(): Promise<UserProfile> {
   if (USE_AUTH_MOCK) {
-    return delay(mockUserProfile);
+    return delay({ ...mockUserProfile, onboardingCompleted: getMockOnboardingCompleted() });
   }
   const { data } = await httpClient.get<UserProfile>('/v1/users/me');
   return data;
@@ -35,6 +36,7 @@ export async function updateMyProfile(
   patch: UpdateMyProfileRequest,
 ): Promise<UserProfile> {
   if (USE_AUTH_MOCK) {
+    setMockOnboardingCompleted(true);
     return delay({
       ...mockUserProfile,
       ...patch,
