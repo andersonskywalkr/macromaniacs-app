@@ -40,21 +40,9 @@ jest.mock('./AppTabs', () => {
     AppTabsNavigator: () => ReactModule.createElement(MockText, null, 'APP_TABS'),
   };
 });
-jest.mock('@/screens/MaintenanceScreen', () => {
-  const ReactModule = jest.requireActual<typeof import('react')>('react');
-  const { Text: MockText } =
-    jest.requireActual<typeof import('react-native')>('react-native');
-  return {
-    MaintenanceScreen: () =>
-      ReactModule.createElement(MockText, null, 'MAINTENANCE_SCREEN'),
-  };
-});
-jest.mock('@/api/config', () => ({ SHOW_MAINTENANCE_SCREEN: false }));
-
 describe('RootNavigator', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.requireMock('@/api/config').SHOW_MAINTENANCE_SCREEN = false;
   });
 
   it('shows authentication when there is no valid session', () => {
@@ -74,8 +62,7 @@ describe('RootNavigator', () => {
     expect(screen.queryByText('APP_TABS')).toBeNull();
   });
 
-  it('routes a complete authenticated profile to Home tabs when maintenance mode is off', () => {
-    jest.requireMock('@/api/config').SHOW_MAINTENANCE_SCREEN = false;
+  it('routes a complete authenticated profile to Home tabs', () => {
     mockAuthState = {
       status: 'authenticated',
       user: { onboardingCompleted: true },
@@ -84,18 +71,5 @@ describe('RootNavigator', () => {
     const screen = render(<RootNavigator />);
     expect(screen.getByText('APP_TABS')).toBeTruthy();
     expect(screen.queryByText('ONBOARDING_STACK')).toBeNull();
-    expect(screen.queryByText('MAINTENANCE_SCREEN')).toBeNull();
-  });
-
-  it('routes a complete authenticated profile to the maintenance screen when maintenance mode is on', () => {
-    jest.requireMock('@/api/config').SHOW_MAINTENANCE_SCREEN = true;
-    mockAuthState = {
-      status: 'authenticated',
-      user: { onboardingCompleted: true },
-      bootstrap,
-    };
-    const screen = render(<RootNavigator />);
-    expect(screen.getByText('MAINTENANCE_SCREEN')).toBeTruthy();
-    expect(screen.queryByText('APP_TABS')).toBeNull();
   });
 });

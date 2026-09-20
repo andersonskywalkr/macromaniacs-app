@@ -9,6 +9,8 @@ import { ProfileStackNavigator } from './ProfileStack';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { HomeIcon, MealsIcon, GroupIcon, ProfileIcon } from '@/components/icons';
+import { SHOW_MAINTENANCE_SCREEN } from '@/api/config';
+import { MaintenanceScreen } from '@/screens/MaintenanceScreen';
 
 const Tab = createBottomTabNavigator<AppTabsParamList>();
 
@@ -48,7 +50,7 @@ export function AppTabsNavigator() {
     >
       <Tab.Screen
         name="HomeTab"
-        component={HomeScreen}
+        component={SHOW_MAINTENANCE_SCREEN ? MaintenanceScreen : HomeScreen}
         options={{
           tabBarLabel: 'Início',
           tabBarIcon: ({ focused, color }) => (
@@ -60,7 +62,7 @@ export function AppTabsNavigator() {
       />
       <Tab.Screen
         name="MealsTab"
-        component={MealsStackNavigator}
+        component={SHOW_MAINTENANCE_SCREEN ? MaintenanceScreen : MealsStackNavigator}
         options={{
           tabBarLabel: 'Refeições',
           tabBarIcon: ({ focused, color }) => (
@@ -72,7 +74,7 @@ export function AppTabsNavigator() {
       />
       <Tab.Screen
         name="GroupTab"
-        component={GroupStackNavigator}
+        component={SHOW_MAINTENANCE_SCREEN ? MaintenanceScreen : GroupStackNavigator}
         options={{
           tabBarLabel: 'Grupo',
           tabBarIcon: ({ focused, color }) => (
