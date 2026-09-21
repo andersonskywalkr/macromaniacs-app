@@ -89,7 +89,7 @@ duas soluções:
 1. **Copiar os assets do protótipo** (`mascote.png`, `fire.svg`, medalhas,
    `perfil.jpg` etc.) do zip do Netlify para `assets/`, e referenciá-los
    nos componentes (`Avatar`, `EmptyState` já esperam esses arquivos).
-2. **Adicionar a fonte Plus Jakarta Sans** de verdade em `assets/fonts/` e
+2. **Adicionar a fonte Plus    Jakarta Sans** de verdade em `assets/fonts/` e
    descomentar o `Font.loadAsync` em `src/app/App.tsx`.
 3. **Substituir os mocks remanescentes** somente quando Refeições, Grupos,
    Ranking e Gamificação tiverem endpoints reais no backend.
