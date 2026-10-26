@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type ThemePreference = 'light' | 'dark' | 'system';
+export type ThemePreference = 'light' | 'dark' | 'system';
 
 interface ThemeStore {
   preference: ThemePreference;

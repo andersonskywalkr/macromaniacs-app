@@ -5,6 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -13,13 +14,27 @@
       "bundleIdentifier": "com.macromaniacs.app"
     },
     "android": {
-      "package": "com.macromaniacs.app"
+      "package": "com.macromaniacs.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#9D52DE"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-secure-store",
       "expo-camera",
       "expo-font",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "100f521c-e0e3-46df-907f-02011e9c874e"
+      }
+    },
+    "owner": "andersonskwrs-team"
   }
 }

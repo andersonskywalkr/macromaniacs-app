@@ -24,9 +24,9 @@ async function handleOpenLandingPage() {
   }
 }
 
-// Tela temporária mostrada no lugar do AppTabs depois do login/onboarding
-// (ver SHOW_MAINTENANCE_SCREEN em api/config.ts) — usada pra apresentação
-// enquanto Home/Refeições/Grupo/Perfil ainda são telas com dado mock.
+// Tela temporária mostrada no lugar de uma aba ainda não pronta (ver
+// MAINTENANCE_TABS em api/config.ts) — usada pra apresentação enquanto
+// Refeições e Grupo ainda não têm as telas finais.
 export function MaintenanceScreen() {
   const { tokens } = useTheme();
 

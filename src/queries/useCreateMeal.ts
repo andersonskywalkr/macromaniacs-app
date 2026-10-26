@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createMeal, CreateMealInput } from '@/api/meals';
+import type { MealLog } from '@/api/types/domain';
 import { ApiError } from '@/api/ApiError';
 import { progressTodayKey } from './useProgressToday';
 import { gamificationStatsKey } from './useGamificationStats';
@@ -17,7 +18,12 @@ export function useCreateMeal() {
   return useMutation({
     mutationFn: (input: CreateMealInput) => createMeal(input),
 
-    onSuccess: () => {
+    onSuccess: (meal) => {
+      // Coloca a refeição nova na lista do dia já, pra o Detalhe abrir sem
+      // esperar o refetch (a invalidação abaixo ainda confirma com o servidor).
+      queryClient.setQueryData<MealLog[]>(mealsTodayKey, (old) =>
+        old && !old.some((m) => m.id === meal.id) ? [...old, meal] : old,
+      );
       queryClient.invalidateQueries({ queryKey: progressTodayKey });
       queryClient.invalidateQueries({ queryKey: gamificationStatsKey });
       queryClient.invalidateQueries({ queryKey: mealsTodayKey });

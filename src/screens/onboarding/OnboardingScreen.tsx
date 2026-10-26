@@ -24,7 +24,7 @@ const TOTAL_STEPS = 6;
 
 const STEP_COPY = [
   { title: 'Sobre você', subtitle: 'Dados básicos para calcular suas necessidades.' },
-  { title: 'Sexo biológico', subtitle: 'Usado no cálculo de taxa metabólica basal.' },
+  { title: 'Sexo', subtitle: 'Escolha uma das opções para continuar.' },
   { title: 'Qual seu objetivo?', subtitle: 'Escolha a meta principal de agora.' },
   { title: 'Nível de atividade', subtitle: 'Quanto você se movimenta no dia a dia?' },
   { title: 'Últimos detalhes', subtitle: 'Opcional — pode pular se preferir.' },

@@ -20,16 +20,10 @@ import { MascotIllustration } from '@/components/MascotIllustration';
 import { GoogleIcon } from '@/components/icons';
 import { login } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
-import { USE_AUTH_MOCK } from '@/api/config';
 import { getAuthErrorMessage } from '@/api/authErrors';
 import { validateLogin } from '@/validation/auth';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
-
-// Credencial sugerida só pra facilitar teste em modo mock — o mock aceita
-// qualquer usuário/senha não vazios, esse valor aqui é só conveniência.
-const MOCK_USER = 'teste@macromaniacs.com';
-const MOCK_PASSWORD = '12345678';
 
 // Login social (Google/Apple/Facebook) — nenhum SDK de OAuth está nas
 // dependências do projeto ainda, e adicionar um está fora do escopo desta
@@ -41,8 +35,8 @@ function handleSocialLogin(provider: string) {
 
 export function LoginScreen({ navigation }: Props) {
   const { tokens } = useTheme();
-  const [identifier, setIdentifier] = useState(USE_AUTH_MOCK ? MOCK_USER : '');
-  const [password, setPassword] = useState(USE_AUTH_MOCK ? MOCK_PASSWORD : '');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sessionRestoreError = useAuthStore((state) => state.sessionRestoreError);

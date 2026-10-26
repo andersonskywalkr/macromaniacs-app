@@ -11,6 +11,9 @@ web-build/
 .prototype-extract/
 prototype-reference/
 
+# Manual pessoal de Git (só no computador, não vai para o GitHub)
+GIT_MANUAL.md
+
 # Nunca commitar segredos (seção 108)
 .env
 .env.*

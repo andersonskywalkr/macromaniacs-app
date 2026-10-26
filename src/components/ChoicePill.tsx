@@ -7,15 +7,20 @@ interface ChoicePillProps {
   label: string;
   selected: boolean;
   onPress: () => void;
+  // 'inverted': selecionada = fundo com a cor do texto e texto com a cor do
+  // fundo (filtros do protótipo) — mantém bom contraste nos dois temas.
+  variant?: 'primary' | 'inverted';
 }
 
 // Pílula de escolha única — usada nos passos "Sexo" e "Objetivo" do
 // onboarding (mesmo componente, o protótipo trata os dois com a mesma lógica
 // de seleção única por lista de rótulos).
-export function ChoicePill({ label, selected, onPress }: ChoicePillProps) {
+export function ChoicePill({ label, selected, onPress, variant = 'primary' }: ChoicePillProps) {
   const { tokens } = useTheme();
-  const backgroundColor = selected ? tokens.primary : tokens.card;
-  const textColor = selected ? '#FFFFFF' : tokens.text;
+  const selectedBackground = variant === 'inverted' ? tokens.text : tokens.primary;
+  const selectedText = variant === 'inverted' ? tokens.background : '#FFFFFF';
+  const backgroundColor = selected ? selectedBackground : tokens.card;
+  const textColor = selected ? selectedText : tokens.text;
 
   return (
     <Pressable

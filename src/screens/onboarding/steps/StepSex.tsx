@@ -25,8 +25,7 @@ export function StepSex({ data, onChange }: Props) {
       ))}
 
       <Text style={[styles.notice, { color: tokens.textSecondary }]}>
-        Isso influencia a estimativa porque está ligado, em média, à proporção de massa magra no
-        corpo, não é uma exigência de identidade.
+        Usado apenas no cálculo do gasto de energia do corpo. Você pode preferir não informar.
       </Text>
     </View>
   );

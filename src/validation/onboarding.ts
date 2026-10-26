@@ -1,5 +1,6 @@
 import type { OnboardingData } from '@/screens/onboarding/types';
 import type { UpdateMyProfileRequest } from '@/api/users';
+import { toApiSex } from '@/api/sexMapping';
 
 export function toIsoDate(value: string): string | null {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
@@ -124,7 +125,7 @@ export function buildOnboardingRequest(
     dateOfBirth: toIsoDate(data.birthDate)!,
     heightCm: Number(data.heightCm),
     currentWeightKg: Number(data.weightKg.replace(',', '.')),
-    biologicalSex: data.sex,
+    biologicalSex: data.sex ? toApiSex(data.sex) : null,
     goal: data.goal,
     activityLevel: data.activityLevel,
     targetWeightKg: data.targetWeightKg.trim()

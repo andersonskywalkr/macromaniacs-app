@@ -12,6 +12,8 @@ export type FoodSource = 'TBCA' | 'OPEN_FOOD_FACTS' | 'USDA' | 'MANUAL';
 export interface FoodItem {
   id: string;
   name: string;
+  // Marca do produto (alimentos industrializados / cadastro manual). Opcional.
+  brand?: string | null;
   source: FoodSource;
   externalId: string | null;
   barcode: string | null;
@@ -55,11 +57,19 @@ export interface MealLogItem {
   fiber: number;
 }
 
+// Tipo da refeição (escolhido pelo usuário). O backend real ainda NÃO tem um
+// campo próprio: o tipo viaja dentro do `name` (ver api/mealName.ts).
+export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
+
 export interface MealLog {
   id: string;
   userId: string;
   plannedMealId: string | null;
-  name: string;
+  // Tipo da refeição; null quando o nome vindo do backend não segue o padrão
+  // conhecido (refeições antigas ou nomes livres).
+  mealType: MealType | null;
+  // Nome dado ao prato (opcional). Sem nome, a UI mostra o rótulo do tipo.
+  name: string | null;
   photoUrl: string | null;
   consumedAt: string; // ISO 8601
   items: MealLogItem[];
@@ -80,7 +90,9 @@ export interface RankingEntry {
   points: number;
 }
 
-export type BiologicalSex = 'FEMALE' | 'MALE';
+// O terceiro valor cobre quem prefere não informar (campo biologicalSex da
+// API). O valor enviado ao backend sai de api/sexMapping.ts.
+export type BiologicalSex = 'FEMALE' | 'MALE' | 'PREFER_NOT_TO_SAY';
 export type NutritionGoal =
   | 'LOSE_WEIGHT'
   | 'GAIN_MUSCLE'

@@ -9,12 +9,15 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Avatar } from '@/components/Avatar';
 import { ProgressRing } from '@/components/ProgressRing';
-import { EmptyState } from '@/components/EmptyState';
-import { BellIcon, ThemeToggleIcon, PlusIcon, ChevronRightIcon, TrendingUpIcon, FireIcon, MedalIcon } from '@/components/icons';
+import { MacroBar } from '@/components/MacroBar';
+import { InlineRetry } from '@/components/InlineRetry';
+import { BellIcon, PlusIcon, ChevronRightIcon, TrendingUpIcon, FireIcon, MedalIcon } from '@/components/icons';
 import { useGamificationStats } from '@/queries/useGamificationStats';
+import { useProgressToday } from '@/queries/useProgressToday';
 import { useMyGroups } from '@/queries/useMyGroups';
 import { useGroupRanking } from '@/queries/useGroupRanking';
 import { formatFriendlyDate } from '@/utils/formatDate';
+import { resolveMacroGoals, summarizeCalories } from '@/utils/dailyProgress';
 import { useAuthStore } from '@/store/authStore';
 
 type Props = BottomTabScreenProps<AppTabsParamList, 'HomeTab'>;
@@ -22,19 +25,19 @@ type Props = BottomTabScreenProps<AppTabsParamList, 'HomeTab'>;
 // Reconstruída a partir de "Home Minimalista.dc.html" do protótipo.
 // Sem endpoint agregador em P0 (seção 127.3) — os dados vêm de queries
 // paralelas independentes (progresso, gamificação, perfil, grupo/ranking).
+// Cada consulta falha sozinha: o que carregou continua na tela e só a parte
+// com erro mostra "Tentar de novo".
 export function HomeScreen({ navigation }: Props) {
-  const { tokens, mode, setMode } = useTheme();
+  const { tokens } = useTheme();
 
   const gamification = useGamificationStats();
+  const progress = useProgressToday();
   const currentUser = useAuthStore((state) => state.user);
   const groups = useMyGroups();
   const primaryGroup = groups.data?.[0];
   const ranking = useGroupRanking(primaryGroup?.id);
 
-  const isLoading = gamification.isLoading || !currentUser;
-  const hasError = gamification.isError || !currentUser?.nutrition;
-
-  if (isLoading) {
+  if (!currentUser) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
         <View style={styles.centerFill}>
@@ -44,24 +47,174 @@ export function HomeScreen({ navigation }: Props) {
     );
   }
 
-  if (hasError) {
+  const todayLabel = formatFriendlyDate(new Date());
+  const rankingEntries = (ranking.data ?? []).slice(0, 3);
+
+  // Meta calórica que o app já usa (derivada do TDEE e do objetivo); se o
+  // perfil não trouxer, cai na meta do progresso do dia.
+  const calorieGoal =
+    currentUser.nutrition?.calorieTargetKcalPerDay ?? progress.data?.calories.goal ?? null;
+
+  function renderCaloriesCard() {
+    if (progress.isLoading) {
+      return <ActivityIndicator color={tokens.primary} accessibilityLabel="Carregando seu consumo" />;
+    }
+
+    if (progress.isError || !progress.data || calorieGoal === null) {
+      return (
+        <InlineRetry
+          message="Não foi possível carregar seu consumo de hoje."
+          onRetry={() => progress.refetch()}
+        />
+      );
+    }
+
+    const data = progress.data;
+    const summary = summarizeCalories(calorieGoal, data.calories.consumed);
+    const macroGoals = resolveMacroGoals(calorieGoal, {
+      protein: data.protein.goal,
+      carbohydrates: data.carbohydrates.goal,
+      fat: data.fat.goal,
+    });
+
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-        <View style={styles.centerFill}>
-          <EmptyState
-            title="Não foi possível carregar sua Home"
-            description="Verifique sua conexão e tente novamente."
-          />
+      <>
+        <View style={styles.summaryRow}>
+          <View style={[styles.summarySide, styles.summarySideLeft]}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              style={[styles.summarySideValue, { color: tokens.text }]}
+            >
+              {Math.round(summary.consumed)}
+            </Text>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={[styles.summarySideLabel, { color: tokens.textSecondary }]}
+            >
+              consumidas
+            </Text>
+          </View>
+
+          <View style={styles.ringWrap}>
+            <ProgressRing
+              progress={summary.ringProgress}
+              size={152}
+              strokeWidth={10}
+              color={tokens.ring}
+              trackColor={tokens.track}
+              accessibilityLabel={`Meta energética diária: ${summary.percent}% consumido`}
+            />
+            <View style={styles.ringCenter} pointerEvents="none">
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
+                style={[styles.ringValue, { color: tokens.text }]}
+              >
+                {Math.round(summary.remaining)}
+              </Text>
+              <Text style={[styles.ringLabel, { color: tokens.textSecondary }]}>kcal restantes</Text>
+            </View>
+          </View>
+
+          <View style={[styles.summarySide, styles.summarySideRight]}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              style={[styles.summarySideValue, { color: tokens.text }]}
+            >
+              {Math.round(summary.goal)}
+            </Text>
+            <Text numberOfLines={1} style={[styles.summarySideLabel, { color: tokens.textSecondary }]}>
+              meta
+            </Text>
+          </View>
         </View>
-      </SafeAreaView>
+
+        {summary.over > 0 && (
+          <Text accessibilityRole="alert" style={[styles.overText, { color: tokens.danger }]}>
+            {Math.round(summary.over)} kcal acima da meta
+          </Text>
+        )}
+
+        <View style={styles.macros}>
+          <MacroBar
+            label="Carboidratos"
+            consumed={data.carbohydrates.consumed}
+            goal={macroGoals.carbohydrates}
+            color={tokens.carbs}
+          />
+          <MacroBar
+            label="Proteínas"
+            consumed={data.protein.consumed}
+            goal={macroGoals.protein}
+            color={tokens.protein}
+          />
+          <MacroBar label="Gorduras" consumed={data.fat.consumed} goal={macroGoals.fat} color={tokens.fat} />
+        </View>
+      </>
     );
   }
 
-  const gamificationData = gamification.data!;
-  const nutrition = currentUser.nutrition!;
-  const todayLabel = formatFriendlyDate(new Date());
+  function renderRankingCard() {
+    if (groups.isError) {
+      return (
+        <Card style={styles.rankingCard}>
+          <InlineRetry
+            message="Não foi possível carregar o ranking do grupo."
+            onRetry={() => groups.refetch()}
+          />
+        </Card>
+      );
+    }
 
-  const rankingEntries = (ranking.data ?? []).slice(0, 3);
+    if (!primaryGroup) return null;
+
+    return (
+      <Card style={styles.rankingCard}>
+        <View style={styles.rankingHeader}>
+          <Text style={[styles.rankingTitle, { color: tokens.text }]}>Ranking do grupo</Text>
+          <Text style={[styles.rankingGroupName, { color: tokens.primary }]}>{primaryGroup.name}</Text>
+        </View>
+
+        {ranking.isLoading ? (
+          <ActivityIndicator color={tokens.primary} />
+        ) : ranking.isError ? (
+          <InlineRetry message="Não foi possível carregar o ranking." onRetry={() => ranking.refetch()} />
+        ) : (
+          <View style={styles.rankingList}>
+            {rankingEntries.map((entry) => {
+              const isYou = entry.userId === currentUser!.id;
+              const pointsColor = isYou ? tokens.primary : entry.position === 1 ? tokens.gold : tokens.textSecondary;
+              return (
+                <View key={entry.userId} style={styles.rankingRow}>
+                  <View style={styles.rankingPosition}>
+                    {entry.position <= 3 ? (
+                      <MedalIcon rank={entry.position as 1 | 2 | 3} size={18} />
+                    ) : (
+                      <Text style={[styles.rankingPositionText, { color: tokens.textSecondary }]}>
+                        {entry.position}
+                      </Text>
+                    )}
+                  </View>
+                  <Avatar uri={null} displayName={entry.displayName} size={30} />
+                  <Text numberOfLines={1} style={[styles.rankingName, { color: tokens.text }]}>
+                    {isYou ? 'Você' : entry.displayName}
+                  </Text>
+                  <Text style={[styles.rankingPoints, { color: pointsColor }]}>{entry.points} pts</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </Card>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
@@ -79,24 +232,16 @@ export function HomeScreen({ navigation }: Props) {
             </View>
           </View>
 
-          <View
-            style={[styles.streakPill, { backgroundColor: tokens.card }]}
-            accessible
-            accessibilityLabel={`Sequência de ${gamificationData.currentStreak} dias`}
-          >
-            <FireIcon size={16} />
-            <Text style={[styles.streakText, { color: tokens.text }]}>{gamificationData.currentStreak}</Text>
-          </View>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Alternar tema claro e escuro"
-            hitSlop={8}
-            onPress={() => setMode(mode === 'dark' ? 'light' : 'dark')}
-            style={[styles.iconButton, { backgroundColor: tokens.card }]}
-          >
-            <ThemeToggleIcon mode={mode} size={19} color={tokens.textSecondary} />
-          </Pressable>
+          {gamification.data && (
+            <View
+              style={[styles.streakPill, { backgroundColor: tokens.card }]}
+              accessible
+              accessibilityLabel={`Sequência de ${gamification.data.currentStreak} dias`}
+            >
+              <FireIcon size={16} />
+              <Text style={[styles.streakText, { color: tokens.text }]}>{gamification.data.currentStreak}</Text>
+            </View>
+          )}
 
           {/* TODO: abrir tela de notificações quando essa rota existir (sem backend/endpoint ainda) */}
           <Pressable
@@ -109,65 +254,21 @@ export function HomeScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
-        <Card style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <View style={styles.summarySide}>
-              <Text style={[styles.summarySideValue, { color: tokens.text }]}>
-                {nutrition.bmrKcalPerDay}
-              </Text>
-              <Text
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-                style={[styles.summarySideLabel, { color: tokens.textSecondary }]}
-              >
-                TMB
-              </Text>
-            </View>
+        {gamification.isError && (
+          <InlineRetry
+            message="Não foi possível carregar sua sequência."
+            onRetry={() => gamification.refetch()}
+          />
+        )}
 
-            <View style={styles.ringWrap}>
-              <ProgressRing
-                progress={0}
-                size={152}
-                strokeWidth={10}
-                color={tokens.ring}
-                trackColor={tokens.track}
-                accessibilityLabel="Meta energética diária"
-              />
-              <View style={styles.ringCenter} pointerEvents="none">
-                <Text style={[styles.ringValue, { color: tokens.text }]}>
-                  {nutrition.calorieTargetKcalPerDay}
-                </Text>
-                <Text style={[styles.ringLabel, { color: tokens.textSecondary }]}>meta kcal/dia</Text>
-              </View>
-            </View>
-
-            <View style={styles.summarySide}>
-              <Text style={[styles.summarySideValue, { color: tokens.text }]}>
-                {nutrition.tdeeKcalPerDay}
-              </Text>
-              <Text
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-                style={[styles.summarySideLabel, { color: tokens.textSecondary }]}
-              >
-                TDEE
-              </Text>
-            </View>
-          </View>
-
-          <Text style={[styles.nutritionNotice, { color: tokens.textSecondary }]}>
-            O consumo e os macronutrientes aparecerão quando o diário alimentar estiver disponível.
-          </Text>
-        </Card>
+        <Card style={styles.summaryCard}>{renderCaloriesCard()}</Card>
 
         <Button
           label="Adicionar refeição"
           variant="dark"
           icon={<PlusIcon size={14} color={tokens.background} />}
-          accessibilityHint="Abre a tela de refeições para registrar o que você comeu"
-          onPress={() => navigation.navigate('MealsTab', { screen: 'MealsHome' })}
+          accessibilityHint="Abre a busca de alimento para registrar o que você comeu"
+          onPress={() => navigation.navigate('MealsTab', { screen: 'FoodSearch' })}
         />
 
         <Pressable
@@ -189,43 +290,7 @@ export function HomeScreen({ navigation }: Props) {
           <ChevronRightIcon size={8} color={tokens.textSecondary} />
         </Pressable>
 
-        {primaryGroup && (
-          <Card style={styles.rankingCard}>
-            <View style={styles.rankingHeader}>
-              <Text style={[styles.rankingTitle, { color: tokens.text }]}>Ranking do grupo</Text>
-              <Text style={[styles.rankingGroupName, { color: tokens.primary }]}>{primaryGroup.name}</Text>
-            </View>
-
-            {ranking.isLoading ? (
-              <ActivityIndicator color={tokens.primary} />
-            ) : (
-              <View style={styles.rankingList}>
-                {rankingEntries.map((entry) => {
-                  const isYou = entry.userId === currentUser.id;
-                  const pointsColor = isYou ? tokens.primary : entry.position === 1 ? tokens.gold : tokens.textSecondary;
-                  return (
-                    <View key={entry.userId} style={styles.rankingRow}>
-                      <View style={styles.rankingPosition}>
-                        {entry.position <= 3 ? (
-                          <MedalIcon rank={entry.position as 1 | 2 | 3} size={18} />
-                        ) : (
-                          <Text style={[styles.rankingPositionText, { color: tokens.textSecondary }]}>
-                            {entry.position}
-                          </Text>
-                        )}
-                      </View>
-                      <Avatar uri={null} displayName={entry.displayName} size={30} />
-                      <Text numberOfLines={1} style={[styles.rankingName, { color: tokens.text }]}>
-                        {isYou ? 'Você' : entry.displayName}
-                      </Text>
-                      <Text style={[styles.rankingPoints, { color: pointsColor }]}>{entry.points} pts</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </Card>
-        )}
+        {renderRankingCard()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -250,12 +315,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 44,
   },
-  nutritionNotice: {
+  macros: { gap: spacing.md, marginTop: spacing.lg },
+  overText: {
     fontFamily: 'PlusJakartaSans',
-    fontSize: 12.5,
-    fontWeight: '600',
-    lineHeight: 18,
-    marginTop: spacing.lg,
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: spacing.md,
     textAlign: 'center',
   },
   performanceIcon: {
@@ -303,17 +368,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     left: 0,
+    paddingHorizontal: spacing.lg,
     position: 'absolute',
     right: 0,
     top: 0,
   },
-  ringLabel: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginTop: 4 },
+  ringLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 4 },
   ringValue: { fontFamily: 'PlusJakartaSans', fontSize: 40, fontWeight: '800', lineHeight: 44 },
   ringWrap: {
     alignItems: 'center',
     height: 152,
     justifyContent: 'center',
-    marginHorizontal: spacing.sm,
     width: 152,
   },
   scrollContent: {
@@ -331,7 +396,9 @@ const styles = StyleSheet.create({
   },
   streakText: { fontFamily: 'PlusJakartaSans', fontSize: 14, fontWeight: '800' },
 
-  summaryCard: { padding: spacing.lg },
+  // Padding horizontal menor: as colunas laterais ficam mais largas e o
+  // texto "consumidas" cabe inteiro.
+  summaryCard: { paddingHorizontal: spacing.md, paddingVertical: spacing.lg },
   summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   // flex:1 (em vez de largura fixa) garante que o anel fique sempre
   // centralizado, dividindo igualmente o espaço que sobra em qualquer
@@ -339,5 +406,7 @@ const styles = StyleSheet.create({
   // só cabia na artboard de 440px dele, estourando em celulares reais.
   summarySide: { alignItems: 'center', flex: 1 },
   summarySideLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  summarySideLeft: { marginLeft: -spacing.sm },
+  summarySideRight: { marginRight: -spacing.sm },
   summarySideValue: { fontFamily: 'PlusJakartaSans', fontSize: 19, fontWeight: '800' },
 });

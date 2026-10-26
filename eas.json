@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 13.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_USE_MOCK": "true",
+        "EXPO_PUBLIC_USE_AUTH_MOCK": "false",
+        "EXPO_PUBLIC_API_URL": "https://macromaniacs-backend-production.up.railway.app",
+        "EXPO_PUBLIC_LANDING_PAGE_URL": "https://macromaniacs-landingpage.vercel.app/",
+        "EXPO_PUBLIC_MAINTENANCE_TABS": "group"
+      }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

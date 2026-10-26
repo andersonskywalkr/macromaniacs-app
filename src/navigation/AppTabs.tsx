@@ -9,7 +9,7 @@ import { ProfileStackNavigator } from './ProfileStack';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { HomeIcon, MealsIcon, GroupIcon, ProfileIcon } from '@/components/icons';
-import { SHOW_MAINTENANCE_SCREEN } from '@/api/config';
+import { MAINTENANCE_TABS } from '@/api/config';
 import { MaintenanceScreen } from '@/screens/MaintenanceScreen';
 
 const Tab = createBottomTabNavigator<AppTabsParamList>();
@@ -50,7 +50,7 @@ export function AppTabsNavigator() {
     >
       <Tab.Screen
         name="HomeTab"
-        component={SHOW_MAINTENANCE_SCREEN ? MaintenanceScreen : HomeScreen}
+        component={MAINTENANCE_TABS.has('home') ? MaintenanceScreen : HomeScreen}
         options={{
           tabBarLabel: 'Início',
           tabBarIcon: ({ focused, color }) => (
@@ -62,7 +62,7 @@ export function AppTabsNavigator() {
       />
       <Tab.Screen
         name="MealsTab"
-        component={SHOW_MAINTENANCE_SCREEN ? MaintenanceScreen : MealsStackNavigator}
+        component={MealsStackNavigator}
         options={{
           tabBarLabel: 'Refeições',
           tabBarIcon: ({ focused, color }) => (
@@ -74,7 +74,7 @@ export function AppTabsNavigator() {
       />
       <Tab.Screen
         name="GroupTab"
-        component={SHOW_MAINTENANCE_SCREEN ? MaintenanceScreen : GroupStackNavigator}
+        component={MAINTENANCE_TABS.has('group') ? MaintenanceScreen : GroupStackNavigator}
         options={{
           tabBarLabel: 'Grupo',
           tabBarIcon: ({ focused, color }) => (

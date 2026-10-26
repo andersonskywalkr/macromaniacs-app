@@ -32,6 +32,9 @@ importers:
       axios:
         specifier: ^1.7.2
         version: 1.19.0(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)
+      babel-preset-expo:
+        specifier: ~57.0.12
+        version: 57.0.12(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@7.29.7)(expo@57.0.24)(react-refresh@0.14.2)(supports-color@10.2.2)
       expo:
         specifier: ~57.0.24
         version: 57.0.24(@babel/core@7.29.7(supports-color@10.2.2))(@expo/dom-webview@57.0.1)(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@react-native-community/cli@13.6.4(supports-color@10.2.2))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(react@19.2.3)(supports-color@10.2.2))(@types/react@19.2.18)(react@19.2.3)(supports-color@10.2.2))(react@19.2.3)(supports-color@10.2.2)(typescript@6.0.3)

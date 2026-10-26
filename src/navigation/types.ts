@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { FoodItem } from '@/api/types/domain';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -9,7 +10,8 @@ export type AuthStackParamList = {
 export type MealsStackParamList = {
   MealsHome: undefined;
   FoodSearch: undefined;
-  FoodConfirm: { candidateIds: string[] };
+  FoodConfirm: { food: FoodItem };
+  FoodManual: undefined;
   MealBuilder: undefined;
   MealReview: { mealId: string };
 };
@@ -21,7 +23,8 @@ export type GroupStackParamList = {
 };
 
 export type ProfileStackParamList = {
-  ProfileHome: undefined;
+  // saved: o Editar perfil acabou de salvar (mostra a confirmação no Perfil)
+  ProfileHome: { saved?: boolean } | undefined;
   EditProfile: undefined;
   History: undefined;
 };
