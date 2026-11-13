@@ -19,7 +19,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const preference = useThemeStore((s) => s.preference); // 'light' | 'dark' | 'system'
-  // Appearance.getColorScheme() também pode retornar 'unspecified' (RN 0.86+)
+  // Appearance.getColorScheme() também pode retornar 'unspecified' (RN 0.88)
   // quando a plataforma não informa um tema — tratamos como 'light', igual
   // ao fallback de null.
   const systemScheme: ThemeMode = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';

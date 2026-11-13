@@ -1,126 +1,163 @@
-# MacroManiacs — App (React Native + Expo)
+# MacroManiacs
 
-Terreno inicial do frontend, montado a partir do Documento de Arquitetura
-(seções 6, 111, 117–129). Antes de mexer, leia os pontos abaixo — eles
-explicam **por que** as coisas estão organizadas assim.
+Aplicativo mobile (Android e iOS) de **acompanhamento nutricional com gamificação e grupos**. A pessoa registra o que come, vê quanto falta para a meta de calorias e macros do dia, mantém uma sequência de dias e compete com amigos em grupos.
+
+Este repositório é o **app (frontend)**. O backend (NestJS + PostgreSQL, publicado na Railway) é mantido por outros membros da equipe e não está aqui.
+
+## O que já está pronto
+
+- **Conta:** cadastro, login, restauração da sessão, sair, "Esqueci a senha" (no modo mock é uma demonstração; no modo real mostra que o recurso ainda não está disponível).
+- **Onboarding:** sexo, idade, altura, peso, objetivo, nível de atividade e restrições alimentares, salvos no perfil.
+- **Início:** anel de calorias do dia, macros (proteína, carboidrato, gordura), sequência de dias e pontos.
+- **Refeições:** montar uma refeição com vários alimentos, escolher o tipo (café da manhã, almoço…), revisar e salvar; lista do dia com totais.
+- **Busca de alimentos:** sugestões enquanto digita, histórico de buscas, busca completa e cadastro manual de alimento.
+- **Grupos:** lista de grupos, entrar com código de convite, ranking, aba Sobre e chat do grupo (campo que cresce com o texto, envio com retentativa).
+- **Histórico:** desempenho dos últimos dias, com "meta batida" (de 90% a 110% da meta).
+- **Perfil:** dados da conta, editar perfil, tema claro/escuro/automático.
+- **Funciona sem internet:** refeições salvas sem rede ficam numa fila e são enviadas quando a conexão volta.
+- **Teclado:** campos nunca ficam escondidos atrás do teclado (Android e iOS).
+
+## Tecnologias
+
+- **Expo SDK 58** (`expo ~58.0`), **React Native 0.88**, **React 19**, **TypeScript 6**
+- React Navigation 7 (pilhas e abas)
+- TanStack Query (dados do servidor) e Zustand (estado local)
+- axios, AsyncStorage e `expo-secure-store` (o token de login fica no armazenamento seguro)
+- Fonte Plus Jakarta Sans (`@expo-google-fonts`)
+- Testes: Jest + `jest-expo` + Testing Library
+- Backend (outra equipe): NestJS + PostgreSQL, publicado na Railway
+
+## Pré-requisitos
+
+- [Node.js](https://nodejs.org/) LTS (versão 20 ou mais nova) e npm
+- Celular com o app **Expo Go** na versão do **SDK 58** (ou um emulador Android/iOS)
+- Para gerar o APK: uma conta gratuita em [expo.dev](https://expo.dev)
+
+## Instalação
+
+```bash
+npm install
+cp .env.example .env
+```
+
+O `.env.example` já vem no modo **mock** (tudo funciona sem backend e sem internet).
+
+> O repositório tem um `pnpm-lock.yaml`. O `npm install` funciona normalmente; o pnpm é opcional.
 
 ## Como rodar
 
 ```bash
-# 1. Instale as dependências (recomendado pnpm, ver seção 117.2)
-pnpm install
-
-# 1.1. Depois de instalar, rode este comando pra garantir que todas as
-# libs nativas (câmera, secure-store, etc.) estão na versão certa pro
-# Expo SDK 57 — corrige sozinho qualquer divergência de versão:
-npx expo install --fix
-
-# 2. Copie o .env de exemplo
-cp .env.example .env
-
-# 3. Rode o app
 npx expo start
 ```
 
-Abra no celular com o app **Expo Go**, ou pressione `a` / `i` no terminal
-para emulador Android/iOS (se configurado na sua máquina).
+Escaneie o QR code com o Expo Go, ou aperte `a` (emulador Android) ou `i` (simulador iOS). Depois de mudar o `.env`, reinicie limpando o cache: `npx expo start -c`.
 
-O projeto possui validação automatizada de tipos, lint, testes e exportação
-Expo. Rode `npx expo-doctor` se o ambiente local ou o Expo Go indicar
-divergência de versões.
+### Modo mock × modo real
 
-## A flag mais importante: `EXPO_PUBLIC_USE_MOCK`
+O app lê estas variáveis do `.env`. Elas começam com `EXPO_PUBLIC_` porque o Expo as **grava dentro do app na hora de rodar/gerar o build**.
 
-No `.env`:
+| Variável | O que faz |
+|---|---|
+| `EXPO_PUBLIC_USE_MOCK` | `true` = dados de demonstração (alimentos, refeições, progresso, grupos). `false` = backend real. |
+| `EXPO_PUBLIC_USE_AUTH_MOCK` | `true` = login, cadastro e perfil de demonstração (qualquer usuário e senha entram). `false` = login real. Se não for definida, acompanha `EXPO_PUBLIC_USE_MOCK`. |
+| `EXPO_PUBLIC_API_URL` | Endereço do backend, **sem `/v1` no final** (o app já põe `/v1` em todas as rotas). Obrigatória quando alguma das duas chaves acima for `false`; sem ela o app não abre. |
+| `EXPO_PUBLIC_MAINTENANCE_TABS` | Abas que mostram a tela "em construção" no lugar da tela real (`home`, `meals`, `group`, separadas por vírgula). **Hoje fica vazia**: nenhuma aba em manutenção. A aba Perfil nunca entra aqui. |
+| `EXPO_PUBLIC_LANDING_PAGE_URL` | Página aberta pelo botão da tela "em construção". |
+
+Combinações mais usadas:
+
+| Objetivo | `USE_MOCK` | `USE_AUTH_MOCK` | `API_URL` |
+|---|---|---|---|
+| Apresentação sem internet (principal) | `true` | `true` | não precisa |
+| Tudo real | `false` | `false` | obrigatória |
+| Login real e o resto de demonstração | `true` | `false` | obrigatória |
+
+Exemplos de `EXPO_PUBLIC_API_URL`: `http://10.0.2.2:3000` (emulador Android), `http://localhost:3000` (simulador iOS), `http://IP_DA_SUA_MAQUINA:3000` (celular físico na mesma rede) ou a URL do backend publicado.
+
+Como o app conversa com o backend (rotas, conversões, limitações): [docs/INTEGRACAO_BACKEND.md](docs/INTEGRACAO_BACKEND.md).
+
+## Testes e verificações
+
+```bash
+npm test               # testes automatizados (Jest)
+npm run type-check     # TypeScript (tsc --noEmit)
+npm run lint           # ESLint
+npx expo-doctor        # confere a saúde do projeto Expo
+npx expo install --check   # confere se as versões das libs batem com o SDK
+```
+
+## Estrutura de pastas
 
 ```
-EXPO_PUBLIC_USE_MOCK=true   # usa dados fake, não precisa do backend rodando
-EXPO_PUBLIC_USE_MOCK=false  # chama a API real (preencha EXPO_PUBLIC_API_URL)
+src/
+  api/          chamadas ao backend (mock e real), rotas, adaptadores e tipos
+    adapters/   conversões entre o formato do backend e o do app
+  app/          App.tsx (provedores, fonte, tela de abertura)
+  components/   componentes reutilizáveis (Button, Card, ProgressRing, teclado…)
+  hooks/        hooks compartilhados
+  mocks/        dados de demonstração
+  navigation/   pilhas e abas
+  offline/      fila de refeições sem rede e sincronização
+  queries/      TanStack Query (consultas e mutações)
+  screens/      telas, por área (auth, onboarding, home, meals, foods, groups, profile, progress)
+  store/        Zustand (sessão, tema, rascunho de refeição, histórico de busca)
+  theme/        cores, tamanhos, fonte e tema claro/escuro
+  utils/        funções puras (datas, cálculo de energia, ranking de sugestões…)
+  validation/   validação de formulários
+assets/         ícone e mascote
+docs/           documentação técnica (integração com o backend)
+scripts/        scripts de apoio
 ```
 
-Para apresentar a autenticação real enquanto os demais módulos ainda usam
-dados demonstrativos:
+## Como gerar o APK (instalar no celular Android)
 
-```env
-EXPO_PUBLIC_USE_MOCK=true
-EXPO_PUBLIC_USE_AUTH_MOCK=false
-EXPO_PUBLIC_API_URL=http://10.0.2.2:3000
-```
+O APK é gerado na nuvem pelo EAS Build, com a conta Expo do time. Existem dois perfis em `eas.json`:
 
-Use `10.0.2.2` no emulador Android, `localhost` no simulador iOS/web ou o IP
-local da máquina em um celular físico. A URL não deve conter `/api/v1`; o
-cliente usa diretamente `/v1/auth/register`, `/v1/auth/login`,
-`/v1/auth/me` e `/v1/users/me`.
-
-Com `EXPO_PUBLIC_USE_AUTH_MOCK=false`, autenticação, perfil, onboarding e os
-valores nutricionais da Home sempre usam a API real. Os outros módulos podem
-continuar com `EXPO_PUBLIC_USE_MOCK=true` até seus endpoints existirem.
-
-## Compatibilidade com o Expo Go
-
-O projeto está fixado no **Expo SDK 57**. O app Expo Go instalado no celular precisa ser da
-mesma versão de SDK — se aparecer um erro dizendo que o projeto só é compatível com outro SDK,
-duas soluções:
-
-1. Rode `npx expo install --fix` para alinhar as libs do projeto à versão do SDK declarada no
-   `package.json`, ou
-2. Se o Expo Go do celular for de um SDK diferente, atualize o Expo Go pela loja de aplicativos
-   (ele geralmente já acompanha a versão mais recente).
-
-## O que já está pronto
-
-| Camada | Onde | Status |
+| Perfil | Para quê | Backend |
 |---|---|---|
-| Config (tsconfig, eslint, env) | raiz | ✅ pronto |
-| Design tokens (cores, radius, fontes) | `src/theme/tokens.ts` | ✅ pronto, extraído do documento |
-| Tema claro/escuro | `src/theme/ThemeProvider.tsx` | ✅ pronto |
-| Autenticação (store + telas) | `src/store/authStore.ts`, `src/screens/auth/` | ✅ Cadastro, login, perfil, restauração e logout local |
-| Camada de API (mock/real) | `src/api/*.ts` | ✅ pronto pros domínios P0 |
-| Queries (TanStack Query) | `src/queries/*.ts` | ✅ pronto pros domínios P0 |
-| Offline (outbox + sync) | `src/offline/*.ts` | ✅ pronto |
-| Componentes base | `src/components/*.tsx` | ✅ Card, Button, ProgressRing, Badge, Avatar, EmptyState |
-| Onboarding | `src/screens/onboarding/` | ✅ valida, persiste no backend e conclui somente após confirmação |
-| Navegação completa | `src/navigation/*.tsx` | ✅ auth loading, login, onboarding e aplicação |
-| Home nutricional | `src/screens/home/HomeScreen.tsx` | ✅ TMB, TDEE e meta calórica reais; demais domínios continuam isolados |
-| Outras telas de conteúdo | `src/screens/**` | 🟡 mocks/placeholders conforme disponibilidade dos endpoints |
+| `preview-mock` | Apresentação offline (tudo de demonstração) | não usa |
+| `preview-real` | App conectado ao backend | usa a URL definida em `eas.json` |
 
-## O que falta (próximos passos, nessa ordem)
+Passo a passo:
 
-1. **Copiar os assets do protótipo** (`mascote.png`, `fire.svg`, medalhas,
-   `perfil.jpg` etc.) do zip do Netlify para `assets/`, e referenciá-los
-   nos componentes (`Avatar`, `EmptyState` já esperam esses arquivos).
-2. **Adicionar a fonte Plus    Jakarta Sans** de verdade em `assets/fonts/` e
-   descomentar o `Font.loadAsync` em `src/app/App.tsx`.
-3. **Substituir os mocks remanescentes** somente quando Refeições, Grupos,
-   Ranking e Gamificação tiverem endpoints reais no backend.
-4. Em um celular físico, configure `EXPO_PUBLIC_API_URL` com o IP local da
-   máquina e mantenha backend, PostgreSQL e Metro em execução.
+```bash
+# 1. Entrar na conta Expo (uma vez)
+npx eas-cli login
 
-## Decisões já tomadas (não precisa redebater)
+# 2a. APK de demonstração (mock)
+npx eas-cli build -p android --profile preview-mock
 
-Tudo isso já está fechado no documento de arquitetura, seções 109 e
-117–121 — não é pra ser alterado sem atualizar o documento e avisar o
-time:
+# 2b. APK com backend real
+npx eas-cli build -p android --profile preview-real
+```
 
-- Expo managed workflow (não é RN CLI puro)
-- TanStack Query pra dados de servidor, Zustand pra estado local de UI
-- axios com Bearer token centralizado e encerramento local da sessão em 401
-- Tokens de segurança (JWT) em `expo-secure-store`, nunca em AsyncStorage
-- `StyleSheet.create` + tokens, sem NativeWind/Tailwind
-- Tipos de domínio em `src/api/types/domain.ts` até o backend publicar o
-  Swagger real (aí entra `npm run generate:types`, seção 120.2)
+Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar o `.apk`.
 
-## Pendências que dependem do time de backend
+**Instalar no celular:** abra o link de download no próprio celular (ou envie o `.apk` por mensagem/cabo), toque no arquivo e permita "instalar apps de fontes desconhecidas" quando o Android pedir.
 
-Estas eram pendências do documento original (seção 129) e continuam
-abertas — o mock foi construído com uma suposição razoável pra cada uma,
-documentada no código:
+**Atenção ao `preview-real`:**
 
-- **Pendente 11**: nomes exatos dos query params `from`/`to` em
-  `GET /meals` (usado em `src/api/meals.ts` → `getMealsByDateRange`, que
-  alimenta o cálculo de streak da seção 127.4).
-- **Pendente 12**: se um endpoint `/dashboard` agregador vai existir —
-  por enquanto a Home consome os endpoints individuais em paralelo, como
-  o documento recomenda para o P0.
-- **Pendente 13**: se alguma feature de P2 (IA com foto) vai exigir sair
-  do Expo managed workflow.
+- Em `eas.json`, o campo `EXPO_PUBLIC_API_URL` do perfil `preview-real` está com um **valor provisório** (`https://COLOQUE-AQUI-A-URL-DO-BACKEND`). Troque pela URL do backend publicado, **sem `/v1` no final**, antes de gerar o APK.
+- As variáveis `EXPO_PUBLIC_*` ficam **gravadas dentro do APK na hora do build**. Se a URL do backend mudar, é preciso gerar um **novo APK**.
+- Cada build novo que for entregue deve ter a `version` do `app.json` conferida (hoje `0.1.0`).
+
+## Limitações conhecidas
+
+- **Login com Google:** botão mostra "Em breve"; ainda não funciona.
+- **Sino de notificações (Início):** é só um espaço reservado; não abre nenhuma tela.
+- **Fotos de refeição e leitura de código de barras pela câmera:** não existem ainda.
+- **Sugestões de busca (modo real):** vêm apenas do que já está no banco do backend. A busca completa também consulta fontes externas.
+- **Histórico de busca:** fica só no aparelho (some ao limpar os dados do app ou trocar de celular).
+- **Recuperar senha:** no modo real ainda não está disponível.
+- **Meta batida:** a faixa de 90% a 110% da meta aguarda validação da Nutrição.
+- **"Prefiro não informar" (sexo):** o backend não calcula metas; o app calcula localmente (constante também aguardando a Nutrição).
+- **Sem paginação:** listas pedem uma página grande (o formato do `meta` do backend não foi confirmado).
+
+## Decisões de projeto
+
+- Expo gerenciado (sem código nativo próprio) e TypeScript estrito.
+- Tokens de design em `src/theme/tokens.ts`; estilos com `StyleSheet.create`, sem Tailwind.
+- Fonte sempre via `fontFamily(peso)` (nunca `fontWeight`).
+- O formato do backend nunca chega às telas: tudo passa pelos adaptadores em `src/api/adapters/`.
+- Token de login só em `expo-secure-store`, nunca em AsyncStorage.
+- Quando o backend publicar o Swagger, os tipos podem ser gerados com `npm run generate:types`.
