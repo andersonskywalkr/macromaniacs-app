@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
@@ -21,6 +14,7 @@ import { Card } from '@/components/Card';
 import { TextField } from '@/components/TextField';
 import { validateForgotPassword } from '@/validation/auth';
 
+import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
 export const FORGOT_PASSWORD_SIMULATION_MESSAGE =
@@ -126,18 +120,18 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={goToLogin} />
         </View>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={[styles.title, { color: tokens.text }]}>Esqueci minha senha</Text>
           <Text style={[styles.subtitle, { color: tokens.textSecondary }]}>
             Informe o e-mail da sua conta para receber as instruções.
           </Text>
           {renderBody()}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -150,7 +144,6 @@ const styles = StyleSheet.create({
   demoCard: { borderWidth: 1.5 },
   demoTitle: { fontFamily: fontFamily(800), fontSize: 14 },
   error: { fontFamily: fontFamily(600), fontSize: 13 },
-  flex: { flex: 1 },
   form: { gap: spacing.md, marginTop: spacing.sm },
   header: { padding: spacing.lg, paddingBottom: spacing.sm },
   message: { fontFamily: fontFamily(700), fontSize: 15, lineHeight: 22 },

@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -33,6 +32,7 @@ import {
   validateInviteCode,
 } from '@/validation/groups';
 
+import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<GroupStackParamList, 'GroupsList'>;
 
 function GroupCard({
@@ -200,7 +200,8 @@ export function GroupsListScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <ScrollView
+      <KeyboardAwareScreen>
+      <KeyboardAwareScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
@@ -250,7 +251,8 @@ export function GroupsListScreen({ navigation }: Props) {
         )}
 
         {renderBody()}
-      </ScrollView>
+      </KeyboardAwareScrollView>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }

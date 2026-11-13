@@ -4,9 +4,6 @@ import {
   View,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,6 +21,7 @@ import { getAuthErrorMessage } from '@/api/authErrors';
 import { validateLogin } from '@/validation/auth';
 
 import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 // Login social (Google/Apple/Facebook) — nenhum SDK de OAuth está nas
@@ -71,8 +69,8 @@ export function LoginScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoiding}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScreen>
+        <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
             <MascotIllustration width={200} />
           </View>
@@ -139,8 +137,8 @@ export function LoginScreen({ navigation }: Props) {
               <GoogleIcon size={20} />
             </Pressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -158,7 +156,6 @@ const styles = StyleSheet.create({
   // texto/form) — cancelamos isso só no hero pra o mascote encostar bem no
   // topo/direita da tela, igual ao protótipo (top: -4px; right: 10px).
   hero: { alignItems: 'flex-end', marginHorizontal: -spacing.lg, marginTop: -spacing.lg },
-  keyboardAvoiding: { flex: 1 },
   primaryButton: { marginTop: spacing.lg + 2 },
   scroll: { flexGrow: 1, padding: spacing.lg },
   secondaryButton: { marginTop: spacing.sm + 4 },

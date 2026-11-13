@@ -15,7 +15,12 @@ interface TextFieldProps extends Omit<TextInputProps, 'style' | 'secureTextEntry
 
 // Input em formato de pílula, usado em Login/Cadastro/Onboarding —
 // mesmo visual em todo o app em vez de repetir o StyleSheet em cada tela.
-export function TextField({ style, secureTextEntry, accessibilityLabel, ...rest }: TextFieldProps) {
+export function TextField({
+  style,
+  secureTextEntry,
+  accessibilityLabel,
+  ...rest
+}: TextFieldProps) {
   const { tokens } = useTheme();
   const [visible, setVisible] = useState(false);
   const isPasswordField = !!secureTextEntry;

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +18,7 @@ import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import { useGroupRanking } from '@/queries/useGroupRanking';
 import { useMyGroups } from '@/queries/useMyGroups';
 import { useAuthStore } from '@/store/authStore';
@@ -27,6 +26,7 @@ import { GroupAboutTab } from './GroupAboutTab';
 import { GroupChatTab } from './GroupChatTab';
 import { GroupRankingTab } from './GroupRankingTab';
 
+import { KeyboardAwareScreen } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<GroupStackParamList, 'GroupProfile'>;
 
 export const GROUP_TABS = ['Ranking', 'Chat', 'Metas', 'Sobre'] as const;
@@ -50,6 +50,10 @@ export function GroupProfileScreen({ navigation, route }: Props) {
   const groups = useMyGroups();
   const ranking = useGroupRanking(groupId);
   const [activeTab, setActiveTab] = useState<GroupTab>('Ranking');
+  const keyboardVisible = useKeyboardState((state) => state.isVisible);
+  // Digitando no chat o teclado ocupa metade da tela: o cartão do grupo some
+  // para a lista de mensagens ter espaço.
+  const compact = keyboardVisible && activeTab === 'Chat';
   const [refreshingRanking, setRefreshingRanking] = useState(false);
 
   const group = groups.data?.find((item) => item.id === groupId);
@@ -151,6 +155,7 @@ export function GroupProfileScreen({ navigation, route }: Props) {
     const countLabel = memberCountLabel(memberCount);
     return (
       <>
+        {!compact && (
         <View style={[styles.groupCard, { backgroundColor: tokens.card }]}>
           <Avatar uri={null} displayName={group.name} size={56} />
           <View style={styles.groupInfo}>
@@ -167,6 +172,7 @@ export function GroupProfileScreen({ navigation, route }: Props) {
             ) : null}
           </View>
         </View>
+        )}
 
         <View accessibilityRole="tablist" style={[styles.tabsRow, { borderBottomColor: tokens.track }]}>
           {GROUP_TABS.map((tab) => {
@@ -205,13 +211,13 @@ export function GroupProfileScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]} edges={['top']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.topHeader}>
           <BackButton onPress={handleBack} />
           <Text style={[styles.headerTitle, { color: tokens.text }]}>Grupos</Text>
         </View>
         {renderBody()}
-      </KeyboardAvoidingView>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -221,7 +227,6 @@ const styles = StyleSheet.create({
   activeTabText: { fontFamily: fontFamily(700) },
   centered: { alignItems: 'center', flex: 1, gap: spacing.md, justifyContent: 'center', padding: spacing.lg },
   container: { flex: 1 },
-  flex: { flex: 1 },
   fullWidth: { alignSelf: 'stretch' },
   groupCard: {
     alignItems: 'center',

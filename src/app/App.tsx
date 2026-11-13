@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FONT_FILES, FONT_LOAD_TIMEOUT_MS } from '@/theme/fonts';
@@ -46,12 +47,15 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <StatusBar style="auto" />
-          <RootNavigator />
-        </ThemeProvider>
-      </QueryClientProvider>
+      {/* Teclado: lê a altura real direto do sistema (Android e iOS). */}
+      <KeyboardProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <StatusBar style="auto" />
+            <RootNavigator />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }

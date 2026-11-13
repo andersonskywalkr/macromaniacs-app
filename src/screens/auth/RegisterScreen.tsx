@@ -4,9 +4,6 @@ import {
   View,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,6 +21,7 @@ import { getAuthErrorMessage } from '@/api/authErrors';
 import { validateRegister } from '@/validation/auth';
 
 import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 // Ver LoginScreen — mesmo motivo pros botões sociais ficarem inertes aqui.
@@ -88,8 +86,8 @@ export function RegisterScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoiding}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScreen>
+        <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
             <MascotIllustration width={130} />
           </View>
@@ -181,8 +179,8 @@ export function RegisterScreen({ navigation }: Props) {
               <GoogleIcon size={20} />
             </Pressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -206,7 +204,6 @@ const styles = StyleSheet.create({
   // Ver LoginScreen — mesmo motivo pra cancelar o padding da ScrollView
   // só no hero, pro mascote encostar no topo/direita da tela.
   hero: { alignItems: 'flex-end', marginHorizontal: -spacing.lg, marginTop: -spacing.lg },
-  keyboardAvoiding: { flex: 1 },
   primaryButton: { marginTop: spacing.lg + 2 },
   scroll: { flexGrow: 1, padding: spacing.lg },
   secondaryButton: { marginTop: spacing.sm + 4 },

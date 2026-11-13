@@ -2,10 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   Alert,
   BackHandler,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -36,6 +33,7 @@ import {
 import { formatDecimal, parseDecimal, scaleNutrition, validateAmount } from '@/utils/nutrition';
 
 import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareFooter, KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealBuilder'>;
 
 const MEAL_NAME_MAX_LENGTH = 60;
@@ -209,13 +207,13 @@ export function MealBuilderScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={requestLeave} />
           <Text style={[styles.title, { color: tokens.text }]}>Montar refeição</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={[styles.fieldLabel, { color: tokens.textSecondary }]}>Nome da refeição (opcional)</Text>
           <TextField
             accessibilityLabel="Nome da refeição, opcional"
@@ -296,9 +294,9 @@ export function MealBuilderScreen({ navigation }: Props) {
             </View>
           )}
 
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={styles.footer}>
+        <KeyboardAwareFooter style={styles.footer}>
           {items.length > MAX_MEAL_ITEMS && (
             <Text accessibilityRole="alert" style={[styles.error, { color: tokens.danger }]}>
               {`Uma refeição pode ter no máximo ${MAX_MEAL_ITEMS} itens. Remova alguns para salvar.`}
@@ -316,8 +314,8 @@ export function MealBuilderScreen({ navigation }: Props) {
             loading={createMeal.isPending}
             accessibilityHint="Registra a refeição e abre o detalhe"
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAwareFooter>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -338,7 +336,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
-  flex: { flex: 1 },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   header: {
     alignItems: 'center',

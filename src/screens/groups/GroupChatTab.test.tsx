@@ -216,3 +216,76 @@ describe('GroupChatTab auto refresh', () => {
     expect(mockGetFeed).toHaveBeenCalledTimes(3);
   });
 });
+
+describe('GroupChatTab message field (WhatsApp style)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { gcTime: 0 } },
+    });
+    mockGetFeed.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    queryClient.clear();
+  });
+
+  const grow = (screen: typeof import('@testing-library/react-native').screen, contentHeight: number) =>
+    fireEvent(screen.getByLabelText('Mensagem'), 'contentSizeChange', {
+      nativeEvent: { contentSize: { width: 200, height: contentHeight } },
+    });
+
+  const heightOf = (screen: typeof import('@testing-library/react-native').screen) => {
+    const style = screen.getByLabelText('Mensagem').props.style;
+    return (Array.isArray(style) ? Object.assign({}, ...style.flat(5)) : style).height;
+  };
+
+  it('starts with one line, multiline, and not scrollable', async () => {
+    renderChat();
+    await screen.findByText('Nenhuma mensagem ainda.');
+
+    const field = screen.getByLabelText('Mensagem');
+    expect(field.props.multiline).toBe(true);
+    expect(field.props.scrollEnabled).toBe(false);
+    expect(heightOf(screen)).toBe(20);
+  });
+
+  it('grows with the text up to about 5 lines', async () => {
+    renderChat();
+    await screen.findByText('Nenhuma mensagem ainda.');
+
+    grow(screen, 40);
+    expect(heightOf(screen)).toBe(40);
+    expect(screen.getByLabelText('Mensagem').props.scrollEnabled).toBe(false);
+
+    grow(screen, 100);
+    expect(heightOf(screen)).toBe(100);
+    expect(screen.getByLabelText('Mensagem').props.scrollEnabled).toBe(false);
+  });
+
+  it('stops growing at the limit and scrolls inside (8 lines)', async () => {
+    renderChat();
+    await screen.findByText('Nenhuma mensagem ainda.');
+
+    grow(screen, 160); // 8 linhas
+
+    expect(heightOf(screen)).toBe(100);
+    expect(screen.getByLabelText('Mensagem').props.scrollEnabled).toBe(true);
+  });
+
+  it('goes back to one line after sending', async () => {
+    mockSend.mockResolvedValue(item('server-9', 'me', 'Anderson', 'Texto grande', 0));
+    renderChat();
+    await screen.findByText('Nenhuma mensagem ainda.');
+
+    fireEvent.changeText(screen.getByLabelText('Mensagem'), 'Texto grande');
+    grow(screen, 160);
+    expect(heightOf(screen)).toBe(100);
+
+    fireEvent.press(screen.getByLabelText('Enviar mensagem'));
+    await act(async () => undefined);
+
+    expect(heightOf(screen)).toBe(20);
+    expect(screen.getByLabelText('Mensagem').props.scrollEnabled).toBe(false);
+  });
+});

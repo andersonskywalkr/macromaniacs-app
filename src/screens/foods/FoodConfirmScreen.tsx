@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -27,6 +24,7 @@ import {
 } from '@/utils/nutrition';
 
 import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareFooter, KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<MealsStackParamList, 'FoodConfirm'>;
 
 // UC-07 — confirmação do alimento escolhido: quantidade em gramas com
@@ -110,13 +108,13 @@ export function FoodConfirmScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
           <Text style={[styles.title, { color: tokens.text }]}>Confirmar alimento</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={[styles.foodName, { color: tokens.text }]}>{food.name}</Text>
           <Text style={[styles.foodDetail, { color: tokens.textSecondary }]}>
             {food.brand ? `${food.brand} · ` : ''}
@@ -161,17 +159,17 @@ export function FoodConfirmScreen({ navigation, route }: Props) {
               ))}
             </View>
           </Card>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={styles.footer}>
+        <KeyboardAwareFooter style={styles.footer}>
           <Button
             label="Adicionar à refeição"
             onPress={handleAdd}
             disabled={error !== null}
             accessibilityHint="Salva o alimento no rascunho da refeição"
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAwareFooter>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -188,7 +186,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
-  flex: { flex: 1 },
   foodDetail: { fontFamily: fontFamily(600), fontSize: 13.5, marginTop: spacing.xs },
   foodName: { fontFamily: fontFamily(800), fontSize: 24, lineHeight: 30 },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },

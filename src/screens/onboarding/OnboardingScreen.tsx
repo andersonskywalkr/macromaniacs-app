@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -21,6 +26,7 @@ import { StepGoalDetails } from './steps/StepGoalDetails';
 import { StepSummary } from './steps/StepSummary';
 
 import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareFooter, KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 const TOTAL_STEPS = 6;
 
 const STEP_COPY = [
@@ -88,7 +94,7 @@ export function OnboardingScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoiding}>
+      <KeyboardAwareScreen>
         <View style={styles.progressRow}>
           {step > 0 && (
             <Pressable
@@ -116,7 +122,7 @@ export function OnboardingScreen() {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={[styles.stepLabel, { color: tokens.primary }]}>
             ETAPA {step + 1} DE {TOTAL_STEPS}
           </Text>
@@ -137,16 +143,16 @@ export function OnboardingScreen() {
               {error}
             </Text>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={styles.footer}>
+        <KeyboardAwareFooter style={styles.footer}>
           <Button
             label={step === TOTAL_STEPS - 1 ? 'Concluir' : 'Continuar'}
             onPress={handleContinue}
             loading={updateProfile.isPending}
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAwareFooter>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -160,7 +166,6 @@ const styles = StyleSheet.create({
   dots: { flex: 1, flexDirection: 'row', gap: 6 },
   error: { fontFamily: fontFamily(400), marginTop: spacing.md },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
-  keyboardAvoiding: { flex: 1 },
   progressRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, paddingBottom: 0 },
   stepBody: { marginTop: spacing.xl - spacing.xs },
   stepLabel: { fontFamily: fontFamily(700), fontSize: 12.5, marginBottom: 6 },

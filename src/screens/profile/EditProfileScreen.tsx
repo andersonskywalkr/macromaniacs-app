@@ -2,9 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -30,6 +27,7 @@ import { StepActivity } from '@/screens/onboarding/steps/StepActivity';
 import { StepGoalDetails } from '@/screens/onboarding/steps/StepGoalDetails';
 
 import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareFooter, KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
 // UC-03 — Editar perfil. Usa os mesmos campos, componentes e validação do
@@ -125,13 +123,13 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
           <Text style={[styles.title, { color: tokens.text }]}>Editar perfil</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={sectionStyle}>SOBRE VOCÊ</Text>
           <StepBasicInfo data={form} onChange={patch} />
 
@@ -146,9 +144,9 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
 
           <Text style={sectionStyle}>METAS (OPCIONAL)</Text>
           <StepGoalDetails data={form} onChange={patch} />
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={styles.footer}>
+        <KeyboardAwareFooter style={styles.footer}>
           {message && (
             <Text accessibilityRole="alert" style={[styles.error, { color: tokens.danger }]}>
               {message}
@@ -161,8 +159,8 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
             loading={isSaving}
             accessibilityHint="Atualiza seus dados e recalcula sua meta calórica"
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAwareFooter>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -172,7 +170,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { gap: spacing.md, padding: spacing.lg, paddingTop: spacing.md },
   error: { fontFamily: fontFamily(600), fontSize: 13, marginBottom: spacing.sm },
-  flex: { flex: 1 },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   header: {
     alignItems: 'center',

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -18,6 +19,7 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { SendIcon } from '@/components/icons';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import { groupFeedKey, useGroupFeed } from '@/queries/useGroupFeed';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -28,6 +30,13 @@ import {
   type ChatRow,
 } from '@/utils/chat';
 import { formatTime } from '@/utils/meals';
+import {
+  CHAT_INPUT_LINE_HEIGHT,
+  CHAT_INPUT_MIN_HEIGHT,
+  clampInputHeight,
+  isInputScrollable,
+  isNearBottom,
+} from '@/utils/chatInput';
 import { resolveTimezone } from '@/utils/today';
 import { canSendMessage } from '@/validation/groups';
 
@@ -143,8 +152,14 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
   const [pending, setPending] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  // Campo de mensagem: cresce com o texto até ~5 linhas e depois rola por dentro.
+  const [inputHeight, setInputHeight] = useState(CHAT_INPUT_MIN_HEIGHT);
+  const [inputScrollable, setInputScrollable] = useState(false);
+  // Só acompanha a última mensagem se o usuário não rolou para ler o histórico.
+  const stickToBottom = useRef(true);
   const listRef = useRef<FlatList<ChatRow<ChatMessage>>>(null);
   const currentUserId = user?.id;
+  const keyboardVisible = useKeyboardState((state) => state.isVisible);
 
   const rows = useMemo(
     () => buildChatRows([...(feed.data ?? []).map(fromFeedItem), ...pending], timezone),
@@ -154,8 +169,19 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
   // Rola para a mensagem mais recente quando chega mensagem nova.
   const messageCount = rows.filter((row) => row.type === 'message').length;
   useEffect(() => {
-    if (messageCount > 0) listRef.current?.scrollToEnd({ animated: false });
+    if (messageCount > 0 && stickToBottom.current) {
+      listRef.current?.scrollToEnd({ animated: false });
+    }
   }, [messageCount]);
+
+  // Com o teclado abrindo, a lista encolhe: mantém a última mensagem à vista.
+  useEffect(() => {
+    if (messageCount === 0) return undefined;
+    const timer = setTimeout(() => {
+      if (stickToBottom.current) listRef.current?.scrollToEnd({ animated: false });
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [keyboardVisible, messageCount]);
 
   async function deliver(id: string, content: string) {
     try {
@@ -194,6 +220,11 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
       },
     ]);
     setText('');
+    // O campo volta a uma linha e a lista vai para a mensagem que acabei de enviar.
+    setInputHeight(CHAT_INPUT_MIN_HEIGHT);
+    setInputScrollable(false);
+    stickToBottom.current = true;
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     void deliver(id, content);
   }
 
@@ -237,6 +268,7 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
 
   const length = text.length;
   const canSend = canSendMessage(text);
+  const inputHeightStyle = { height: inputHeight };
   const sendButtonColors = { backgroundColor: tokens.primary, opacity: canSend ? 1 : 0.4 };
 
   return (
@@ -249,6 +281,27 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
         showsVerticalScrollIndicator={false}
         refreshing={refreshing}
         onRefresh={handleRefresh}
+        // O campo de mensagem cresce ao digitar várias linhas e a lista encolhe:
+        // continua na última mensagem.
+        onLayout={() => {
+          if (messageCount > 0 && stickToBottom.current) {
+            listRef.current?.scrollToEnd({ animated: false });
+          }
+        }}
+        onContentSizeChange={() => {
+          if (stickToBottom.current) listRef.current?.scrollToEnd({ animated: false });
+        }}
+        onScroll={(event) => {
+          const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+          stickToBottom.current = isNearBottom({
+            offsetY: contentOffset.y,
+            viewportHeight: layoutMeasurement.height,
+            contentHeight: contentSize.height,
+          });
+        }}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={[styles.emptyTitle, { color: tokens.text }]}>Nenhuma mensagem ainda.</Text>
@@ -291,11 +344,20 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
             accessibilityLabel="Mensagem"
             placeholder="Mensagem..."
             placeholderTextColor={tokens.textSecondary}
-            style={[styles.input, { color: tokens.text }]}
+            style={[styles.input, inputHeightStyle, { color: tokens.text }]}
             value={text}
             onChangeText={setText}
             maxLength={MAX_MESSAGE_LENGTH}
             multiline
+            // Altura vem do conteúdo (entre 1 e ~5 linhas); passando disso o
+            // texto rola por dentro e o cursor fica à vista.
+            scrollEnabled={inputScrollable}
+            onContentSizeChange={(event) => {
+              const contentHeight = event.nativeEvent.contentSize.height;
+              setInputHeight(clampInputHeight(contentHeight));
+              setInputScrollable(isInputScrollable(contentHeight));
+            }}
+            textAlignVertical="top"
           />
         </View>
         <Pressable
@@ -332,7 +394,13 @@ const styles = StyleSheet.create({
   emptySub: { fontFamily: fontFamily(500), fontSize: 14, marginTop: 4 },
   emptyTitle: { fontFamily: fontFamily(600), fontSize: 16 },
   fullWidth: { alignSelf: 'stretch' },
-  input: { fontFamily: fontFamily(500), fontSize: 14, maxHeight: 96, padding: 0, paddingVertical: 10 },
+  input: {
+    fontFamily: fontFamily(500),
+    fontSize: 14,
+    lineHeight: CHAT_INPUT_LINE_HEIGHT,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
   inputBar: {
     alignItems: 'flex-end',
     borderTopWidth: 1,
@@ -347,6 +415,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: touchTarget.minSize,
     paddingHorizontal: 14,
+    paddingVertical: (touchTarget.minSize - CHAT_INPUT_LINE_HEIGHT) / 2,
   },
   listContent: { flexGrow: 1, paddingBottom: spacing.md, paddingHorizontal: spacing.md },
   mealShare: { fontFamily: fontFamily(600), fontSize: 13, fontStyle: 'italic', lineHeight: 18 },

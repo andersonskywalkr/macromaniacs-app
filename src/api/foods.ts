@@ -5,6 +5,7 @@ import { mockFoods } from '@/mocks/data';
 import { unwrapItems, type Paginated } from './adapters/common';
 import { fromApiFood, toApiManualFood, type ApiFood } from './adapters/foods';
 import { ApiError } from './ApiError';
+import { rankSuggestions, SUGGESTION_LIMIT } from '@/utils/foodSuggestions';
 import type { FoodItem } from './types/domain';
 
 // Ignora maiúsculas e acentos na busca do mock ("feijao" acha "Feijão").
@@ -22,23 +23,47 @@ function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), MOCK_LATENCY_MS));
 }
 
+export interface SearchFoodsOptions {
+  // false = só alimentos já guardados no banco (sem consultar o Open Food
+  // Facts, que tem limite de 10 consultas por minuto). Omitido = busca completa.
+  external?: boolean;
+  limit?: number;
+  signal?: AbortSignal;
+}
+
 // GET /v1/foods?q= (2 a 100 letras; a tela bloqueia busca menor) — seção 51.
 // Sem paginação (o `meta` não foi confirmado): lê só `items` da primeira página.
-// IMPORTANTE (seção 28/108): esta função deve ser chamada só a partir de um
-// botão "Buscar" ou debounce >= ~400ms — nunca a cada tecla digitada, por
-// causa do limite de 10 req/min do Open Food Facts.
-export async function searchFoods(query: string): Promise<FoodItem[]> {
+// A busca completa NÃO manda `external` (o padrão do backend é consultar as
+// fontes externas); só as sugestões mandam external=false.
+// IMPORTANTE (seção 28/108): a busca completa só dispara por botão — nunca a
+// cada tecla, por causa do limite de 10 req/min do Open Food Facts.
+export async function searchFoods(
+  query: string,
+  options: SearchFoodsOptions = {},
+): Promise<FoodItem[]> {
   if (USE_MOCK) {
     const term = normalize(query.trim());
-    const filtered = mockFoods.filter((f) =>
-      normalize(`${f.name} ${f.brand ?? ''}`).includes(term),
-    );
+    // O limite vale para a requisição real; no mock, suggestFoods reordena e
+    // só depois corta em 8 (assim a melhor sugestão não fica de fora).
+    const filtered = mockFoods.filter((f) => normalize(`${f.name} ${f.brand ?? ''}`).includes(term));
     return delay(filtered);
   }
   const { data } = await httpClient.get<Paginated<ApiFood> | ApiFood[]>(v1('/foods'), {
-    params: { q: query.trim(), limit: FOODS_PAGE_LIMIT },
+    params: {
+      q: query.trim(),
+      limit: options.limit ?? FOODS_PAGE_LIMIT,
+      ...(options.external === false ? { external: false } : {}),
+    },
+    signal: options.signal,
   });
   return unwrapItems(data).map(fromApiFood);
+}
+
+// Sugestões da busca: até 8, só do banco (external=false), reordenadas
+// (começa com o texto, depois palavra que começa, depois o resto).
+export async function suggestFoods(query: string, signal?: AbortSignal): Promise<FoodItem[]> {
+  const foods = await searchFoods(query, { external: false, limit: SUGGESTION_LIMIT, signal });
+  return rankSuggestions(foods, query, SUGGESTION_LIMIT);
 }
 
 // GET /v1/foods/barcode/:barcode — seção 51
