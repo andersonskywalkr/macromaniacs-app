@@ -3,6 +3,7 @@ import { Pressable, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing, touchTarget } from '@/theme/tokens';
 
+import { fontFamily } from '@/theme/fonts';
 interface ChoicePillProps {
   label: string;
   selected: boolean;
@@ -45,8 +46,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(700),
     fontSize: 15,
-    fontWeight: '700',
   },
 });

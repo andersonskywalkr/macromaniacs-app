@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing, touchTarget } from '@/theme/tokens';
 
+import { fontFamily } from '@/theme/fonts';
 interface InlineRetryProps {
   message: string;
   onRetry: () => void;
@@ -31,7 +32,7 @@ export function InlineRetry({ message, onRetry }: InlineRetryProps) {
 
 const styles = StyleSheet.create({
   button: { justifyContent: 'center', minHeight: touchTarget.minSize, paddingHorizontal: spacing.sm },
-  buttonLabel: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
-  message: { flex: 1, fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600' },
+  buttonLabel: { fontFamily: fontFamily(800), fontSize: 13 },
+  message: { flex: 1, fontFamily: fontFamily(600), fontSize: 12.5 },
   row: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
 });

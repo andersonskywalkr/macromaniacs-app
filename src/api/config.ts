@@ -33,13 +33,12 @@ export const MOCK_LATENCY_MS = 400;
 // Abas do app que ainda mostram a MaintenanceScreen no lugar da tela real
 // (apresentação). Lista separada por vírgula em EXPO_PUBLIC_MAINTENANCE_TABS,
 // com os nomes: home, meals, group. Vazia ("") = nenhuma aba em manutenção.
-// Sem a variável, vale o padrão abaixo: Início e Refeições já são reais, só
-// Grupo segue em manutenção até a tela ficar pronta. A aba Perfil nunca
-// entra aqui.
+// Sem a variável, vale o padrão abaixo: nenhuma aba em manutenção (Início,
+// Refeições e Grupo já são reais). A aba Perfil nunca entra aqui.
 export type MaintenanceTab = 'home' | 'meals' | 'group';
 
 const MAINTENANCE_TAB_NAMES: readonly MaintenanceTab[] = ['home', 'meals', 'group'];
-const DEFAULT_MAINTENANCE_TABS: readonly MaintenanceTab[] = ['group'];
+const DEFAULT_MAINTENANCE_TABS: readonly MaintenanceTab[] = [];
 
 export function parseMaintenanceTabs(raw: string | undefined): ReadonlySet<MaintenanceTab> {
   if (raw === undefined) return new Set(DEFAULT_MAINTENANCE_TABS);

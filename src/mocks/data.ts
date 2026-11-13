@@ -3,9 +3,7 @@ import type {
   GamificationStats,
   FoodItem,
   MealLog,
-  RankingEntry,
   UserProfile,
-  GroupSummary,
 } from '@/api/types/domain';
 
 // Metas do dia no mock (calorias iguais à meta do mockUserProfile). O consumo
@@ -268,15 +266,4 @@ export const mockMealLogs: MealLog[] = [
       },
     ],
   },
-];
-
-// Baseado na tela "Ranking do grupo Los Maniacs" do protótipo HTML
-export const mockRanking: RankingEntry[] = [
-  { position: 1, userId: 'user-2', initials: 'MP', displayName: 'Maria P.', points: 980 },
-  { position: 2, userId: 'user-1', initials: 'AN', displayName: 'Anderson', points: 420 },
-  { position: 3, userId: 'user-3', initials: 'JS', displayName: 'João S.', points: 310 },
-];
-
-export const mockGroups: GroupSummary[] = [
-  { id: 'group-1', name: 'Los Maniacs', inviteCode: 'LOSMAN2026', memberCount: 8 },
 ];

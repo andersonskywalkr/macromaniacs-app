@@ -1,5 +1,5 @@
 import { defaultMacroGoals } from '@/utils/dailyProgress';
-import type { GamificationStats, ProgressToday } from '../types/domain';
+import type { DailyProgressEntry, GamificationStats, ProgressToday } from '../types/domain';
 import { toNumber } from './common';
 
 // GET /v1/progress/daily: valores soltos, sem meta por macro.
@@ -16,6 +16,10 @@ export interface ApiDailyProgress {
   calorieProgressPercent?: number | string | null;
   updatedAt?: string;
 }
+
+// Cada item de GET /v1/progress/history é o mesmo formato do dia
+// (`date` obrigatório).
+export type ApiProgressHistoryItem = ApiDailyProgress & { date: string };
 
 // GET /v1/gamification/summary
 export interface ApiGamificationSummary {
@@ -64,5 +68,24 @@ export function fromApiGamificationSummary(raw: ApiGamificationSummary): Gamific
     points: toNumber(raw.totalPoints),
     currentStreak: toNumber(raw.currentStreak),
     bestStreak: toNumber(raw.bestStreak),
+  };
+}
+
+// Meta do dia nula usa a meta calculada pelo app (mesmo fallback do dia).
+export function fromApiProgressDay(
+  raw: ApiProgressHistoryItem,
+  fallbackCalorieGoal: number | null = null,
+): DailyProgressEntry {
+  const target = raw.targetCalories;
+  return {
+    date: raw.date.slice(0, 10),
+    calories: toNumber(raw.calories),
+    protein: toNumber(raw.protein),
+    carbohydrates: toNumber(raw.carbs),
+    fat: toNumber(raw.fat),
+    fiber: toNumber(raw.fiber),
+    mealCount: toNumber(raw.mealCount),
+    targetCalories:
+      target !== null && target !== undefined ? toNumber(target) : fallbackCalorieGoal,
   };
 }

@@ -5,6 +5,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { GOAL_LABELS, ACTIVITY_OPTIONS, SEX_OPTIONS, findLabel, type OnboardingData } from '../types';
 
+import { fontFamily } from '@/theme/fonts';
 interface Props {
   data: OnboardingData;
 }
@@ -53,9 +54,8 @@ export function StepSummary({ data }: Props) {
 
 const styles = StyleSheet.create({
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 13,
-    fontWeight: '600',
   },
   row: {
     paddingVertical: spacing.sm + spacing.xs,
@@ -64,9 +64,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   value: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(700),
     fontSize: 15,
-    fontWeight: '700',
     marginTop: 2,
   },
 });

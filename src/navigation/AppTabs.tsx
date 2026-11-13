@@ -12,6 +12,7 @@ import { HomeIcon, MealsIcon, GroupIcon, ProfileIcon } from '@/components/icons'
 import { MAINTENANCE_TABS } from '@/api/config';
 import { MaintenanceScreen } from '@/screens/MaintenanceScreen';
 
+import { fontFamily } from '@/theme/fonts';
 const Tab = createBottomTabNavigator<AppTabsParamList>();
 
 // Pílula de destaque atrás do ícone da aba ativa — mesmo visual nos 4
@@ -45,6 +46,9 @@ export function AppTabsNavigator() {
         tabBarActiveTintColor: tokens.primary,
         tabBarInactiveTintColor: tokens.textSecondary,
         tabBarStyle: { backgroundColor: tokens.background },
+        // A barra de abas some com o teclado aberto (não fica flutuando acima
+        // dele, como no campo de mensagem do chat).
+        tabBarHideOnKeyboard: true,
         tabBarLabelStyle: styles.label,
       }}
     >
@@ -109,8 +113,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
   },
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 11,
-    fontWeight: '600',
   },
 });

@@ -48,9 +48,11 @@ export const radius = {
   card: 28,
 } as const;
 
+// Fonte do app: Plus Jakarta Sans. O nome da família depende do peso — use
+// fontFamily(peso) de theme/fonts.ts nos estilos (nunca fontWeight sozinho).
 export const typography = {
   family: 'PlusJakartaSans',
-  weights: [500, 600, 700, 800],
+  weights: [400, 500, 600, 700, 800],
 } as const;
 
 // Espaçamento base em escala de 4px — não estava explícito no documento,

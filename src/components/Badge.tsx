@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
+import { fontFamily } from '@/theme/fonts';
 interface BadgeProps {
   label: string;
   color?: string;
@@ -32,8 +33,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs / 2,
   },
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 12,
-    fontWeight: '600',
   },
 });

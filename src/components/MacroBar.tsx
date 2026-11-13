@@ -5,6 +5,7 @@ import { spacing } from '@/theme/tokens';
 import { formatDecimal } from '@/utils/nutrition';
 import { summarizeMacro } from '@/utils/dailyProgress';
 
+import { fontFamily } from '@/theme/fonts';
 interface MacroBarProps {
   label: string;
   consumed: number;
@@ -41,7 +42,7 @@ export function MacroBar({ label, consumed, goal, color }: MacroBarProps) {
 const styles = StyleSheet.create({
   fill: { borderRadius: 999, height: 8 },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs + 2 },
-  label: { fontFamily: 'PlusJakartaSans', fontSize: 13.5, fontWeight: '700' },
+  label: { fontFamily: fontFamily(700), fontSize: 13.5 },
   track: { borderRadius: 999, height: 8, overflow: 'hidden' },
-  value: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '700' },
+  value: { fontFamily: fontFamily(700), fontSize: 13 },
 });

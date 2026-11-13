@@ -23,6 +23,7 @@ import { resolveCalorieGoal } from '@/utils/nutritionFallback';
 import { resolveTimezone, todayAsLocalDate } from '@/utils/today';
 import { GOAL_LABELS } from '@/screens/onboarding/types';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileHome'>;
 
 const APPEARANCE_OPTIONS: { value: ThemePreference; label: string }[] = [
@@ -275,7 +276,7 @@ function GoalRow({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   appearance: { marginTop: spacing.sm },
-  bigValue: { fontFamily: 'PlusJakartaSans', fontSize: 20, fontWeight: '800' },
+  bigValue: { fontFamily: fontFamily(800), fontSize: 20 },
   card: { padding: spacing.lg },
   centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   container: { flex: 1 },
@@ -283,11 +284,11 @@ const styles = StyleSheet.create({
   editButton: { marginTop: spacing.lg },
   goalRow: { flexDirection: 'row', justifyContent: 'space-between' },
   goalRows: { gap: spacing.sm + spacing.xs, marginTop: spacing.md },
-  goalValue: { fontFamily: 'PlusJakartaSans', fontSize: 14.5, fontWeight: '800' },
+  goalValue: { fontFamily: fontFamily(800), fontSize: 14.5 },
   headerRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   headerText: { flex: 1, minWidth: 0 },
-  muted: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginTop: 2 },
-  name: { fontFamily: 'PlusJakartaSans', fontSize: 20, fontWeight: '800' },
+  muted: { fontFamily: fontFamily(600), fontSize: 13, marginTop: 2 },
+  name: { fontFamily: fontFamily(800), fontSize: 20 },
   options: { gap: spacing.sm },
   ringCenter: {
     alignItems: 'center',
@@ -298,14 +299,13 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
-  ringUnit: { fontFamily: 'PlusJakartaSans', fontSize: 11, fontWeight: '600' },
-  ringValue: { fontFamily: 'PlusJakartaSans', fontSize: 20, fontWeight: '800' },
+  ringUnit: { fontFamily: fontFamily(600), fontSize: 11 },
+  ringValue: { fontFamily: fontFamily(800), fontSize: 20 },
   ringWrap: { height: 96, width: 96 },
-  saved: { fontFamily: 'PlusJakartaSans', fontSize: 14, fontWeight: '800', textAlign: 'center' },
+  saved: { fontFamily: fontFamily(800), fontSize: 14, textAlign: 'center' },
   section: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     letterSpacing: 0.5,
     marginBottom: spacing.sm,
   },
@@ -318,6 +318,6 @@ const styles = StyleSheet.create({
   weekDay: { alignItems: 'center', gap: spacing.xs },
   weekDot: { borderRadius: 999, height: 28, width: 28 },
   weekDotToday: { borderWidth: 2 },
-  weekLabel: { fontFamily: 'PlusJakartaSans', fontSize: 11.5, fontWeight: '700' },
+  weekLabel: { fontFamily: fontFamily(700), fontSize: 11.5 },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.lg },
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { fontFamily } from '@/theme/fonts';
 interface AvatarProps {
   uri: string | null;
   displayName: string;
@@ -56,8 +57,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   initials: {
-    fontFamily: 'PlusJakartaSans',
-    fontWeight: '700',
+    fontFamily: fontFamily(700),
   },
   streakBadge: {
     bottom: -2,

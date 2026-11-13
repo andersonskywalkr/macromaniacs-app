@@ -29,6 +29,7 @@ import { StepGoal } from '@/screens/onboarding/steps/StepGoal';
 import { StepActivity } from '@/screens/onboarding/steps/StepActivity';
 import { StepGoalDetails } from '@/screens/onboarding/steps/StepGoalDetails';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
 // UC-03 — Editar perfil. Usa os mesmos campos, componentes e validação do
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
   centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   container: { flex: 1 },
   content: { gap: spacing.md, padding: spacing.lg, paddingTop: spacing.md },
-  error: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginBottom: spacing.sm },
+  error: { fontFamily: fontFamily(600), fontSize: 13, marginBottom: spacing.sm },
   flex: { flex: 1 },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   header: {
@@ -181,11 +182,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   section: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     letterSpacing: 0.5,
     marginTop: spacing.md,
   },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
 });

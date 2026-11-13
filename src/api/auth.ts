@@ -79,3 +79,14 @@ export async function getMe(): Promise<CurrentUser> {
   const { data } = await httpClient.get<CurrentUser>('/v1/auth/me');
   return data;
 }
+
+// Recuperação de senha: o backend NÃO tem essa rota. No modo mock (auth) a
+// tela simula o fluxo; no modo real nenhuma rota é chamada (a tela mostra que
+// o recurso ainda não está disponível).
+export async function requestPasswordReset(email: string): Promise<{ simulated: true }> {
+  if (!USE_AUTH_MOCK) {
+    throw new Error('Recuperação de senha não está disponível no backend.');
+  }
+  void email; // simulação: o e-mail não vai a lugar nenhum
+  return delay({ simulated: true });
+}

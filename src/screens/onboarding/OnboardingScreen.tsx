@@ -20,6 +20,7 @@ import { StepActivity } from './steps/StepActivity';
 import { StepGoalDetails } from './steps/StepGoalDetails';
 import { StepSummary } from './steps/StepSummary';
 
+import { fontFamily } from '@/theme/fonts';
 const TOTAL_STEPS = 6;
 
 const STEP_COPY = [
@@ -157,12 +158,12 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.lg },
   dot: { borderRadius: 999, flex: 1, height: 6 },
   dots: { flex: 1, flexDirection: 'row', gap: 6 },
-  error: { fontFamily: 'PlusJakartaSans', marginTop: spacing.md },
+  error: { fontFamily: fontFamily(400), marginTop: spacing.md },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   keyboardAvoiding: { flex: 1 },
   progressRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, paddingBottom: 0 },
   stepBody: { marginTop: spacing.xl - spacing.xs },
-  stepLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '700', marginBottom: 6 },
-  subtitle: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '600', marginTop: spacing.sm },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 26, fontWeight: '800', lineHeight: 32 },
+  stepLabel: { fontFamily: fontFamily(700), fontSize: 12.5, marginBottom: 6 },
+  subtitle: { fontFamily: fontFamily(600), fontSize: 15, marginTop: spacing.sm },
+  title: { fontFamily: fontFamily(800), fontSize: 26, lineHeight: 32 },
 });

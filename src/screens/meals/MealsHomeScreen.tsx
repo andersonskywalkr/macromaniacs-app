@@ -34,6 +34,7 @@ import {
 } from '@/utils/meals';
 import { formatDecimal } from '@/utils/nutrition';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealsHome'>;
 
 function MealRow({ meal, onPress }: { meal: MealLog; onPress: () => void }) {
@@ -186,17 +187,16 @@ const styles = StyleSheet.create({
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   fullWidth: { alignSelf: 'stretch' },
   list: { gap: spacing.sm + spacing.xs },
-  macro: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
+  macro: { fontFamily: fontFamily(800), fontSize: 13 },
   macroRow: { alignItems: 'baseline', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
-  mealCalories: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '800' },
-  mealDetail: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
-  mealName: { flexShrink: 1, fontFamily: 'PlusJakartaSans', fontSize: 16, fontWeight: '800' },
-  mealTime: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '700' },
+  mealCalories: { fontFamily: fontFamily(800), fontSize: 15 },
+  mealDetail: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
+  mealName: { flexShrink: 1, fontFamily: fontFamily(800), fontSize: 16 },
+  mealTime: { fontFamily: fontFamily(700), fontSize: 13 },
   rowHeader: { alignItems: 'baseline', flexDirection: 'row', justifyContent: 'space-between' },
   title: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 26,
-    fontWeight: '800',
     padding: spacing.lg,
     paddingBottom: spacing.md,
   },

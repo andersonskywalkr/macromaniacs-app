@@ -5,6 +5,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { SEX_OPTIONS, type OnboardingData } from '../types';
 
+import { fontFamily } from '@/theme/fonts';
 interface Props {
   data: OnboardingData;
   onChange: (patch: Partial<OnboardingData>) => void;
@@ -34,9 +35,8 @@ export function StepSex({ data, onChange }: Props) {
 const styles = StyleSheet.create({
   group: { gap: spacing.md },
   notice: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 12.5,
-    fontWeight: '600',
     lineHeight: 17,
     paddingHorizontal: spacing.xs,
   },

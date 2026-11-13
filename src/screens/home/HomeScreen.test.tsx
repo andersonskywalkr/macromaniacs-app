@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { HomeScreen } from './HomeScreen';
+import { buildPerformanceDays, lastDates } from '@/utils/performance';
 
 const mockUser = {
   id: 'user-id',
@@ -59,14 +60,24 @@ jest.mock('@/theme/ThemeProvider', () => ({
 jest.mock('@/queries/useGamificationStats', () => ({
   useGamificationStats: () => ({ ...mockGamification, refetch: mockRefetchGamification }),
 }));
+let mockWeek: unknown;
+jest.mock('@/queries/useProgressHistory', () => ({
+  usePerformance: () => ({ data: mockWeek, isLoading: false, isError: false }),
+}));
 jest.mock('@/queries/useProgressToday', () => ({
   useProgressToday: () => ({ ...mockProgress, refetch: mockRefetchProgress }),
 }));
+let mockGroupsData: { id: string; name: string }[] = [];
 jest.mock('@/queries/useMyGroups', () => ({
-  useMyGroups: () => ({ data: [] }),
+  useMyGroups: () => ({ data: mockGroupsData }),
 }));
 jest.mock('@/queries/useGroupRanking', () => ({
-  useGroupRanking: () => ({ data: [], isLoading: false }),
+  useGroupRanking: () => ({
+    data: mockGroupsData.length
+      ? [{ position: 1, userId: 'user-id', initials: 'NI', displayName: 'Nicolly', points: 900 }]
+      : [],
+    isLoading: false,
+  }),
 }));
 jest.mock('@/components/Avatar', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
@@ -107,6 +118,8 @@ function renderHome() {
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGroupsData = [];
+    mockWeek = undefined;
     mockGamification = { data: { currentStreak: 5 }, isLoading: false, isError: false };
     mockProgress = {
       data: progressOf({ calories: 0, protein: 0, carbohydrates: 0, fat: 0 }),
@@ -223,5 +236,55 @@ describe('HomeScreen', () => {
     fireEvent.press(screen.getByLabelText('Adicionar refeição'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('MealsTab', { screen: 'FoodSearch' });
+  });
+
+  it('opens the group profile when the group ranking block is pressed', () => {
+    mockGroupsData = [{ id: 'g1', name: 'Los Maniacs' }];
+    const { navigation, screen } = renderHome();
+
+    fireEvent.press(screen.getByLabelText('Ranking do grupo Los Maniacs'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('GroupTab', {
+      screen: 'GroupProfile',
+      params: { groupId: 'g1', origin: 'home' },
+    });
+  });
+
+  it('shows the weekly performance from the same calculation as the history screen', () => {
+    const entry = (date: string, calories: number) => ({
+      date,
+      calories,
+      protein: 100,
+      carbohydrates: 200,
+      fat: 60,
+      fiber: 0,
+      mealCount: 3,
+      targetCalories: 2000,
+    });
+    mockWeek = buildPerformanceDays(
+      lastDates(7, '2026-10-22'),
+      [entry('2026-10-17', 1900), entry('2026-10-18', 2100), entry('2026-10-20', 1000)],
+      2000,
+    );
+    const { screen } = renderHome();
+
+    expect(screen.getByText('Desempenho semanal')).toBeTruthy();
+    expect(screen.getByText('Meta batida em 2 de 7 dias')).toBeTruthy();
+  });
+
+  it('keeps a neutral text when the weekly performance is not available', () => {
+    const { screen } = renderHome();
+    expect(screen.getByText('Ver seu histórico de metas batidas')).toBeTruthy();
+  });
+
+  it('opens the history from the weekly performance shortcut', () => {
+    const { navigation, screen } = renderHome();
+
+    fireEvent.press(screen.getByLabelText('Desempenho semanal'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('ProfileTab', {
+      screen: 'History',
+      params: { origin: 'home' },
+    });
   });
 });

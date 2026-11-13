@@ -23,6 +23,7 @@ import { useAuthStore } from '@/store/authStore';
 import { getAuthErrorMessage } from '@/api/authErrors';
 import { validateLogin } from '@/validation/auth';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 // Login social (Google/Apple/Facebook) — nenhum SDK de OAuth está nas
@@ -146,12 +147,12 @@ export function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  dividerLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600' },
+  dividerLabel: { fontFamily: fontFamily(600), fontSize: 12.5 },
   dividerLine: { flex: 1, height: 1 },
   dividerRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm + spacing.xs, marginTop: spacing.lg + 2 },
-  error: { fontFamily: 'PlusJakartaSans', marginTop: spacing.sm },
+  error: { fontFamily: fontFamily(400), marginTop: spacing.sm },
   forgotPassword: { alignSelf: 'flex-end', marginTop: spacing.sm + 2 },
-  forgotPasswordLabel: { fontFamily: 'PlusJakartaSans', fontSize: 13.5, fontWeight: '700' },
+  forgotPasswordLabel: { fontFamily: fontFamily(700), fontSize: 13.5 },
   form: { gap: spacing.md, marginTop: spacing.lg },
   // A ScrollView tem padding: spacing.lg em toda a volta (pro conteúdo de
   // texto/form) — cancelamos isso só no hero pra o mascote encostar bem no
@@ -169,6 +170,6 @@ const styles = StyleSheet.create({
     width: 56,
   },
   socialRow: { flexDirection: 'row', gap: spacing.md - 2, justifyContent: 'center', marginTop: spacing.lg - 2 },
-  subtitle: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '600', marginTop: spacing.xs + 4 },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 30, fontWeight: '800', lineHeight: 36 },
+  subtitle: { fontFamily: fontFamily(600), fontSize: 15, marginTop: spacing.xs + 4 },
+  title: { fontFamily: fontFamily(800), fontSize: 30, lineHeight: 36 },
 });

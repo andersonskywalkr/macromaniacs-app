@@ -1,11 +1,12 @@
 import { parseMaintenanceTabs } from './config';
 
 describe('parseMaintenanceTabs', () => {
-  it('defaults to only Grupo in maintenance, with Início and Refeições real', () => {
+  it('defaults to no tab in maintenance: Início, Refeições and Grupo are real', () => {
     const tabs = parseMaintenanceTabs(undefined);
+    expect(tabs.size).toBe(0);
     expect(tabs.has('home')).toBe(false);
     expect(tabs.has('meals')).toBe(false);
-    expect(tabs.has('group')).toBe(true);
+    expect(tabs.has('group')).toBe(false);
   });
 
   it('reads a comma separated list, ignoring spaces and case', () => {

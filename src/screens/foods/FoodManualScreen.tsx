@@ -23,6 +23,7 @@ import {
   type ManualFoodForm,
 } from '@/validation/food';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = NativeStackScreenProps<MealsStackParamList, 'FoodManual'>;
 
 const NUMBER_FIELDS: { key: keyof ManualFoodForm; label: string }[] = [
@@ -131,7 +132,7 @@ export function FoodManualScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
-  error: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginTop: spacing.md },
+  error: { fontFamily: fontFamily(600), fontSize: 13, marginTop: spacing.md },
   flex: { flex: 1 },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   header: {
@@ -142,18 +143,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
   section: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     letterSpacing: 0.5,
     marginTop: spacing.lg,
   },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
 });

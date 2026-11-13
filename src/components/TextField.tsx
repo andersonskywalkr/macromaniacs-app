@@ -4,6 +4,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { spacing, touchTarget } from '@/theme/tokens';
 import { EyeIcon, EyeOffIcon } from './icons';
 
+import { fontFamily } from '@/theme/fonts';
 interface TextFieldProps extends Omit<TextInputProps, 'style' | 'secureTextEntry'> {
   style?: StyleProp<ViewStyle>;
   // Quando true, mostra o campo como senha com botão de alternar
@@ -52,9 +53,8 @@ export function TextField({ style, secureTextEntry, accessibilityLabel, ...rest 
 const styles = StyleSheet.create({
   input: {
     borderRadius: 999,
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 15,
-    fontWeight: '600',
     minHeight: touchTarget.minSize,
     paddingHorizontal: spacing.md + spacing.xs,
     paddingVertical: spacing.sm + spacing.xs,

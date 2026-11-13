@@ -23,6 +23,7 @@ import { TextField } from '@/components/TextField';
 import { useFoodsSearch } from '@/queries/useFoodsSearch';
 import { formatDecimal, MAX_FOOD_QUERY_LENGTH, MIN_FOOD_QUERY_LENGTH } from '@/utils/nutrition';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = NativeStackScreenProps<MealsStackParamList, 'FoodSearch'>;
 
 function FoodResultRow({ food, onPress }: { food: FoodItem; onPress: () => void }) {
@@ -205,8 +206,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
   flex: { flex: 1 },
-  foodDetail: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
-  foodName: { fontFamily: 'PlusJakartaSans', fontSize: 15.5, fontWeight: '800' },
+  foodDetail: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
+  foodName: { fontFamily: fontFamily(800), fontSize: 15.5 },
   fullWidth: { alignSelf: 'stretch' },
   header: {
     alignItems: 'center',
@@ -215,21 +216,19 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  macro: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
+  macro: { fontFamily: fontFamily(800), fontSize: 13 },
   macroRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   manualButton: { marginTop: spacing.lg },
   queryError: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 13,
-    fontWeight: '600',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
   },
   results: { gap: spacing.sm + spacing.xs },
   resultsTitle: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 13,
-    fontWeight: '800',
     marginBottom: spacing.xs,
   },
   searchRow: {
@@ -239,5 +238,5 @@ const styles = StyleSheet.create({
     minHeight: touchTarget.minSize,
     paddingHorizontal: spacing.lg,
   },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
 });
