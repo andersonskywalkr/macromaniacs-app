@@ -74,6 +74,20 @@ describe('FoodSearchScreen', () => {
     expect(mockUseFoodsSearch).toHaveBeenLastCalledWith('frango', true);
   });
 
+  it('blocks a search with fewer than 2 letters, with a message and no API call', () => {
+    const { screen } = renderScreen();
+
+    search(screen, 'a');
+
+    expect(screen.getByText('Digite pelo menos 2 letras para buscar.')).toBeTruthy();
+    expect(mockUseFoodsSearch).not.toHaveBeenCalledWith('a', true);
+    expect(screen.getByText('Busque um alimento')).toBeTruthy();
+
+    // digitar de novo limpa o aviso
+    fireEvent.changeText(screen.getByLabelText('Nome ou marca do alimento'), 'ar');
+    expect(screen.queryByText('Digite pelo menos 2 letras para buscar.')).toBeNull();
+  });
+
   it('goes straight to the confirmation when there is a single result', () => {
     mockSearchResult = { data: [food('1', 'Banana prata')], isLoading: false, isError: false };
     const { navigation, screen } = renderScreen();

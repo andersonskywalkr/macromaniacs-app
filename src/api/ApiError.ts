@@ -13,7 +13,7 @@ export class ApiError extends Error {
 
   constructor(shape: ApiErrorShape | { message: string }) {
     const message = Array.isArray(shape.message)
-      ? shape.message.join(' ')
+      ? shape.message.join('; ')
       : shape.message;
 
     super(message);

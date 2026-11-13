@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ChoicePill } from '@/components/ChoicePill';
 import { spacing } from '@/theme/tokens';
-import { GOAL_OPTIONS, type OnboardingData } from '../types';
+import { GOAL_LABELS, GOAL_OPTIONS, type OnboardingData } from '../types';
 
 interface Props {
   data: OnboardingData;
@@ -20,6 +20,11 @@ export function StepGoal({ data, onChange }: Props) {
           onPress={() => onChange({ goal: option.value })}
         />
       ))}
+      {/* Recomposição existe no backend, mas não é opção do Onboarding: só
+          aparece (selecionada) para quem já tem esse objetivo no perfil. */}
+      {data.goal === 'RECOMPOSITION' && (
+        <ChoicePill label={GOAL_LABELS.RECOMPOSITION} selected onPress={() => undefined} />
+      )}
     </View>
   );
 }

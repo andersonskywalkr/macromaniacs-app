@@ -29,6 +29,7 @@ import {
   canSaveMeal,
   draftTotals,
   itemsCountLabel,
+  MAX_MEAL_ITEMS,
   MEAL_TYPE_OPTIONS,
   suggestMealType,
 } from '@/utils/meals';
@@ -297,6 +298,11 @@ export function MealBuilderScreen({ navigation }: Props) {
         </ScrollView>
 
         <View style={styles.footer}>
+          {items.length > MAX_MEAL_ITEMS && (
+            <Text accessibilityRole="alert" style={[styles.error, { color: tokens.danger }]}>
+              {`Uma refeição pode ter no máximo ${MAX_MEAL_ITEMS} itens. Remova alguns para salvar.`}
+            </Text>
+          )}
           {error && (
             <Text accessibilityRole="alert" style={[styles.error, { color: tokens.danger }]}>
               {error}

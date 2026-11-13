@@ -22,7 +22,7 @@ describe('mock profile and calorie target', () => {
     const before = (await getMyProfile()).nutrition!;
 
     const updated = await updateMyProfile({
-      biologicalSex: 'PREFER_NOT_TO_SAY',
+      biologicalSex: 'NOT_INFORMED', // valor da API
       currentWeightKg: 70,
       heightCm: 178,
       activityLevel: 'LIGHT',
@@ -45,7 +45,7 @@ describe('mock profile and calorie target', () => {
 
     const male = await bmr('MALE');
     const female = await bmr('FEMALE');
-    const none = await bmr('PREFER_NOT_TO_SAY');
+    const none = await bmr('NOT_INFORMED');
 
     expect(male - female).toBe(166);
     expect(male - none).toBe(83);

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '@/components/Card';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
-import { GOAL_OPTIONS, ACTIVITY_OPTIONS, SEX_OPTIONS, findLabel, type OnboardingData } from '../types';
+import { GOAL_LABELS, ACTIVITY_OPTIONS, SEX_OPTIONS, findLabel, type OnboardingData } from '../types';
 
 interface Props {
   data: OnboardingData;
@@ -22,7 +22,7 @@ export function StepSummary({ data }: Props) {
     { label: 'Altura', value: data.heightCm ? `${data.heightCm} cm` : '—' },
     { label: 'Peso', value: data.weightKg ? `${data.weightKg} kg` : '—' },
     { label: 'Sexo', value: findLabel(SEX_OPTIONS, data.sex) },
-    { label: 'Objetivo', value: findLabel(GOAL_OPTIONS, data.goal) },
+    { label: 'Objetivo', value: data.goal ? GOAL_LABELS[data.goal] : '—' },
     {
       label: 'Nível de atividade',
       value: findLabel(

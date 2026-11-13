@@ -17,6 +17,8 @@ import { useProgressToday } from '@/queries/useProgressToday';
 import { useMyGroups } from '@/queries/useMyGroups';
 import { useGroupRanking } from '@/queries/useGroupRanking';
 import { formatFriendlyDate } from '@/utils/formatDate';
+import { resolveCalorieGoal } from '@/utils/nutritionFallback';
+import { resolveTimezone, todayAsLocalDate } from '@/utils/today';
 import { resolveMacroGoals, summarizeCalories } from '@/utils/dailyProgress';
 import { useAuthStore } from '@/store/authStore';
 
@@ -47,13 +49,13 @@ export function HomeScreen({ navigation }: Props) {
     );
   }
 
-  const todayLabel = formatFriendlyDate(new Date());
+  // "Hoje" no fuso do usuário (perfil, ou o do aparelho).
+  const todayLabel = formatFriendlyDate(todayAsLocalDate(resolveTimezone(currentUser.timezone)));
   const rankingEntries = (ranking.data ?? []).slice(0, 3);
 
-  // Meta calórica que o app já usa (derivada do TDEE e do objetivo); se o
-  // perfil não trouxer, cai na meta do progresso do dia.
-  const calorieGoal =
-    currentUser.nutrition?.calorieTargetKcalPerDay ?? progress.data?.calories.goal ?? null;
+  // Meta calórica: a do backend (perfil); se ele não calcular (ex.: "Prefiro
+  // não informar"), a calculada pelo app; por fim, a meta do progresso do dia.
+  const calorieGoal = resolveCalorieGoal(currentUser) ?? progress.data?.calories.goal ?? null;
 
   function renderCaloriesCard() {
     if (progress.isLoading) {

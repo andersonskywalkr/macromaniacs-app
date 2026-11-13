@@ -51,6 +51,17 @@ export const GOAL_OPTIONS: { label: string; value: NutritionGoal }[] = [
   { label: 'Performance', value: 'PERFORMANCE' },
 ];
 
+// Rótulos de TODOS os objetivos do backend (inclui os que não são opção do
+// Onboarding, como Recomposição corporal).
+export const GOAL_LABELS: Record<NutritionGoal, string> = {
+  LOSE_WEIGHT: 'Emagrecimento',
+  GAIN_MUSCLE: 'Ganho de massa',
+  GAIN_STRENGTH: 'Ganho de força',
+  MAINTAIN: 'Manutenção',
+  RECOMPOSITION: 'Recomposição corporal',
+  PERFORMANCE: 'Performance',
+};
+
 export interface ActivityOption {
   label: string;
   value: ActivityLevel;

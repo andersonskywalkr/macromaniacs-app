@@ -1,12 +1,12 @@
 import type { BiologicalSex } from './types/domain';
 
 // ÚNICO lugar que liga o valor usado no app ao valor enviado/recebido pelo
-// backend no campo `biologicalSex`. Hoje são iguais; se o backend usar outro
-// nome para "prefiro não informar" (ex.: 'UNSPECIFIED'), troque só aqui.
+// backend no campo `biologicalSex`. O backend aceita FEMALE, MALE e
+// NOT_INFORMED; "Prefiro não informar" é PREFER_NOT_TO_SAY dentro do app.
 const APP_TO_API: Record<BiologicalSex, string> = {
   FEMALE: 'FEMALE',
   MALE: 'MALE',
-  PREFER_NOT_TO_SAY: 'PREFER_NOT_TO_SAY',
+  PREFER_NOT_TO_SAY: 'NOT_INFORMED',
 };
 
 export function toApiSex(sex: BiologicalSex): string {

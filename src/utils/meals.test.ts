@@ -2,6 +2,7 @@ import type { MealLog } from '@/api/types/domain';
 import type { MealDraftItem } from '@/store/mealDraftStore';
 import {
   canSaveMeal,
+  MAX_MEAL_ITEMS,
   draftTotals,
   filterMealsByType,
   mealTotals,
@@ -52,6 +53,12 @@ describe('canSaveMeal', () => {
 
   it('is enabled with items and valid amounts', () => {
     expect(canSaveMeal([rice], false, false)).toBe(true);
+  });
+
+  it('is disabled above the 50 items the backend accepts', () => {
+    const many = Array.from({ length: MAX_MEAL_ITEMS + 1 }, () => rice);
+    expect(canSaveMeal(many.slice(0, MAX_MEAL_ITEMS), false, false)).toBe(true);
+    expect(canSaveMeal(many, false, false)).toBe(false);
   });
 
   it('is disabled while an amount is invalid or a save is in progress', () => {

@@ -41,8 +41,8 @@ export function validateRegister(form: RegisterForm): string | null {
     return 'Informe um e-mail válido.';
   }
 
-  if (!/^[a-zA-Z0-9_]{3,30}$/.test(form.username.trim())) {
-    return 'O usuário deve ter de 3 a 30 caracteres, usando letras, números ou _.';
+  if (!/^[a-zA-Z0-9_]{3,50}$/.test(form.username.trim())) {
+    return 'O usuário deve ter de 3 a 50 caracteres, usando letras, números ou _.';
   }
 
   if (form.password.length < 8 || form.password.length > 128) {

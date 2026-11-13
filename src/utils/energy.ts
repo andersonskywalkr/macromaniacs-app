@@ -26,16 +26,16 @@ export const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {
   VERY_INTENSE: 1.9,
 };
 
-// Regra de objetivo do mock: só emagrecimento tem ajuste (-10%, a mesma razão
-// 2511/2790 que o mock já usava). Os demais objetivos usam o TDEE como meta
-// até o grupo de Nutrição definir a regra.
-export const GOAL_CALORIE_FACTOR: Record<NutritionGoal, number> = {
-  LOSE_WEIGHT: 0.9,
-  GAIN_MUSCLE: 1,
-  GAIN_STRENGTH: 1,
-  MAINTAIN: 1,
-  PERFORMANCE: 1,
-};
+// Regra de meta alinhada à do backend: emagrecimento = TDEE -10% (déficit
+// máximo de 500 kcal/dia); ganho de massa = TDEE +10% (superávit máximo de
+// 300 kcal/dia); demais objetivos = TDEE. A meta nunca fica abaixo do TMB nem
+// acima de TDEE + 300. LIMITAÇÃO: o backend ainda ajusta pelo prazo e pelo
+// peso-alvo; este cálculo local (mock e fallback) não reproduz isso.
+export const LOSE_WEIGHT_RATE = 0.1;
+export const LOSE_WEIGHT_MAX_DEFICIT_KCAL = 500;
+export const GAIN_MUSCLE_RATE = 0.1;
+export const GAIN_MUSCLE_MAX_SURPLUS_KCAL = 300;
+export const MAX_SURPLUS_OVER_TDEE_KCAL = 300;
 
 export function calculateBmr(input: {
   weightKg: number;
@@ -55,8 +55,19 @@ export function calculateTdee(bmr: number, activityLevel: ActivityLevel): number
   return bmr * ACTIVITY_FACTOR[activityLevel];
 }
 
-export function calculateCalorieTarget(tdee: number, goal: NutritionGoal | null): number {
-  return tdee * (goal ? GOAL_CALORIE_FACTOR[goal] : 1);
+export function calculateCalorieTarget(
+  tdee: number,
+  goal: NutritionGoal | null,
+  bmr?: number,
+): number {
+  let target = tdee;
+  if (goal === 'LOSE_WEIGHT') {
+    target = tdee - Math.min(tdee * LOSE_WEIGHT_RATE, LOSE_WEIGHT_MAX_DEFICIT_KCAL);
+  } else if (goal === 'GAIN_MUSCLE') {
+    target = tdee + Math.min(tdee * GAIN_MUSCLE_RATE, GAIN_MUSCLE_MAX_SURPLUS_KCAL);
+  }
+  if (bmr !== undefined) target = Math.max(target, bmr);
+  return Math.min(target, tdee + MAX_SURPLUS_OVER_TDEE_KCAL);
 }
 
 export function ageFromDateOfBirth(dateOfBirth: string, today: Date = new Date()): number {
@@ -94,7 +105,7 @@ export function calculateNutrition(
     ageYears,
     bmrKcalPerDay: Math.round(bmr),
     tdeeKcalPerDay: Math.round(tdee),
-    calorieTargetKcalPerDay: Math.round(calculateCalorieTarget(tdee, goal)),
+    calorieTargetKcalPerDay: Math.round(calculateCalorieTarget(tdee, goal, bmr)),
     calculatedAt: today.toISOString(),
   };
 }

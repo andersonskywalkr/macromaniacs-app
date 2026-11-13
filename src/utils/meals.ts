@@ -100,12 +100,15 @@ export function mealTotals(meal: MealLog): MealTotals {
 
 // "Salvar refeição" só habilita com itens, quantidades válidas e sem envio em
 // andamento.
+// O backend aceita de 1 a 50 itens por refeição.
+export const MAX_MEAL_ITEMS = 50;
+
 export function canSaveMeal(
   items: MealDraftItem[],
   hasInvalidAmount: boolean,
   isSaving: boolean,
 ): boolean {
-  return items.length > 0 && !hasInvalidAmount && !isSaving;
+  return items.length > 0 && items.length <= MAX_MEAL_ITEMS && !hasInvalidAmount && !isSaving;
 }
 
 export function filterMealsByType(meals: MealLog[], filter: MealTypeFilter): MealLog[] {

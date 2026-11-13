@@ -1,4 +1,5 @@
 import { INITIAL_ONBOARDING_DATA } from '@/screens/onboarding/types';
+import { getDeviceTimezone } from '@/utils/today';
 import {
   buildOnboardingRequest,
   toIsoDate,
@@ -48,7 +49,15 @@ describe('onboarding validation', () => {
       targetWeightKg: 62,
       targetDate: '2027-03-01',
       dietaryRestrictions: 'Sem lactose',
+      timezone: getDeviceTimezone(),
     });
+  });
+
+  it('sends the device timezone and the API value for "prefer not to say"', () => {
+    const request = buildOnboardingRequest({ ...validData, sex: 'PREFER_NOT_TO_SAY' }, today);
+    expect(request.biologicalSex).toBe('NOT_INFORMED');
+    expect(typeof request.timezone).toBe('string');
+    expect(request.timezone).toBeTruthy();
   });
 
   it('rejects invalid body measurements', () => {

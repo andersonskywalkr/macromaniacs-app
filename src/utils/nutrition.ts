@@ -2,6 +2,9 @@ import type { FoodItem } from '@/api/types/domain';
 
 export const DEFAULT_AMOUNT_GRAMS = 100;
 export const MAX_AMOUNT_GRAMS = 5000;
+// O backend só busca alimentos com 2 a 100 caracteres.
+export const MIN_FOOD_QUERY_LENGTH = 2;
+export const MAX_FOOD_QUERY_LENGTH = 100;
 
 export interface ScaledNutrition {
   calories: number;

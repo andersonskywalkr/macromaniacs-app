@@ -4,6 +4,7 @@ import { createMeal } from '@/api/meals';
 import { getPendingMeals, removePendingMeal } from './outbox';
 import { progressTodayKey } from '@/queries/useProgressToday';
 import { gamificationStatsKey } from '@/queries/useGamificationStats';
+import { mealsTodayKey } from '@/queries/useMealsToday';
 
 /**
  * Reenvia a fila offline em ordem quando o NetInfo detecta reconexão
@@ -34,5 +35,6 @@ async function flushOutbox(queryClient: QueryClient): Promise<void> {
   if (pending.length > 0) {
     queryClient.invalidateQueries({ queryKey: progressTodayKey });
     queryClient.invalidateQueries({ queryKey: gamificationStatsKey });
+    queryClient.invalidateQueries({ queryKey: mealsTodayKey });
   }
 }
