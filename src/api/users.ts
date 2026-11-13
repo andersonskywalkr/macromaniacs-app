@@ -18,6 +18,8 @@ export type UpdateMyProfileRequest = {
   targetWeightKg?: number | null;
   targetDate?: string | null;
   dietaryRestrictions?: string | null;
+  // Fuso do aparelho (nome IANA); define o "hoje" do backend.
+  timezone?: string;
 };
 
 function delay<T>(value: T): Promise<T> {

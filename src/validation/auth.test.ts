@@ -34,7 +34,7 @@ describe('auth form validation', () => {
   it('rejects an invalid username', () => {
     expect(
       validateRegister({ ...validRegister, username: 'invalid user' }),
-    ).toContain('3 a 30');
+    ).toContain('3 a 50');
   });
 
   it('rejects mismatched passwords', () => {

@@ -1,6 +1,7 @@
 import type { OnboardingData } from '@/screens/onboarding/types';
 import type { UpdateMyProfileRequest } from '@/api/users';
 import { toApiSex } from '@/api/sexMapping';
+import { getDeviceTimezone } from '@/utils/today';
 
 export function toIsoDate(value: string): string | null {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
@@ -48,8 +49,8 @@ export function validateOnboardingStep(
     ) {
       return 'Preencha todos os campos para continuar.';
     }
-    if (data.displayName.trim().length > 80) {
-      return 'O nome deve ter no máximo 80 caracteres.';
+    if (data.displayName.trim().length > 100) {
+      return 'O nome deve ter no máximo 100 caracteres.';
     }
     const birthDate = toIsoDate(data.birthDate);
     if (!birthDate) return 'Informe uma data de nascimento válida.';
@@ -133,5 +134,7 @@ export function buildOnboardingRequest(
       : null,
     targetDate: data.targetDate.trim() ? toIsoDate(data.targetDate) : null,
     dietaryRestrictions: data.dietaryRestrictions.trim() || null,
+    // Enviado no Onboarding e no Editar perfil (mesmo construtor).
+    timezone: getDeviceTimezone(),
   };
 }

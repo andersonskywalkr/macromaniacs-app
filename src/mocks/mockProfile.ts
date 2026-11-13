@@ -47,6 +47,7 @@ export function updateMockProfile(patch: UpdateMyProfileRequest): UserProfile {
   if (patch.targetWeightKg !== undefined) next.targetWeightKg = patch.targetWeightKg;
   if (patch.targetDate !== undefined) next.targetDate = patch.targetDate;
   if (patch.dietaryRestrictions !== undefined) next.dietaryRestrictions = patch.dietaryRestrictions;
+  if (patch.timezone !== undefined) next.timezone = patch.timezone;
 
   if (patch.heightCm !== undefined || patch.currentWeightKg !== undefined) {
     measurementCounter += 1;

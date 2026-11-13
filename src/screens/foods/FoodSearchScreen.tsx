@@ -21,7 +21,7 @@ import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { TextField } from '@/components/TextField';
 import { useFoodsSearch } from '@/queries/useFoodsSearch';
-import { formatDecimal } from '@/utils/nutrition';
+import { formatDecimal, MAX_FOOD_QUERY_LENGTH, MIN_FOOD_QUERY_LENGTH } from '@/utils/nutrition';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'FoodSearch'>;
 
@@ -75,10 +75,22 @@ export function FoodSearchScreen({ navigation }: Props) {
     navigation.navigate('FoodConfirm', { food: foods[0] });
   }, [foods, searchId, navigation]);
 
+  const [queryError, setQueryError] = useState<string | null>(null);
   const canSearch = text.trim().length > 0;
+
+  function handleChangeText(value: string) {
+    setText(value);
+    setQueryError(null);
+  }
 
   function handleSearch() {
     if (!canSearch) return;
+    // O backend só aceita busca com 2 ou mais letras: avisa antes de chamar a API.
+    if (text.trim().length < MIN_FOOD_QUERY_LENGTH) {
+      setQueryError(`Digite pelo menos ${MIN_FOOD_QUERY_LENGTH} letras para buscar.`);
+      return;
+    }
+    setQueryError(null);
     setSubmitted(text.trim());
     setSearchId((id) => id + 1);
   }
@@ -157,7 +169,8 @@ export function FoodSearchScreen({ navigation }: Props) {
             accessibilityLabel="Nome ou marca do alimento"
             placeholder="Nome ou marca do alimento"
             value={text}
-            onChangeText={setText}
+            onChangeText={handleChangeText}
+            maxLength={MAX_FOOD_QUERY_LENGTH}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
             autoCapitalize="none"
@@ -165,6 +178,12 @@ export function FoodSearchScreen({ navigation }: Props) {
           />
           <Button label="Buscar" onPress={handleSearch} disabled={!canSearch} />
         </View>
+
+        {queryError && (
+          <Text accessibilityRole="alert" style={[styles.queryError, { color: tokens.danger }]}>
+            {queryError}
+          </Text>
+        )}
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {renderBody()}
@@ -199,6 +218,13 @@ const styles = StyleSheet.create({
   macro: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
   macroRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   manualButton: { marginTop: spacing.lg },
+  queryError: {
+    fontFamily: 'PlusJakartaSans',
+    fontSize: 13,
+    fontWeight: '600',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
   results: { gap: spacing.sm + spacing.xs },
   resultsTitle: {
     fontFamily: 'PlusJakartaSans',

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { searchFoods } from '@/api/foods';
+import { MIN_FOOD_QUERY_LENGTH } from '@/utils/nutrition';
 
 /**
  * Busca de alimentos. IMPORTANTE: `enabled` deve ser controlado pela tela
@@ -10,6 +11,6 @@ export function useFoodsSearch(query: string, enabled: boolean) {
   return useQuery({
     queryKey: ['foods', 'search', query],
     queryFn: () => searchFoods(query),
-    enabled: enabled && query.trim().length > 0,
+    enabled: enabled && query.trim().length >= MIN_FOOD_QUERY_LENGTH,
   });
 }

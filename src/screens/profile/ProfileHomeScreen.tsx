@@ -16,10 +16,12 @@ import { useAuthStore } from '@/store/authStore';
 import { useThemeStore, type ThemePreference } from '@/store/themeStore';
 import { useGamificationStats } from '@/queries/useGamificationStats';
 import { useProgressToday } from '@/queries/useProgressToday';
-import { GOAL_OPTIONS } from '@/screens/onboarding/types';
 import { summarizeCalories } from '@/utils/dailyProgress';
 import { formatDecimal } from '@/utils/nutrition';
 import { buildStreakWeek } from '@/utils/streak';
+import { resolveCalorieGoal } from '@/utils/nutritionFallback';
+import { resolveTimezone, todayAsLocalDate } from '@/utils/today';
+import { GOAL_LABELS } from '@/screens/onboarding/types';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileHome'>;
 
@@ -71,8 +73,8 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
   }
 
   const name = user.displayName ?? user.username;
-  const calorieGoal = user.nutrition?.calorieTargetKcalPerDay ?? progress.data?.calories.goal ?? null;
-  const goalLabel = GOAL_OPTIONS.find((option) => option.value === user.goal)?.label;
+  const calorieGoal = resolveCalorieGoal(user) ?? progress.data?.calories.goal ?? null;
+  const goalLabel = user.goal ? GOAL_LABELS[user.goal] : undefined;
   const currentWeight = user.currentMeasurement?.weightKg;
 
   function renderToday() {
@@ -133,7 +135,7 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
     }
 
     const { points, currentStreak, bestStreak } = gamification.data;
-    const week = buildStreakWeek(currentStreak);
+    const week = buildStreakWeek(currentStreak, todayAsLocalDate(resolveTimezone(user?.timezone)));
     return (
       <>
         <View style={styles.statsRow}>

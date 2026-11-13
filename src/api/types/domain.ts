@@ -6,7 +6,10 @@
  * domínio "amigáveis" que a UI consome, mapeados a partir daqueles.
  */
 
-export type FoodSource = 'TBCA' | 'OPEN_FOOD_FACTS' | 'USDA' | 'MANUAL';
+// Valores conhecidos de origem do alimento. O backend pode devolver outros: o
+// valor é preservado como veio (por isso o `string & {}`, que mantém o
+// autocompletar dos conhecidos sem descartar os demais).
+export type FoodSource = 'TBCA' | 'OPEN_FOOD_FACTS' | 'USDA' | 'MANUAL' | (string & Record<never, never>);
 
 // Formato de normalização — seção 32 do documento
 export interface FoodItem {
@@ -63,7 +66,8 @@ export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
 
 export interface MealLog {
   id: string;
-  userId: string;
+  // O backend real não devolve o dono da refeição (a lista já é do usuário).
+  userId?: string;
   plannedMealId: string | null;
   // Tipo da refeição; null quando o nome vindo do backend não segue o padrão
   // conhecido (refeições antigas ou nomes livres).
@@ -79,7 +83,26 @@ export interface GroupSummary {
   id: string;
   name: string;
   inviteCode: string;
-  memberCount: number;
+  // O backend real não informa a quantidade de membros.
+  memberCount?: number;
+  description?: string | null;
+  isPrivate?: boolean;
+  // Papel do usuário no grupo (ex.: dono ou membro), como vem do backend.
+  role?: string;
+}
+
+// Item do feed do grupo (sem tela ainda).
+export interface GroupFeedItem {
+  id: string;
+  groupId: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  mealLogId: string | null;
+  content: string | null;
+  reactions: unknown;
+  viewerReaction: string | null;
+  createdAt: string;
 }
 
 export interface RankingEntry {
@@ -98,6 +121,7 @@ export type NutritionGoal =
   | 'GAIN_MUSCLE'
   | 'GAIN_STRENGTH'
   | 'MAINTAIN'
+  | 'RECOMPOSITION' // existe no backend; não é opção do Onboarding
   | 'PERFORMANCE';
 export type ActivityLevel =
   | 'SEDENTARY'
@@ -138,6 +162,8 @@ export interface UserProfile {
   currentMeasurement: BodyMeasurement | null;
   measurements: BodyMeasurement[];
   nutrition: NutritionMetrics | null;
+  // Fuso do usuário (nome IANA, ex.: America/Sao_Paulo) — define o "hoje" do backend.
+  timezone?: string | null;
 }
 
 export interface CurrentUser {
@@ -161,4 +187,5 @@ export interface ApiErrorShape {
   message: string | string[];
   timestamp: string;
   path: string;
+  correlationId?: string;
 }

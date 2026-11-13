@@ -127,11 +127,13 @@ describe('EditProfileScreen', () => {
     await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
     expect(mockMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        biologicalSex: 'PREFER_NOT_TO_SAY',
+        biologicalSex: 'NOT_INFORMED',
         currentWeightKg: 80,
         heightCm: 178,
         dateOfBirth: '1998-04-12',
         displayName: 'Anderson',
+        // o fuso do aparelho vai junto, como no Onboarding
+        timezone: expect.any(String),
       }),
     );
     await waitFor(() => expect(mockSetUser).toHaveBeenCalledWith(updated));

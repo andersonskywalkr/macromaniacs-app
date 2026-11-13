@@ -32,10 +32,25 @@ describe('TDEE and calorie target', () => {
     expect(calculateTdee(1000, 'VERY_INTENSE')).toBe(1900);
   });
 
-  it('starts from the TDEE; only weight loss has an adjustment in the mock', () => {
+  it('follows the backend rule: -10% (max 500) to lose, +10% (max 300) to gain, TDEE otherwise', () => {
     expect(calculateCalorieTarget(2000, 'MAINTAIN')).toBe(2000);
     expect(calculateCalorieTarget(2000, null)).toBe(2000);
+    expect(calculateCalorieTarget(2000, 'RECOMPOSITION')).toBe(2000);
+    expect(calculateCalorieTarget(2000, 'PERFORMANCE')).toBe(2000);
+    expect(calculateCalorieTarget(2000, 'GAIN_STRENGTH')).toBe(2000);
     expect(calculateCalorieTarget(2000, 'LOSE_WEIGHT')).toBe(1800);
+    expect(calculateCalorieTarget(2000, 'GAIN_MUSCLE')).toBe(2200);
+  });
+
+  it('caps the deficit at 500 kcal and the surplus at 300 kcal', () => {
+    expect(calculateCalorieTarget(6000, 'LOSE_WEIGHT')).toBe(5500);
+    expect(calculateCalorieTarget(6000, 'GAIN_MUSCLE')).toBe(6300);
+  });
+
+  it('never goes below the BMR or above TDEE + 300', () => {
+    expect(calculateCalorieTarget(2000, 'LOSE_WEIGHT', 1900)).toBe(1900);
+    expect(calculateCalorieTarget(2000, 'LOSE_WEIGHT', 1500)).toBe(1800);
+    expect(calculateCalorieTarget(2000, 'MAINTAIN', 2600)).toBe(2300);
   });
 });
 

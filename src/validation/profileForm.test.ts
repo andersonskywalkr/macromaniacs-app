@@ -56,7 +56,7 @@ describe('profileToFormData', () => {
       dateOfBirth: '1998-04-12',
       heightCm: 178,
       currentWeightKg: 82.5,
-      biologicalSex: 'PREFER_NOT_TO_SAY',
+      biologicalSex: 'NOT_INFORMED',
     });
     expect(validateOnboarding({ ...form, weightKg: '10' }, today)).toMatch(/peso/);
     expect(validateOnboarding({ ...form, sex: null }, today)).toMatch(/Selecione/);
