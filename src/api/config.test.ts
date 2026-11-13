@@ -22,3 +22,30 @@ describe('parseMaintenanceTabs', () => {
     expect([...parseMaintenanceTabs('profile,meals,foo')]).toEqual(['meals']);
   });
 });
+
+describe('MAINTENANCE_TABS with the variable absent (EAS builds do not define it)', () => {
+  const original = process.env.EXPO_PUBLIC_MAINTENANCE_TABS;
+
+  afterEach(() => {
+    if (original === undefined) delete process.env.EXPO_PUBLIC_MAINTENANCE_TABS;
+    else process.env.EXPO_PUBLIC_MAINTENANCE_TABS = original;
+  });
+
+  it('leaves no tab in maintenance when the variable is not defined', () => {
+    delete process.env.EXPO_PUBLIC_MAINTENANCE_TABS;
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { MAINTENANCE_TABS } = require('./config') as typeof import('./config');
+      expect(MAINTENANCE_TABS.size).toBe(0);
+    });
+  });
+
+  it('still reads the variable when it is defined (local .env)', () => {
+    process.env.EXPO_PUBLIC_MAINTENANCE_TABS = 'group';
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { MAINTENANCE_TABS } = require('./config') as typeof import('./config');
+      expect([...MAINTENANCE_TABS]).toEqual(['group']);
+    });
+  });
+});

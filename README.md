@@ -61,7 +61,7 @@ O app lê estas variáveis do `.env`. Elas começam com `EXPO_PUBLIC_` porque o 
 | `EXPO_PUBLIC_USE_MOCK` | `true` = dados de demonstração (alimentos, refeições, progresso, grupos). `false` = backend real. |
 | `EXPO_PUBLIC_USE_AUTH_MOCK` | `true` = login, cadastro e perfil de demonstração (qualquer usuário e senha entram). `false` = login real. Se não for definida, acompanha `EXPO_PUBLIC_USE_MOCK`. |
 | `EXPO_PUBLIC_API_URL` | Endereço do backend, **sem `/v1` no final** (o app já põe `/v1` em todas as rotas). Obrigatória quando alguma das duas chaves acima for `false`; sem ela o app não abre. |
-| `EXPO_PUBLIC_MAINTENANCE_TABS` | Abas que mostram a tela "em construção" no lugar da tela real (`home`, `meals`, `group`, separadas por vírgula). **Hoje fica vazia**: nenhuma aba em manutenção. A aba Perfil nunca entra aqui. |
+| `EXPO_PUBLIC_MAINTENANCE_TABS` | Abas que mostram a tela "em construção" no lugar da tela real (`home`, `meals`, `group`, separadas por vírgula). **Hoje nenhuma aba fica em manutenção**: vazia ou não definida dá o mesmo resultado. Nos builds do EAS (APK) ela simplesmente **não é definida** (o EAS não aceita valor vazio em `env`); no desenvolvimento local vale a linha do `.env`. A aba Perfil nunca entra aqui. |
 | `EXPO_PUBLIC_LANDING_PAGE_URL` | Página aberta pelo botão da tela "em construção". |
 
 Combinações mais usadas:

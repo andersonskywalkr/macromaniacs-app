@@ -13,8 +13,7 @@
         "EXPO_PUBLIC_USE_MOCK": "true",
         "EXPO_PUBLIC_USE_AUTH_MOCK": "false",
         "EXPO_PUBLIC_API_URL": "https://macromaniacs-backend-production.up.railway.app",
-        "EXPO_PUBLIC_LANDING_PAGE_URL": "https://macromaniacs-landingpage.vercel.app/",
-        "EXPO_PUBLIC_MAINTENANCE_TABS": ""
+        "EXPO_PUBLIC_LANDING_PAGE_URL": "https://macromaniacs-landingpage.vercel.app/"
       }
     },
     "preview-mock": {
@@ -25,8 +24,7 @@
       "env": {
         "EXPO_PUBLIC_USE_MOCK": "true",
         "EXPO_PUBLIC_USE_AUTH_MOCK": "true",
-        "EXPO_PUBLIC_LANDING_PAGE_URL": "https://macromaniacs-landingpage.vercel.app/",
-        "EXPO_PUBLIC_MAINTENANCE_TABS": ""
+        "EXPO_PUBLIC_LANDING_PAGE_URL": "https://macromaniacs-landingpage.vercel.app/"
       }
     },
     "preview-real": {
@@ -38,8 +36,7 @@
         "EXPO_PUBLIC_USE_MOCK": "false",
         "EXPO_PUBLIC_USE_AUTH_MOCK": "false",
         "EXPO_PUBLIC_API_URL": "https://COLOQUE-AQUI-A-URL-DO-BACKEND",
-        "EXPO_PUBLIC_LANDING_PAGE_URL": "https://macromaniacs-landingpage.vercel.app/",
-        "EXPO_PUBLIC_MAINTENANCE_TABS": ""
+        "EXPO_PUBLIC_LANDING_PAGE_URL": "https://macromaniacs-landingpage.vercel.app/"
       }
     },
     "production": {
