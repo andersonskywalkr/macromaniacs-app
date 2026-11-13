@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  Alert,
+  Keyboard,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -20,9 +19,15 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { TextField } from '@/components/TextField';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useFoodSuggestions } from '@/queries/useFoodSuggestions';
 import { useFoodsSearch } from '@/queries/useFoodsSearch';
+import { isSuggestionQuery } from '@/utils/foodSuggestions';
+import { SearchHistoryList, SuggestionsList } from './SearchSuggestionsPanel';
 import { formatDecimal, MAX_FOOD_QUERY_LENGTH, MIN_FOOD_QUERY_LENGTH } from '@/utils/nutrition';
 
+import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<MealsStackParamList, 'FoodSearch'>;
 
 function FoodResultRow({ food, onPress }: { food: FoodItem; onPress: () => void }) {
@@ -67,6 +72,12 @@ export function FoodSearchScreen({ navigation }: Props) {
   const search = useFoodsSearch(submitted, searchId > 0);
   const foods = search.data;
 
+  // Sugestões enquanto digita e histórico de busca (só neste aparelho).
+  const [focused, setFocused] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const suggestions = useFoodSuggestions(text);
+  const history = useSearchHistory();
+
   // Resultado único vai direto para a confirmação (uma vez por busca).
   useEffect(() => {
     if (searchId === 0 || foods?.length !== 1) return;
@@ -81,19 +92,52 @@ export function FoodSearchScreen({ navigation }: Props) {
   function handleChangeText(value: string) {
     setText(value);
     setQueryError(null);
+    setPanelOpen(true);
   }
 
-  function handleSearch() {
-    if (!canSearch) return;
+  // Busca completa (botão, lupa/teclado, "Buscar por..." e histórico).
+  function runFullSearch(term: string) {
+    const clean = term.trim();
     // O backend só aceita busca com 2 ou mais letras: avisa antes de chamar a API.
-    if (text.trim().length < MIN_FOOD_QUERY_LENGTH) {
+    if (clean.length < MIN_FOOD_QUERY_LENGTH) {
       setQueryError(`Digite pelo menos ${MIN_FOOD_QUERY_LENGTH} letras para buscar.`);
       return;
     }
     setQueryError(null);
-    setSubmitted(text.trim());
+    setPanelOpen(false);
+    Keyboard.dismiss();
+    void history.add(clean);
+    setSubmitted(clean);
     setSearchId((id) => id + 1);
   }
+
+  function handleSearch() {
+    if (!canSearch) return;
+    runFullSearch(text);
+  }
+
+  function handlePickSuggestion(food: FoodItem) {
+    // Abre a confirmação direto, com o alimento da sugestão (sem nova chamada).
+    setPanelOpen(false);
+    Keyboard.dismiss();
+    void history.add(food.name);
+    navigation.navigate('FoodConfirm', { food });
+  }
+
+  function handlePickHistory(term: string) {
+    setText(term);
+    runFullSearch(term);
+  }
+
+  function handleClearHistory() {
+    Alert.alert('Limpar histórico?', 'As buscas recentes serão apagadas deste aparelho.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Limpar', style: 'destructive', onPress: () => void history.clear() },
+    ]);
+  }
+
+  const showHistory = focused && text.trim() === '' && history.items.length > 0;
+  const showSuggestions = panelOpen && isSuggestionQuery(text);
 
   function goToManual() {
     navigation.navigate('FoodManual');
@@ -158,7 +202,7 @@ export function FoodSearchScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
           <Text style={[styles.title, { color: tokens.text }]}>Buscar alimento</Text>
@@ -170,6 +214,11 @@ export function FoodSearchScreen({ navigation }: Props) {
             placeholder="Nome ou marca do alimento"
             value={text}
             onChangeText={handleChangeText}
+            onFocus={() => {
+              setFocused(true);
+              setPanelOpen(true);
+            }}
+            onBlur={() => setFocused(false)}
             maxLength={MAX_FOOD_QUERY_LENGTH}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
@@ -185,8 +234,28 @@ export function FoodSearchScreen({ navigation }: Props) {
           </Text>
         )}
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          {renderBody()}
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {showHistory && (
+            <SearchHistoryList
+              items={history.items}
+              onPick={handlePickHistory}
+              onRemove={(term) => void history.remove(term)}
+              onClear={handleClearHistory}
+            />
+          )}
+          {!showHistory && showSuggestions && (
+            <SuggestionsList
+              text={text}
+              suggestions={suggestions.suggestions}
+              isLoading={suggestions.isLoading}
+              isSettled={suggestions.isSettled}
+              onSearchFull={() => runFullSearch(text)}
+              onPick={handlePickSuggestion}
+            />
+          )}
+          {/* Resultado antigo some enquanto as sugestões estão na tela; o estado
+              inicial ("Busque um alimento") continua visível. */}
+          {!showHistory && !(showSuggestions && searchId > 0) && renderBody()}
 
           <Button
             label="Cadastrar alimento manualmente"
@@ -194,8 +263,8 @@ export function FoodSearchScreen({ navigation }: Props) {
             onPress={goToManual}
             style={styles.manualButton}
           />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -205,8 +274,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
   flex: { flex: 1 },
-  foodDetail: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
-  foodName: { fontFamily: 'PlusJakartaSans', fontSize: 15.5, fontWeight: '800' },
+  foodDetail: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
+  foodName: { fontFamily: fontFamily(800), fontSize: 15.5 },
   fullWidth: { alignSelf: 'stretch' },
   header: {
     alignItems: 'center',
@@ -215,21 +284,19 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  macro: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
+  macro: { fontFamily: fontFamily(800), fontSize: 13 },
   macroRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   manualButton: { marginTop: spacing.lg },
   queryError: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 13,
-    fontWeight: '600',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
   },
   results: { gap: spacing.sm + spacing.xs },
   resultsTitle: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 13,
-    fontWeight: '800',
     marginBottom: spacing.xs,
   },
   searchRow: {
@@ -239,5 +306,5 @@ const styles = StyleSheet.create({
     minHeight: touchTarget.minSize,
     paddingHorizontal: spacing.lg,
   },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
 });

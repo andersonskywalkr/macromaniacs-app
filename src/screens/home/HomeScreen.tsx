@@ -14,14 +14,17 @@ import { InlineRetry } from '@/components/InlineRetry';
 import { BellIcon, PlusIcon, ChevronRightIcon, TrendingUpIcon, FireIcon, MedalIcon } from '@/components/icons';
 import { useGamificationStats } from '@/queries/useGamificationStats';
 import { useProgressToday } from '@/queries/useProgressToday';
+import { usePerformance } from '@/queries/useProgressHistory';
 import { useMyGroups } from '@/queries/useMyGroups';
 import { useGroupRanking } from '@/queries/useGroupRanking';
 import { formatFriendlyDate } from '@/utils/formatDate';
 import { resolveCalorieGoal } from '@/utils/nutritionFallback';
+import { goalHitLabel, summarizePerformance } from '@/utils/performance';
 import { resolveTimezone, todayAsLocalDate } from '@/utils/today';
 import { resolveMacroGoals, summarizeCalories } from '@/utils/dailyProgress';
 import { useAuthStore } from '@/store/authStore';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = BottomTabScreenProps<AppTabsParamList, 'HomeTab'>;
 
 // Reconstruída a partir de "Home Minimalista.dc.html" do protótipo.
@@ -34,6 +37,7 @@ export function HomeScreen({ navigation }: Props) {
 
   const gamification = useGamificationStats();
   const progress = useProgressToday();
+  const weekPerformance = usePerformance(7);
   const currentUser = useAuthStore((state) => state.user);
   const groups = useMyGroups();
   const primaryGroup = groups.data?.[0];
@@ -178,6 +182,17 @@ export function HomeScreen({ navigation }: Props) {
     if (!primaryGroup) return null;
 
     return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ranking do grupo ${primaryGroup.name}`}
+        accessibilityHint="Abre o perfil do grupo"
+        onPress={() =>
+          navigation.navigate('GroupTab', {
+            screen: 'GroupProfile',
+            params: { groupId: primaryGroup.id, origin: 'home' },
+          })
+        }
+      >
       <Card style={styles.rankingCard}>
         <View style={styles.rankingHeader}>
           <Text style={[styles.rankingTitle, { color: tokens.text }]}>Ranking do grupo</Text>
@@ -215,6 +230,7 @@ export function HomeScreen({ navigation }: Props) {
           </View>
         )}
       </Card>
+      </Pressable>
     );
   }
 
@@ -275,18 +291,22 @@ export function HomeScreen({ navigation }: Props) {
 
         <Pressable
           style={styles.performanceRow}
-          onPress={() => navigation.navigate('ProfileTab', { screen: 'History' })}
+          onPress={() =>
+            navigation.navigate('ProfileTab', { screen: 'History', params: { origin: 'home' } })
+          }
           accessibilityRole="button"
-          accessibilityLabel="Desempenho"
+          accessibilityLabel="Desempenho semanal"
           accessibilityHint="Abre o histórico de desempenho"
         >
           <View style={[styles.performanceIcon, { backgroundColor: tokens.card }]}>
             <TrendingUpIcon size={20} color={tokens.primary} />
           </View>
           <View style={styles.performanceTextWrap}>
-            <Text style={[styles.performanceTitle, { color: tokens.text }]}>Desempenho</Text>
+            <Text style={[styles.performanceTitle, { color: tokens.text }]}>Desempenho semanal</Text>
             <Text style={[styles.performanceSubtitle, { color: tokens.textSecondary }]}>
-              Ver seu histórico de metas batidas
+              {weekPerformance.data
+                ? goalHitLabel(summarizePerformance(weekPerformance.data))
+                : 'Ver seu histórico de metas batidas'}
             </Text>
           </View>
           <ChevronRightIcon size={8} color={tokens.textSecondary} />
@@ -301,9 +321,9 @@ export function HomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   centerFill: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   container: { flex: 1 },
-  dateText: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
+  dateText: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
 
-  greeting: { fontFamily: 'PlusJakartaSans', fontSize: 19, fontWeight: '800' },
+  greeting: { fontFamily: fontFamily(800), fontSize: 19 },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -319,9 +339,8 @@ const styles = StyleSheet.create({
   },
   macros: { gap: spacing.md, marginTop: spacing.lg },
   overText: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 13,
-    fontWeight: '800',
     marginTop: spacing.md,
     textAlign: 'center',
   },
@@ -338,9 +357,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     minHeight: 44,
   },
-  performanceSubtitle: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
+  performanceSubtitle: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
   performanceTextWrap: { flex: 1, minWidth: 0 },
-  performanceTitle: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '700' },
+  performanceTitle: { fontFamily: fontFamily(700), fontSize: 15 },
   profilePill: {
     alignItems: 'center',
     borderRadius: 999,
@@ -355,16 +374,16 @@ const styles = StyleSheet.create({
 
   profileTextWrap: { flex: 1, minWidth: 0 },
   rankingCard: { padding: spacing.lg },
-  rankingGroupName: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '700' },
+  rankingGroupName: { fontFamily: fontFamily(700), fontSize: 12.5 },
   rankingHeader: { alignItems: 'baseline', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
   rankingList: { gap: spacing.sm + spacing.xs },
-  rankingName: { flex: 1, fontFamily: 'PlusJakartaSans', fontSize: 14, fontWeight: '700', minWidth: 0 },
-  rankingPoints: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
+  rankingName: { flex: 1, fontFamily: fontFamily(700), fontSize: 14, minWidth: 0 },
+  rankingPoints: { fontFamily: fontFamily(800), fontSize: 13 },
   rankingPosition: { alignItems: 'center', justifyContent: 'center', width: 20 },
 
-  rankingPositionText: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '700' },
+  rankingPositionText: { fontFamily: fontFamily(700), fontSize: 13 },
   rankingRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm + spacing.xs },
-  rankingTitle: { fontFamily: 'PlusJakartaSans', fontSize: 16, fontWeight: '800' },
+  rankingTitle: { fontFamily: fontFamily(800), fontSize: 16 },
   ringCenter: {
     alignItems: 'center',
     bottom: 0,
@@ -375,8 +394,8 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
-  ringLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 4 },
-  ringValue: { fontFamily: 'PlusJakartaSans', fontSize: 40, fontWeight: '800', lineHeight: 44 },
+  ringLabel: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 4 },
+  ringValue: { fontFamily: fontFamily(800), fontSize: 40, lineHeight: 44 },
   ringWrap: {
     alignItems: 'center',
     height: 152,
@@ -396,7 +415,7 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: spacing.sm,
   },
-  streakText: { fontFamily: 'PlusJakartaSans', fontSize: 14, fontWeight: '800' },
+  streakText: { fontFamily: fontFamily(800), fontSize: 14 },
 
   // Padding horizontal menor: as colunas laterais ficam mais largas e o
   // texto "consumidas" cabe inteiro.
@@ -407,8 +426,8 @@ const styles = StyleSheet.create({
   // largura de tela — o protótipo original tinha 84px fixos, mas isso
   // só cabia na artboard de 440px dele, estourando em celulares reais.
   summarySide: { alignItems: 'center', flex: 1 },
-  summarySideLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  summarySideLabel: { fontFamily: fontFamily(600), fontSize: 12, marginTop: 2 },
   summarySideLeft: { marginLeft: -spacing.sm },
   summarySideRight: { marginRight: -spacing.sm },
-  summarySideValue: { fontFamily: 'PlusJakartaSans', fontSize: 19, fontWeight: '800' },
+  summarySideValue: { fontFamily: fontFamily(800), fontSize: 19 },
 });

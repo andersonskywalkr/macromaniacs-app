@@ -1,4 +1,5 @@
 import type { GroupFeedItem, GroupSummary, RankingEntry } from '../types/domain';
+import { buildInitials } from '@/utils/ranking';
 import { toNumber } from './common';
 
 // GET /v1/groups: lista simples; não tem memberCount.
@@ -47,17 +48,8 @@ export function fromApiGroup(group: ApiGroup): GroupSummary {
   };
 }
 
-// Iniciais: 2+ palavras -> primeira letra das duas primeiras ("Maria Pereira" =
-// "MP"); 1 palavra -> as duas primeiras letras ("Anderson" = "AN"). Sem nome,
-// usa o username.
-export function buildInitials(displayName?: string | null, username?: string | null): string {
-  const source = displayName?.trim() || username?.trim() || '';
-  const words = source.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '?';
-  const letters =
-    words.length >= 2 ? `${words[0][0]}${words[1][0]}` : words[0].slice(0, 2);
-  return letters.toUpperCase();
-}
+// Iniciais: implementação única em utils/ranking.ts (também usada pelo mock).
+export { buildInitials } from '@/utils/ranking';
 
 export function fromApiRankingEntry(entry: ApiRankingEntry): RankingEntry {
   return {

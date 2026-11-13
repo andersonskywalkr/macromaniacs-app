@@ -27,6 +27,17 @@ export function validateLogin(form: LoginForm): string | null {
   return null;
 }
 
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+// E-mail da recuperação de senha.
+export function validateForgotPassword(email: string): string | null {
+  if (!email.trim()) return 'Informe o seu e-mail.';
+  if (!isValidEmail(email)) return 'Informe um e-mail válido.';
+  return null;
+}
+
 export function validateRegister(form: RegisterForm): string | null {
   if (
     !form.email.trim() ||
@@ -37,7 +48,7 @@ export function validateRegister(form: RegisterForm): string | null {
     return 'Preencha todos os campos.';
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+  if (!isValidEmail(form.email)) {
     return 'Informe um e-mail válido.';
   }
 

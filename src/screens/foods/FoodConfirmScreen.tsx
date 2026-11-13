@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -26,6 +23,8 @@ import {
   validateAmount,
 } from '@/utils/nutrition';
 
+import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareFooter, KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<MealsStackParamList, 'FoodConfirm'>;
 
 // UC-07 — confirmação do alimento escolhido: quantidade em gramas com
@@ -109,13 +108,13 @@ export function FoodConfirmScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
           <Text style={[styles.title, { color: tokens.text }]}>Confirmar alimento</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={[styles.foodName, { color: tokens.text }]}>{food.name}</Text>
           <Text style={[styles.foodDetail, { color: tokens.textSecondary }]}>
             {food.brand ? `${food.brand} · ` : ''}
@@ -160,37 +159,35 @@ export function FoodConfirmScreen({ navigation, route }: Props) {
               ))}
             </View>
           </Card>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={styles.footer}>
+        <KeyboardAwareFooter style={styles.footer}>
           <Button
             label="Adicionar à refeição"
             onPress={handleAdd}
             disabled={error !== null}
             accessibilityHint="Salva o alimento no rascunho da refeição"
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAwareFooter>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  calories: { fontFamily: 'PlusJakartaSans', fontSize: 40, fontWeight: '800', marginTop: spacing.xs },
-  caloriesUnit: { fontSize: 16, fontWeight: '700' },
+  calories: { fontFamily: fontFamily(800), fontSize: 40, marginTop: spacing.xs },
+  caloriesUnit: { fontFamily: fontFamily(700), fontSize: 16 },
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
-  error: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginTop: spacing.sm },
+  error: { fontFamily: fontFamily(600), fontSize: 13, marginTop: spacing.sm },
   fieldLabel: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
-  flex: { flex: 1 },
-  foodDetail: { fontFamily: 'PlusJakartaSans', fontSize: 13.5, fontWeight: '600', marginTop: spacing.xs },
-  foodName: { fontFamily: 'PlusJakartaSans', fontSize: 24, fontWeight: '800', lineHeight: 30 },
+  foodDetail: { fontFamily: fontFamily(600), fontSize: 13.5, marginTop: spacing.xs },
+  foodName: { fontFamily: fontFamily(800), fontSize: 24, lineHeight: 30 },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   header: {
     alignItems: 'center',
@@ -200,10 +197,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   macroItem: { flex: 1 },
-  macroLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
+  macroLabel: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
   macroRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  macroValue: { fontFamily: 'PlusJakartaSans', fontSize: 18, fontWeight: '800' },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
+  macroValue: { fontFamily: fontFamily(800), fontSize: 18 },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
   totalsCard: { marginTop: spacing.lg, padding: spacing.lg },
-  totalsTitle: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '800', letterSpacing: 0.5 },
+  totalsTitle: { fontFamily: fontFamily(800), fontSize: 12.5, letterSpacing: 0.5 },
 });

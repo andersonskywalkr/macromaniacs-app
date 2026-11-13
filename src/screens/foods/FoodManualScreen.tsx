@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MealsStackParamList } from '@/navigation/types';
@@ -23,6 +16,8 @@ import {
   type ManualFoodForm,
 } from '@/validation/food';
 
+import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareFooter, KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<MealsStackParamList, 'FoodManual'>;
 
 const NUMBER_FIELDS: { key: keyof ManualFoodForm; label: string }[] = [
@@ -68,13 +63,13 @@ export function FoodManualScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
           <Text style={[styles.title, { color: tokens.text }]}>Novo alimento</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={[styles.label, { color: tokens.textSecondary }]}>Nome do alimento</Text>
           <TextField
             accessibilityLabel="Nome do alimento"
@@ -113,17 +108,17 @@ export function FoodManualScreen({ navigation }: Props) {
               {error}
             </Text>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={styles.footer}>
+        <KeyboardAwareFooter style={styles.footer}>
           <Button
             label="Salvar e continuar"
             onPress={handleSave}
             loading={saving}
             accessibilityHint="Cadastra o alimento e abre a confirmação"
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAwareFooter>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -131,8 +126,7 @@ export function FoodManualScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
-  error: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginTop: spacing.md },
-  flex: { flex: 1 },
+  error: { fontFamily: fontFamily(600), fontSize: 13, marginTop: spacing.md },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   header: {
     alignItems: 'center',
@@ -142,18 +136,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
   section: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     letterSpacing: 0.5,
     marginTop: spacing.lg,
   },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
 });

@@ -1,4 +1,4 @@
-import { getMe, login, register } from './auth';
+import { getMe, login, register, requestPasswordReset } from './auth';
 import { httpClient, publicHttpClient } from './client';
 
 jest.mock('./config', () => ({
@@ -61,5 +61,11 @@ describe('auth API', () => {
 
     await expect(getMe()).resolves.toEqual(user);
     expect(httpClient.get).toHaveBeenCalledWith('/v1/auth/me');
+  });
+
+  it('does not call any route for the password reset in real mode', async () => {
+    await expect(requestPasswordReset('ana@exemplo.com')).rejects.toThrow(/não está disponível/);
+    expect(publicHttpClient.post).not.toHaveBeenCalled();
+    expect(httpClient.get).not.toHaveBeenCalled();
   });
 });

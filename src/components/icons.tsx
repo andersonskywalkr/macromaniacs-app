@@ -140,6 +140,21 @@ export function PlusIcon({ size = 14, color = '#000' }: IconProps) {
   );
 }
 
+// Avião de papel (enviar mensagem do chat).
+export function SendIcon({ size = 18, color = '#000' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+      <Path
+        d="M18 2L9 11M18 2l-6 16-3-7-7-3 16-6z"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function ChevronRightIcon({ size = 8, color = '#000' }: IconProps) {
   return (
     <Svg width={size} height={(size * 14) / 8} viewBox="0 0 8 14" fill="none">

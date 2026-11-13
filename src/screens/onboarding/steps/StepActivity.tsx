@@ -4,6 +4,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { ACTIVITY_OPTIONS, type OnboardingData } from '../types';
 
+import { fontFamily } from '@/theme/fonts';
 interface Props {
   data: OnboardingData;
   onChange: (patch: Partial<OnboardingData>) => void;
@@ -54,20 +55,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   criteria: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 12.5,
-    fontWeight: '600',
     marginTop: spacing.xs,
   },
   description: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 13,
-    fontWeight: '600',
     marginTop: 2,
   },
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(700),
     fontSize: 15,
-    fontWeight: '700',
   },
 });

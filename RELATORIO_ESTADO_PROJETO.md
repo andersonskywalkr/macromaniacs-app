@@ -1,5 +1,7 @@
 # Relatório do estado atual do MacroManiacs
 
+> **Nota:** este relatório é um retrato de 13/11/2026, antes das etapas de integração com o backend, telas finais, teclado e atualização para o SDK 58. A tabela de versões (seção 3) foi corrigida; o restante descreve o estado da época. Para o estado atual, veja o `README.md` e o `docs/INTEGRACAO_BACKEND.md`.
+
 Levantamento somente de leitura, feito em 13/11/2026 no computador do desenvolvedor.
 Nenhum arquivo do projeto foi alterado, e nenhum comando de escrita do Git foi usado
 (só `git status`, `git log`, `git diff`, `git show`, `git ls-remote`). Este arquivo é o
@@ -100,15 +102,15 @@ O relatório anterior (20/10/2026, versão enviada no commit `db8a214`) mostrava
 
 | Item | Versão |
 |---|---|
-| Expo SDK | 57 (`expo ~57.0.24`) |
-| React Native / React | 0.86.3 / 19.2.3 |
+| Expo SDK | 58 (`expo ~58.0.25`) |
+| React Native / React | 0.88.1 / 19.3.0 |
 | TypeScript | `~6.0.3` |
 | Navegação | `@react-navigation/native`, `native-stack` e `bottom-tabs` (^7) |
 | Estado | `zustand ^4.5` |
 | Requisições e cache | `axios ^1.7`, `@tanstack/react-query ^5.45` |
-| Armazenamento | `@react-native-async-storage/async-storage 2.2.0`, `expo-secure-store ~57.0.4` |
+| Armazenamento | `@react-native-async-storage/async-storage 2.2.0`, `expo-secure-store ~58.0.3` |
 | Rede | `@react-native-community/netinfo 12.0.1` |
-| Testes | `jest ^29`, `jest-expo ~57`, `@testing-library/react-native ^12` |
+| Testes | `jest ^30`, `jest-expo ~58`, `@testing-library/react-native ^12` |
 
 **Scripts:** `start`, `android`, `ios`, `lint`, `type-check`, `test` (`jest --runInBand`), `generate:types` (usa `$SWAGGER_URL`, mas não há `api.d.ts` gerado) e `prepare` (husky).
 
@@ -264,7 +266,7 @@ npm test
 - **Tudo em mock (padrão do `.env` local atual):** `EXPO_PUBLIC_USE_MOCK=true` e `EXPO_PUBLIC_USE_AUTH_MOCK=true`. Qualquer usuário e senha entram (por exemplo `anderson`).
 - **Autenticação real, resto em mock:** `USE_MOCK=true`, `USE_AUTH_MOCK=false` e `EXPO_PUBLIC_API_URL` preenchida (sem `/v1` no fim).
 - **Tudo real:** `USE_MOCK=false` e `EXPO_PUBLIC_API_URL` preenchida. Hoje isso **não funciona de ponta a ponta** (ver G).
-- Depois de mudar o `.env`, reinicie com `npx expo start -c`. No celular, use o Expo Go na mesma versão do SDK 57.
+- Depois de mudar o `.env`, reinicie com `npx expo start -c`. No celular, use o Expo Go na mesma versão do SDK 58.
 - Para ver Grupo como tela real, deixe `EXPO_PUBLIC_MAINTENANCE_TABS=` (vazio); com a variável ausente, vale `group`.
 
 ---

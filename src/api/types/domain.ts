@@ -42,6 +42,19 @@ export interface ProgressToday {
   fat: MacroGoal;
 }
 
+// Um dia do histórico de desempenho (GET /v1/progress/history).
+export interface DailyProgressEntry {
+  date: string; // AAAA-MM-DD
+  calories: number;
+  protein: number;
+  carbohydrates: number;
+  fat: number;
+  fiber: number;
+  mealCount: number;
+  // Meta de calorias do dia; null quando o backend não calcula.
+  targetCalories: number | null;
+}
+
 export interface GamificationStats {
   points: number;
   currentStreak: number;
@@ -111,6 +124,8 @@ export interface RankingEntry {
   initials: string;
   displayName: string;
   points: number;
+  // Sequência de dias do membro. Só existe no mock: o backend real não devolve.
+  streak?: number;
 }
 
 // O terceiro valor cobre quem prefere não informar (campo biologicalSex da

@@ -1,56 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import * as Font from 'expo-font';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { FONT_FILES, FONT_LOAD_TIMEOUT_MS } from '@/theme/fonts';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { startOfflineSync } from '@/offline/sync';
 import { queryClient } from '@/queries/queryClient';
 
+// Segura a tela de abertura (splash) até a fonte carregar, evitando o flash
+// de fonte do sistema — seção 121.4.
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // sem splash nativa (ex.: ambiente de teste): segue sem ela
+});
+
 export default function App() {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [fontsLoaded, fontError] = useFonts(FONT_FILES);
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Se a fonte demorar mais que o limite (ou falhar), o app abre com a fonte
+  // do sistema — nunca fica preso na abertura nem em tela em branco.
+  useEffect(() => {
+    const timer = setTimeout(() => setTimedOut(true), FONT_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const ready = fontsLoaded || Boolean(fontError) || timedOut;
 
   useEffect(() => {
-    // Splash mantida até a fonte carregar, evitando flash de fonte do
-    // sistema — seção 121.4. Substituir os require() abaixo pelos arquivos
-    // reais de assets/fonts/ quando forem adicionados ao projeto.
-    Font.loadAsync({
-      // 'PlusJakartaSans': require('../../assets/fonts/PlusJakartaSans-Regular.ttf'),
-    })
-      .catch(() => {
-        // Se a fonte falhar ao carregar, segue com a fonte padrão do
-        // sistema em vez de travar o boot do app.
-      })
-      .finally(() => setFontsLoaded(true));
-  }, []);
+    if (ready) {
+      SplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, [ready]);
 
   useEffect(() => {
     const unsubscribe = startOfflineSync(queryClient);
     return unsubscribe;
   }, []);
 
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+  if (!ready) {
+    return null;
   }
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <StatusBar style="auto" />
-          <RootNavigator />
-        </ThemeProvider>
-      </QueryClientProvider>
+      {/* Teclado: lê a altura real direto do sistema (Android e iOS). */}
+      <KeyboardProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <StatusBar style="auto" />
+            <RootNavigator />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  loading: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-});

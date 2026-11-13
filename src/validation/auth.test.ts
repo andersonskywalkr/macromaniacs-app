@@ -1,4 +1,14 @@
-import { validateLogin, validateRegister } from './auth';
+import { validateForgotPassword, validateLogin, validateRegister } from './auth';
+
+describe('forgot password validation', () => {
+  it('needs a valid e-mail', () => {
+    expect(validateForgotPassword('ana@exemplo.com')).toBeNull();
+    expect(validateForgotPassword('  ana@exemplo.com ')).toBeNull();
+    expect(validateForgotPassword('')).toBe('Informe o seu e-mail.');
+    expect(validateForgotPassword('ana@')).toBe('Informe um e-mail válido.');
+    expect(validateForgotPassword('ana exemplo.com')).toBe('Informe um e-mail válido.');
+  });
+});
 
 describe('auth form validation', () => {
   const validRegister = {

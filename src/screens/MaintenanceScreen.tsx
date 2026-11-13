@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { MascotIllustration } from '@/components/MascotIllustration';
 import { LANDING_PAGE_URL } from '@/api/config';
 
+import { fontFamily } from '@/theme/fonts';
 // Cor de destaque decorativa (barra no topo) — fixa, igual ao gradiente do
 // FireIcon: não é uma cor semântica do design system, é só um acento de
 // marca, então não precisa vir de um token de tema.
@@ -55,17 +56,15 @@ const styles = StyleSheet.create({
   content: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: spacing.xl },
   mascot: { marginBottom: spacing.lg },
   subtitle: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(600),
     fontSize: 14.5,
-    fontWeight: '600',
     lineHeight: 20,
     marginTop: spacing.sm,
     textAlign: 'center',
   },
   title: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 22,
-    fontWeight: '800',
     textAlign: 'center',
   },
 });

@@ -20,6 +20,7 @@ import {
 } from '@/utils/meals';
 import { formatDecimal } from '@/utils/nutrition';
 
+import { fontFamily } from '@/theme/fonts';
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealReview'>;
 
 // Detalhe da refeição (item 11), logo após salvar ou aberto pela lista. Lê
@@ -140,8 +141,8 @@ export function MealReviewScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  calories: { fontFamily: 'PlusJakartaSans', fontSize: 40, fontWeight: '800', marginTop: spacing.xs },
-  caloriesUnit: { fontSize: 16, fontWeight: '700' },
+  calories: { fontFamily: fontFamily(800), fontSize: 40, marginTop: spacing.xs },
+  caloriesUnit: { fontFamily: fontFamily(700), fontSize: 16 },
   centered: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
@@ -154,17 +155,17 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  itemDetail: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginTop: 2 },
-  itemName: { fontFamily: 'PlusJakartaSans', fontSize: 15.5, fontWeight: '800' },
+  itemDetail: { fontFamily: fontFamily(600), fontSize: 13, marginTop: 2 },
+  itemName: { fontFamily: fontFamily(800), fontSize: 15.5 },
   itemsTitle: { marginBottom: spacing.sm, marginTop: spacing.lg },
   list: { gap: spacing.sm + spacing.xs },
-  macro: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
+  macro: { fontFamily: fontFamily(800), fontSize: 13 },
   macroRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
-  mealName: { flexShrink: 1, fontFamily: 'PlusJakartaSans', fontSize: 24, fontWeight: '800' },
-  mealTime: { fontFamily: 'PlusJakartaSans', fontSize: 13.5, fontWeight: '600', marginTop: spacing.xs },
-  sectionTitle: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '800', letterSpacing: 0.5 },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
+  mealName: { flexShrink: 1, fontFamily: fontFamily(800), fontSize: 24 },
+  mealTime: { fontFamily: fontFamily(600), fontSize: 13.5, marginTop: spacing.xs },
+  sectionTitle: { fontFamily: fontFamily(800), fontSize: 12.5, letterSpacing: 0.5 },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
   titleRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  totalMacro: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '800' },
+  totalMacro: { fontFamily: fontFamily(800), fontSize: 15 },
   totalsCard: { marginTop: spacing.lg, padding: spacing.lg },
 });

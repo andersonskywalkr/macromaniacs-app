@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { createMeal } from '@/api/meals';
 import { getPendingMeals, removePendingMeal } from './outbox';
 import { progressTodayKey } from '@/queries/useProgressToday';
+import { progressHistoryKey } from '@/queries/useProgressHistory';
 import { gamificationStatsKey } from '@/queries/useGamificationStats';
 import { mealsTodayKey } from '@/queries/useMealsToday';
 
@@ -34,6 +35,7 @@ async function flushOutbox(queryClient: QueryClient): Promise<void> {
   }
   if (pending.length > 0) {
     queryClient.invalidateQueries({ queryKey: progressTodayKey });
+    queryClient.invalidateQueries({ queryKey: progressHistoryKey });
     queryClient.invalidateQueries({ queryKey: gamificationStatsKey });
     queryClient.invalidateQueries({ queryKey: mealsTodayKey });
   }

@@ -2,7 +2,7 @@ import { httpClient } from './client';
 import { ApiError } from './ApiError';
 import { createManualFood, getFoodByBarcode, searchFoods } from './foods';
 import { createMeal, getMealsByDateRange, getMealsToday } from './meals';
-import { getProgressToday } from './progress';
+import { getProgressHistory, getProgressToday } from './progress';
 import { getGamificationStats } from './gamification';
 import { getGroupFeed, getGroupRanking, getMyGroups, joinGroup } from './groups';
 import { getMyProfile, updateMyProfile } from './users';
@@ -312,5 +312,61 @@ describe('profile (real mode): sex and timezone', () => {
       biologicalSex: 'NOT_INFORMED',
       timezone: 'America/Sao_Paulo',
     });
+  });
+});
+
+describe('progress history (real mode)', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('reads GET /v1/progress/history with limit 100 and converts each day', async () => {
+    get.mockResolvedValue({
+      data: {
+        items: [
+          {
+            date: '2026-10-21',
+            timezone: 'America/Sao_Paulo',
+            calories: '1900.5',
+            protein: 110,
+            carbs: '230',
+            fat: 60,
+            fiber: 22,
+            mealCount: 3,
+            targetCalories: 2000,
+            calorieProgressPercent: 95,
+            updatedAt: '2026-10-21T23:00:00.000Z',
+          },
+          {
+            date: '2026-10-22',
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            fiber: 0,
+            mealCount: 0,
+            targetCalories: null,
+            calorieProgressPercent: null,
+          },
+        ],
+        meta: { page: 1, limit: 100, total: 2 },
+      },
+    });
+
+    const days = await getProgressHistory('2026-10-16', '2026-10-22', 'America/Sao_Paulo', 1800);
+
+    expect(get).toHaveBeenCalledWith('/v1/progress/history', {
+      params: { from: '2026-10-16', to: '2026-10-22', limit: 100 },
+    });
+    expect(days[0]).toEqual({
+      date: '2026-10-21',
+      calories: 1900.5,
+      protein: 110,
+      carbohydrates: 230,
+      fat: 60,
+      fiber: 22,
+      mealCount: 3,
+      targetCalories: 2000,
+    });
+    // meta nula usa a meta do perfil (fallback)
+    expect(days[1].targetCalories).toBe(1800);
   });
 });

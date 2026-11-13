@@ -18,7 +18,8 @@ export type MealsStackParamList = {
 
 export type GroupStackParamList = {
   GroupsList: undefined;
-  GroupProfile: { groupId: string };
+  // origin 'home': aberto pelo bloco de ranking da Home (o voltar leva de volta à Home)
+  GroupProfile: { groupId: string; origin?: 'home' };
   RankingFull: { groupId: string };
 };
 
@@ -26,7 +27,8 @@ export type ProfileStackParamList = {
   // saved: o Editar perfil acabou de salvar (mostra a confirmação no Perfil)
   ProfileHome: { saved?: boolean } | undefined;
   EditProfile: undefined;
-  History: undefined;
+  // origin 'home': aberto pelo atalho "Desempenho semanal" da Home
+  History: { origin?: 'home' } | undefined;
 };
 
 export type HomeStackParamList = {

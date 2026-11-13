@@ -3,6 +3,7 @@ import { createMeal, CreateMealInput } from '@/api/meals';
 import type { MealLog } from '@/api/types/domain';
 import { ApiError } from '@/api/ApiError';
 import { progressTodayKey } from './useProgressToday';
+import { progressHistoryKey } from './useProgressHistory';
 import { gamificationStatsKey } from './useGamificationStats';
 import { mealsTodayKey } from './useMealsToday';
 import { enqueueOfflineMeal } from '@/offline/outbox';
@@ -25,6 +26,7 @@ export function useCreateMeal() {
         old && !old.some((m) => m.id === meal.id) ? [...old, meal] : old,
       );
       queryClient.invalidateQueries({ queryKey: progressTodayKey });
+      queryClient.invalidateQueries({ queryKey: progressHistoryKey });
       queryClient.invalidateQueries({ queryKey: gamificationStatsKey });
       queryClient.invalidateQueries({ queryKey: mealsTodayKey });
     },

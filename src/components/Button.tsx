@@ -3,6 +3,7 @@ import { Pressable, Text, StyleSheet, ActivityIndicator, PressableProps, StylePr
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing, touchTarget } from '@/theme/tokens';
 
+import { fontFamily } from '@/theme/fonts';
 // Sobrescreve `style` do PressableProps: aqui ele é sempre um objeto/array
 // estático (nunca a variante função-de-estado), como em todo uso atual do Button.
 interface ButtonProps extends Omit<PressableProps, 'style'> {
@@ -79,8 +80,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   label: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(700),
     fontSize: 16,
-    fontWeight: '700',
   },
 });

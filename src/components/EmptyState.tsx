@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
+import { fontFamily } from '@/theme/fonts';
 interface EmptyStateProps {
   title: string;
   description?: string;
@@ -34,9 +35,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   description: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(500),
     fontSize: 14,
-    fontWeight: '500',
     marginTop: spacing.xs,
     textAlign: 'center',
   },
@@ -47,9 +47,8 @@ const styles = StyleSheet.create({
     width: 120,
   },
   title: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(700),
     fontSize: 18,
-    fontWeight: '700',
     textAlign: 'center',
   },
 });

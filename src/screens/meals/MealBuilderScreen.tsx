@@ -2,10 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   Alert,
   BackHandler,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -35,6 +32,8 @@ import {
 } from '@/utils/meals';
 import { formatDecimal, parseDecimal, scaleNutrition, validateAmount } from '@/utils/nutrition';
 
+import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareFooter, KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealBuilder'>;
 
 const MEAL_NAME_MAX_LENGTH = 60;
@@ -208,13 +207,13 @@ export function MealBuilderScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAwareScreen>
         <View style={styles.header}>
           <BackButton onPress={requestLeave} />
           <Text style={[styles.title, { color: tokens.text }]}>Montar refeição</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={[styles.fieldLabel, { color: tokens.textSecondary }]}>Nome da refeição (opcional)</Text>
           <TextField
             accessibilityLabel="Nome da refeição, opcional"
@@ -295,9 +294,9 @@ export function MealBuilderScreen({ navigation }: Props) {
             </View>
           )}
 
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={styles.footer}>
+        <KeyboardAwareFooter style={styles.footer}>
           {items.length > MAX_MEAL_ITEMS && (
             <Text accessibilityRole="alert" style={[styles.error, { color: tokens.danger }]}>
               {`Uma refeição pode ter no máximo ${MAX_MEAL_ITEMS} itens. Remova alguns para salvar.`}
@@ -315,8 +314,8 @@ export function MealBuilderScreen({ navigation }: Props) {
             loading={createMeal.isPending}
             accessibilityHint="Registra a refeição e abre o detalhe"
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAwareFooter>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -324,21 +323,19 @@ export function MealBuilderScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   addButtonTop: { marginBottom: spacing.md },
   amountField: { flex: 1 },
-  amountLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '800' },
+  amountLabel: { fontFamily: fontFamily(800), fontSize: 12.5 },
   amountRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
-  calories: { fontFamily: 'PlusJakartaSans', fontSize: 40, fontWeight: '800', marginTop: spacing.xs },
-  caloriesUnit: { fontSize: 16, fontWeight: '700' },
+  calories: { fontFamily: fontFamily(800), fontSize: 40, marginTop: spacing.xs },
+  caloriesUnit: { fontFamily: fontFamily(700), fontSize: 16 },
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
-  error: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '600', marginBottom: spacing.sm, marginTop: spacing.sm },
+  error: { fontFamily: fontFamily(600), fontSize: 13, marginBottom: spacing.sm, marginTop: spacing.sm },
   fieldLabel: {
-    fontFamily: 'PlusJakartaSans',
+    fontFamily: fontFamily(800),
     fontSize: 12.5,
-    fontWeight: '800',
     marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
-  flex: { flex: 1 },
   footer: { padding: spacing.lg, paddingTop: spacing.sm },
   header: {
     alignItems: 'center',
@@ -347,9 +344,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  itemDetail: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
+  itemDetail: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
   itemHeader: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
-  itemName: { fontFamily: 'PlusJakartaSans', fontSize: 15.5, fontWeight: '800' },
+  itemName: { fontFamily: fontFamily(800), fontSize: 15.5 },
   itemTitleWrap: { flex: 1, minWidth: 0 },
   list: { gap: spacing.sm + spacing.xs },
   listHeader: {
@@ -358,14 +355,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
-  macro: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
+  macro: { fontFamily: fontFamily(800), fontSize: 13 },
   macroRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   removeButton: { justifyContent: 'center', minHeight: touchTarget.minSize, paddingHorizontal: spacing.sm },
-  removeLabel: { fontFamily: 'PlusJakartaSans', fontSize: 13, fontWeight: '800' },
-  sectionTitle: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '800', letterSpacing: 0.5 },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 22, fontWeight: '800' },
-  totalMacro: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '800' },
+  removeLabel: { fontFamily: fontFamily(800), fontSize: 13 },
+  sectionTitle: { fontFamily: fontFamily(800), fontSize: 12.5, letterSpacing: 0.5 },
+  title: { fontFamily: fontFamily(800), fontSize: 22 },
+  totalMacro: { fontFamily: fontFamily(800), fontSize: 15 },
   totalsCard: { marginTop: spacing.lg, padding: spacing.lg },
-  totalsTitle: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '800', letterSpacing: 0.5 },
+  totalsTitle: { fontFamily: fontFamily(800), fontSize: 12.5, letterSpacing: 0.5 },
   typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });

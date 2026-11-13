@@ -4,9 +4,6 @@ import {
   View,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +20,8 @@ import { useAuthStore } from '@/store/authStore';
 import { getAuthErrorMessage } from '@/api/authErrors';
 import { validateRegister } from '@/validation/auth';
 
+import { fontFamily } from '@/theme/fonts';
+import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 // Ver LoginScreen — mesmo motivo pros botões sociais ficarem inertes aqui.
@@ -87,8 +86,8 @@ export function RegisterScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tokens.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoiding}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScreen>
+        <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
             <MascotIllustration width={130} />
           </View>
@@ -180,8 +179,8 @@ export function RegisterScreen({ navigation }: Props) {
               <GoogleIcon size={20} />
             </Pressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
+      </KeyboardAwareScreen>
     </SafeAreaView>
   );
 }
@@ -195,17 +194,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 22,
   },
-  checkmark: { fontSize: 14, fontWeight: '800' },
+  checkmark: { fontFamily: fontFamily(800), fontSize: 14 },
   container: { flex: 1 },
-  dividerLabel: { fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: '600' },
+  dividerLabel: { fontFamily: fontFamily(600), fontSize: 12.5 },
   dividerLine: { flex: 1, height: 1 },
   dividerRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm + spacing.xs, marginTop: spacing.lg + 2 },
-  error: { fontFamily: 'PlusJakartaSans', marginTop: spacing.sm },
+  error: { fontFamily: fontFamily(400), marginTop: spacing.sm },
   form: { gap: spacing.md, marginTop: spacing.lg },
   // Ver LoginScreen — mesmo motivo pra cancelar o padding da ScrollView
   // só no hero, pro mascote encostar no topo/direita da tela.
   hero: { alignItems: 'flex-end', marginHorizontal: -spacing.lg, marginTop: -spacing.lg },
-  keyboardAvoiding: { flex: 1 },
   primaryButton: { marginTop: spacing.lg + 2 },
   scroll: { flexGrow: 1, padding: spacing.lg },
   secondaryButton: { marginTop: spacing.sm + 4 },
@@ -217,8 +215,8 @@ const styles = StyleSheet.create({
     width: 56,
   },
   socialRow: { flexDirection: 'row', gap: spacing.md - 2, justifyContent: 'center', marginTop: spacing.lg - 2 },
-  subtitle: { fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: '600', marginTop: spacing.xs + 4 },
-  termsLabel: { flex: 1, fontFamily: 'PlusJakartaSans', fontSize: 14, fontWeight: '600' },
+  subtitle: { fontFamily: fontFamily(600), fontSize: 15, marginTop: spacing.xs + 4 },
+  termsLabel: { flex: 1, fontFamily: fontFamily(600), fontSize: 14 },
   termsRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, minHeight: 44 },
-  title: { fontFamily: 'PlusJakartaSans', fontSize: 30, fontWeight: '800', lineHeight: 36 },
+  title: { fontFamily: fontFamily(800), fontSize: 30, lineHeight: 36 },
 });
