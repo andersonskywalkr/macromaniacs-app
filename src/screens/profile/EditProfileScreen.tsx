@@ -138,10 +138,10 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
           <View style={styles.avatarRow}>
             <Avatar isSelf displayName={avatarName} size={64} />
             <Button
-              label="Escolher avatar"
+              label="Personalizar avatar"
               variant="secondary"
-              onPress={() => navigation.navigate('AvatarPicker')}
-              accessibilityHint="Abre a escolha de avatar de desenho"
+              onPress={() => navigation.navigate('AvatarCustomizer')}
+              accessibilityHint="Abre a personalização do avatar"
               style={styles.avatarButton}
             />
           </View>

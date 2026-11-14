@@ -159,12 +159,12 @@ describe('ProfileHomeScreen', () => {
     });
   });
 
-  it('opens the avatar picker when tapping the avatar', () => {
+  it('opens the avatar customizer when tapping the avatar', () => {
     const { navigation, screen } = renderProfile();
 
-    fireEvent.press(screen.getByLabelText('Escolher avatar'));
+    fireEvent.press(screen.getByLabelText('Personalizar avatar'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('AvatarPicker');
+    expect(navigation.navigate).toHaveBeenCalledWith('AvatarCustomizer');
   });
 
   it('shows the header, today, points and the goal summary', () => {

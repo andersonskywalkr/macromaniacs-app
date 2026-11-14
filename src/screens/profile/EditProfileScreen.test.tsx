@@ -87,12 +87,12 @@ function isDisabled(button: { props: { accessibilityState?: { disabled?: boolean
 describe('EditProfileScreen', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('opens the avatar picker from "Escolher avatar" without marking the form as changed', () => {
+  it('opens the avatar customizer from "Personalizar avatar" without marking the form as changed', () => {
     const { navigation, screen } = renderScreen();
 
-    fireEvent.press(screen.getByLabelText('Escolher avatar'));
+    fireEvent.press(screen.getByLabelText('Personalizar avatar'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('AvatarPicker');
+    expect(navigation.navigate).toHaveBeenCalledWith('AvatarCustomizer');
     expect(isDisabled(screen.getByLabelText('Salvar alterações'))).toBe(true);
   });
 

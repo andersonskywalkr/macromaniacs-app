@@ -1,86 +1,97 @@
 import React from 'react';
 import { Image } from 'react-native';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
+import { SvgXml } from 'react-native-svg';
 import { Avatar } from './Avatar';
-import { buildAvatarUrl } from '@/utils/avatar';
+import { defaultAvatarConfig, type AvatarConfig } from '@/utils/avatarConfig';
+import { buildAvatarSvg } from '@/utils/avatarSvg';
 
-let mockChoice: { style: string; seed: string } | null = null;
+let mockConfig: AvatarConfig | null = null;
+let mockBuildFails = false;
 
 jest.mock('@/theme/ThemeProvider', () => ({
-  useTheme: () => ({ tokens: { primary: '#bba0ff', onPrimary: '#fff' } }),
+  useTheme: () => ({ tokens: { primary: '#bba0ff', onPrimary: '#fff', card: '#111' } }),
 }));
 jest.mock('@/hooks/useMyAvatar', () => ({
-  useMyAvatar: () => ({ choice: mockChoice, save: jest.fn() }),
+  useMyAvatar: () => ({ config: mockConfig, save: jest.fn() }),
 }));
+jest.mock('@/utils/avatarSvg', () => {
+  const actual = jest.requireActual<typeof import('@/utils/avatarSvg')>('@/utils/avatarSvg');
+  return {
+    ...actual,
+    buildAvatarSvg: (...args: Parameters<typeof actual.buildAvatarSvg>) => {
+      if (mockBuildFails) throw new Error('falha ao gerar');
+      return actual.buildAvatarSvg(...args);
+    },
+  };
+});
+
+const drawings = () => screen.UNSAFE_queryAllByType(SvgXml);
 
 describe('Avatar', () => {
   beforeEach(() => {
-    mockChoice = null;
-    jest.useFakeTimers();
+    mockConfig = null;
+    mockBuildFails = false;
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  it('shows the initials when there is no image', () => {
+  it('shows the initials when there is no avatar', () => {
     render(<Avatar displayName="Maria Pereira" />);
     expect(screen.getByText('MP')).toBeTruthy();
+    expect(drawings()).toHaveLength(0);
   });
 
-  it('keeps others with initials even when I have an avatar (backend does not know avatars)', () => {
-    mockChoice = { style: 'adventurer', seed: 'abc123def456' };
+  it('keeps the other people with initials even when I have an avatar (backend does not know avatars)', () => {
+    mockConfig = defaultAvatarConfig();
     render(<Avatar displayName="Maria Pereira" />);
     expect(screen.getByText('MP')).toBeTruthy();
-    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(0);
+    expect(drawings()).toHaveLength(0);
   });
 
-  it('uses my chosen avatar when isSelf, with the initials underneath while it loads', () => {
-    mockChoice = { style: 'adventurer', seed: 'abc123def456' };
+  it('shows my drawn avatar when isSelf, generated locally from my configuration', () => {
+    mockConfig = defaultAvatarConfig();
     render(<Avatar isSelf displayName="Anderson Lima" size={64} />);
 
-    const image = screen.UNSAFE_getByType(Image);
-    expect(image.props.source.uri).toBe(
-      buildAvatarUrl({ style: 'adventurer', seed: 'abc123def456', size: 128 }),
-    );
-    expect(screen.getByText('AL')).toBeTruthy(); // ainda carregando
-
-    fireEvent(image, 'load');
+    const [drawing] = drawings();
+    expect(drawing.props.xml).toBe(buildAvatarSvg(mockConfig, 128));
+    expect(drawing.props.width).toBe(64);
     expect(screen.queryByText('AL')).toBeNull();
+    expect(screen.getByLabelText('Foto de perfil de Anderson Lima')).toBeTruthy();
   });
 
-  it('isSelf without a chosen avatar shows the initials', () => {
+  it('isSelf without a saved avatar shows the initials', () => {
     render(<Avatar isSelf displayName="Anderson Lima" />);
     expect(screen.getByText('AL')).toBeTruthy();
+    expect(drawings()).toHaveLength(0);
   });
 
-  it('falls back to the initials when the image fails, and tells the parent', () => {
-    const onImageError = jest.fn();
-    render(<Avatar uri="https://example.com/x.png" displayName="Anderson Lima" onImageError={onImageError} />);
+  it('uses an explicit configuration (customizer preview) over the saved one', () => {
+    mockConfig = defaultAvatarConfig();
+    const other: AvatarConfig = { ...defaultAvatarConfig(), options: { ...mockConfig.options, skinColor: '614335' } };
+    render(<Avatar isSelf config={other} displayName="Anderson Lima" />);
+    expect(drawings()[0].props.xml).toBe(buildAvatarSvg(other, 128));
+  });
 
-    fireEvent(screen.UNSAFE_getByType(Image), 'error');
-
-    expect(onImageError).toHaveBeenCalledTimes(1);
+  it('falls back to the initials when generating the drawing fails', () => {
+    mockBuildFails = true;
+    mockConfig = defaultAvatarConfig();
+    render(<Avatar isSelf displayName="Anderson Lima" />);
     expect(screen.getByText('AL')).toBeTruthy();
-    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(0);
+    expect(drawings()).toHaveLength(0);
   });
 
-  it('waits loadDelayMs before asking for the image', () => {
-    render(<Avatar uri="https://example.com/x.png" displayName="Anderson Lima" loadDelayMs={500} />);
-    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(0);
-
-    act(() => {
-      jest.advanceTimersByTime(500);
-    });
-    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(1);
+  it('keeps the streak badge', () => {
+    mockConfig = defaultAvatarConfig();
+    render(<Avatar isSelf displayName="Anderson Lima" streakCount={5} />);
+    expect(screen.getByLabelText('Sequência de 5 dias')).toBeTruthy();
   });
 
-  it('tries again when the image url changes', () => {
-    const { rerender } = render(<Avatar uri="https://example.com/a.png" displayName="Anderson Lima" />);
-    fireEvent(screen.UNSAFE_getByType(Image), 'error');
+  it('makes no network request (no remote images)', () => {
+    mockConfig = defaultAvatarConfig();
+    render(<Avatar isSelf displayName="Anderson Lima" />);
+    const serialized = JSON.stringify(screen.toJSON());
+    // o SVG traz só metadados de licença (texto): nada de imagem remota
+    expect(serialized).not.toMatch(/(href|src)=|"uri"/);
+    expect(serialized).not.toContain('dicebear.com');
     expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(0);
-
-    rerender(<Avatar uri="https://example.com/b.png" displayName="Anderson Lima" />);
-    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(1);
   });
 });

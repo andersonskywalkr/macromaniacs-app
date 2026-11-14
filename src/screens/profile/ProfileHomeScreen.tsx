@@ -201,10 +201,10 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
           <View style={styles.headerRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Escolher avatar"
-              accessibilityHint="Abre a escolha de avatar de desenho"
+              accessibilityLabel="Personalizar avatar"
+              accessibilityHint="Abre a personalização do avatar"
               hitSlop={8}
-              onPress={() => navigation.navigate('AvatarPicker')}
+              onPress={() => navigation.navigate('AvatarCustomizer')}
             >
               <Avatar isSelf displayName={name} size={64} />
             </Pressable>
