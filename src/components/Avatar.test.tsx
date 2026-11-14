@@ -28,7 +28,7 @@ describe('Avatar', () => {
     expect(screen.getByText('MP')).toBeTruthy();
   });
 
-  it('keeps others with initials even when I have an avatar (backend does not know avatars)', () => {
+  it('keeps others with initials because social DTOs do not expose avatars', () => {
     mockChoice = { style: 'adventurer', seed: 'abc123def456' };
     render(<Avatar displayName="Maria Pereira" />);
     expect(screen.getByText('MP')).toBeTruthy();

@@ -5,8 +5,10 @@ import { getMockProfile, updateMockProfile } from '@/mocks/mockProfile';
 import { getMockOnboardingCompleted, setMockOnboardingCompleted } from '@/mocks/mockSession';
 import type { UserProfile } from './types/domain';
 import { v1 } from './paths';
+import { isAvatarChoice, type AvatarChoice } from '@/utils/avatar';
 
 export type UpdateMyProfileRequest = {
+  avatar?: AvatarChoice | null;
   displayName?: string | null;
   username?: string;
   dateOfBirth?: string | null;
@@ -29,10 +31,17 @@ function delay<T>(value: T): Promise<T> {
 
 // O backend devolve `biologicalSex` como texto; o app trabalha com FEMALE e
 // MALE (NOT_INFORMED, ausente ou desconhecido vira null: perfil sem sexo).
-type ApiUserProfile = Omit<UserProfile, 'biologicalSex'> & { biologicalSex: string | null };
+type ApiUserProfile = Omit<UserProfile, 'avatar' | 'biologicalSex'> & {
+  avatar?: unknown;
+  biologicalSex: string | null;
+};
 
 function fromApiProfile(profile: ApiUserProfile): UserProfile {
-  return { ...profile, biologicalSex: fromApiSex(profile.biologicalSex) };
+  return {
+    ...profile,
+    avatar: isAvatarChoice(profile.avatar) ? profile.avatar : null,
+    biologicalSex: fromApiSex(profile.biologicalSex),
+  };
 }
 
 // GET /api/v1/users/me — seção 49

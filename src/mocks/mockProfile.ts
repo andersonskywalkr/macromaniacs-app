@@ -39,6 +39,7 @@ export function updateMockProfile(patch: UpdateMyProfileRequest): UserProfile {
   const next: UserProfile = { ...profile };
 
   if (patch.displayName !== undefined) next.displayName = patch.displayName;
+  if (patch.avatar !== undefined) next.avatar = patch.avatar;
   if (patch.username !== undefined) next.username = patch.username;
   if (patch.dateOfBirth !== undefined) next.dateOfBirth = patch.dateOfBirth;
   if (patch.biologicalSex !== undefined) next.biologicalSex = fromApiSex(patch.biologicalSex);

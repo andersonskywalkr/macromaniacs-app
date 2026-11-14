@@ -8,6 +8,7 @@ const base: UserProfile = {
   email: 'a@b.c',
   username: 'anderson',
   displayName: 'Anderson',
+  avatar: null,
   dateOfBirth: '2001-06-15', // 25 anos em 15/06/2026
   biologicalSex: null, // conta antiga sem sexo: o backend devolve nutrition: null
   goal: 'MAINTAIN',

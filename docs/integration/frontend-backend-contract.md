@@ -59,11 +59,11 @@ abaixo usa dados simulados.
   código existe na API, mas falta a captura na interface.
 - O backend tem tabela legada de `chat_messages`, porém não expõe endpoint. O
   aplicativo usa o feed suportado; não há polling sobre rota inventada.
-- Avatar de desenho (DiceBear): o perfil do backend não tem campo de avatar e o
-  `PATCH /v1/users/me` recusa campos extras. A escolha fica só no aparelho, por
-  usuário (AsyncStorage), nunca é enviada ao backend, e os outros membros dos
-  grupos aparecem sempre com iniciais. Para salvar na conta, o backend precisaria
-  expor o `avatar_config` (já existe no banco) no PATCH e no GET do perfil.
+- Avatar de desenho (DiceBear): `GET/PATCH /v1/users/me` expõe
+  `avatar: { style, seed } | null`. O backend persiste a configuração no
+  `avatar_config` existente; AsyncStorage é apenas cache e origem da migração
+  única de escolhas antigas. O perfil remoto sempre prevalece. Os DTOs sociais
+  não foram ampliados, então outros membros continuam com iniciais.
 - Desafios/metas de grupo não têm endpoint. A antiga aba estática foi removida.
 - Upload de arquivos e URL pública de produção permanecem decisões de deploy;
   esta integração não realizou deploy.

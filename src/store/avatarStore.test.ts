@@ -24,6 +24,7 @@ jest.mock('./authStore', () => ({
     },
   },
 }));
+jest.mock('@/api/config', () => ({ USE_AUTH_MOCK: true }));
 
 const disk: Disk = new Map();
 (globalThis as unknown as { __disk: Disk }).__disk = disk;
@@ -39,7 +40,7 @@ describe('avatarStore', () => {
   });
 
   it('starts empty and saves the choice under the user key', async () => {
-    await useAvatarStore.getState().load('u1');
+    await useAvatarStore.getState().load('u1', null);
     expect(useAvatarStore.getState().choice).toBeNull();
 
     await useAvatarStore.getState().save(choiceA);
@@ -49,37 +50,39 @@ describe('avatarStore', () => {
 
   it('loads what was saved before (survives closing the app)', async () => {
     disk.set(avatarStorageKey('u1'), JSON.stringify(choiceA));
-    await useAvatarStore.getState().load('u1');
+    await useAvatarStore.getState().load('u1', null);
     expect(useAvatarStore.getState().choice).toEqual(choiceA);
   });
 
   it('keeps one avatar per user on the same device', async () => {
-    await useAvatarStore.getState().load('u1');
+    await useAvatarStore.getState().load('u1', null);
     await useAvatarStore.getState().save(choiceA);
 
-    await useAvatarStore.getState().load('u2');
+    await useAvatarStore.getState().load('u2', null);
     expect(useAvatarStore.getState().choice).toBeNull();
     await useAvatarStore.getState().save(choiceB);
 
-    await useAvatarStore.getState().load('u1');
+    await useAvatarStore.getState().load('u1', null);
     expect(useAvatarStore.getState().choice).toEqual(choiceA);
     expect(JSON.parse(disk.get(avatarStorageKey('u2')) as string)).toEqual(choiceB);
   });
 
   it('ignores corrupted stored data', async () => {
     disk.set(avatarStorageKey('u1'), '{"style":"x"');
-    await useAvatarStore.getState().load('u1');
+    await useAvatarStore.getState().load('u1', null);
     expect(useAvatarStore.getState().choice).toBeNull();
   });
 
   it('does not save without a logged-in user', async () => {
-    await useAvatarStore.getState().save(choiceA);
+    await expect(useAvatarStore.getState().save(choiceA)).rejects.toThrow(
+      'Entre novamente',
+    );
     expect(useAvatarStore.getState().choice).toBeNull();
     expect(disk.size).toBe(0);
   });
 
   it('drops the avatar from memory on logout, but keeps it stored for the user', async () => {
-    await useAvatarStore.getState().load('u1');
+    await useAvatarStore.getState().load('u1', null);
     await useAvatarStore.getState().save(choiceA);
 
     authListener()({ user: null }, { user: { id: 'u1' } });
@@ -88,7 +91,7 @@ describe('avatarStore', () => {
     expect(useAvatarStore.getState().userId).toBeNull();
     expect(JSON.parse(disk.get(avatarStorageKey('u1')) as string)).toEqual(choiceA);
 
-    await useAvatarStore.getState().load('u1');
+    await useAvatarStore.getState().load('u1', null);
     expect(useAvatarStore.getState().choice).toEqual(choiceA);
   });
 });
