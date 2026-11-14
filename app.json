@@ -18,15 +18,10 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#9D52DE"
-      },
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ]
+      }
     },
     "plugins": [
       "expo-secure-store",
-      "expo-camera",
       "expo-font",
       "expo-sqlite",
       "expo-splash-screen",

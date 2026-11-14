@@ -14,6 +14,8 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@dicebear/avataaars": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "12.0.1",
@@ -25,7 +27,6 @@
     "axios": "^1.20.0",
     "babel-preset-expo": "~58.0.25",
     "expo": "~58.0.25",
-    "expo-camera": "~58.0.14",
     "expo-font": "~58.0.12",
     "expo-notifications": "~58.1.9",
     "expo-secure-store": "~58.0.3",
@@ -77,6 +78,11 @@
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
-    }
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@dicebear))",
+      "/node_modules/react-native-reanimated/plugin/",
+      "/node_modules/@react-native/babel-preset/"
+    ]
   }
 }
