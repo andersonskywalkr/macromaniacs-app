@@ -14,6 +14,7 @@ import type { UserProfile } from '@/api/types/domain';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { BackButton } from '@/components/BackButton';
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { useAuthStore } from '@/store/authStore';
 import { useUpdateProfile } from '@/queries/useUpdateProfile';
@@ -76,6 +77,8 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
   const [form, setForm] = useState<OnboardingData>(initial);
   const [saveError, setSaveError] = useState<string | null>(null);
   const allowLeave = useRef(false);
+  const user = useAuthStore((state) => state.user);
+  const avatarName = user?.displayName ?? user?.username ?? '';
 
   const dirty = hasFormChanges(snapshot, form);
   const validationError = dirty ? validateOnboarding(form) : null;
@@ -130,6 +133,17 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
         </View>
 
         <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <View style={styles.avatarRow}>
+            <Avatar isSelf displayName={avatarName} size={64} />
+            <Button
+              label="Escolher avatar"
+              variant="secondary"
+              onPress={() => navigation.navigate('AvatarPicker')}
+              accessibilityHint="Abre a escolha de avatar de desenho"
+              style={styles.avatarButton}
+            />
+          </View>
+
           <Text style={sectionStyle}>SOBRE VOCÊ</Text>
           <StepBasicInfo data={form} onChange={patch} />
 
@@ -166,6 +180,8 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
 }
 
 const styles = StyleSheet.create({
+  avatarButton: { flex: 1 },
+  avatarRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   container: { flex: 1 },
   content: { gap: spacing.md, padding: spacing.lg, paddingTop: spacing.md },

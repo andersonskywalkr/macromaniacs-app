@@ -219,7 +219,7 @@ export function HomeScreen({ navigation }: Props) {
                       </Text>
                     )}
                   </View>
-                  <Avatar uri={null} displayName={entry.displayName} size={30} />
+                  <Avatar isSelf={isYou} displayName={entry.displayName} size={30} />
                   <Text numberOfLines={1} style={[styles.rankingName, { color: tokens.text }]}>
                     {isYou ? 'Você' : entry.displayName}
                   </Text>
@@ -239,7 +239,7 @@ export function HomeScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={[styles.profilePill, { backgroundColor: tokens.card }]}>
-            <Avatar uri={null} displayName={currentUser.displayName ?? currentUser.username} size={44} />
+            <Avatar isSelf displayName={currentUser.displayName ?? currentUser.username} size={44} />
             <View style={styles.profileTextWrap}>
               <Text numberOfLines={1} style={[styles.greeting, { color: tokens.text }]}>
                 Olá, {currentUser.displayName ?? currentUser.username}

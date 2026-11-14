@@ -42,6 +42,11 @@ jest.mock('@/theme/ThemeProvider', () => ({
     },
   }),
 }));
+jest.mock('@/components/Avatar', () => {
+  const ReactModule = jest.requireActual<typeof import('react')>('react');
+  const { View: MockView } = jest.requireActual<typeof import('react-native')>('react-native');
+  return { Avatar: () => ReactModule.createElement(MockView) };
+});
 jest.mock('@/components/icons', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
   const { View: MockView } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -57,6 +62,7 @@ function renderScreen() {
     goBack: jest.fn(),
     popTo: jest.fn(),
     dispatch: jest.fn(),
+    navigate: jest.fn(),
     addListener: jest.fn((_event: string, listener: Listener) => {
       listeners.push(listener);
       return () => undefined;
@@ -80,6 +86,15 @@ function isDisabled(button: { props: { accessibilityState?: { disabled?: boolean
 
 describe('EditProfileScreen', () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it('opens the avatar picker from "Escolher avatar" without marking the form as changed', () => {
+    const { navigation, screen } = renderScreen();
+
+    fireEvent.press(screen.getByLabelText('Escolher avatar'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('AvatarPicker');
+    expect(isDisabled(screen.getByLabelText('Salvar alterações'))).toBe(true);
+  });
 
   it('is filled with the current data and the three sex options', () => {
     const { screen } = renderScreen();

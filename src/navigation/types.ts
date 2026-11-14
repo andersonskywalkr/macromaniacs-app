@@ -27,6 +27,7 @@ export type ProfileStackParamList = {
   // saved: o Editar perfil acabou de salvar (mostra a confirmação no Perfil)
   ProfileHome: { saved?: boolean } | undefined;
   EditProfile: undefined;
+  AvatarPicker: undefined;
   // origin 'home': aberto pelo atalho "Desempenho semanal" da Home
   History: { origin?: 'home' } | undefined;
   GamificationRewards: undefined;

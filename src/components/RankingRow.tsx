@@ -41,7 +41,7 @@ export function RankingRow({ entry, isYou, showStreak = false }: RankingRowProps
           <Text style={[styles.positionText, { color: tokens.textSecondary }]}>{entry.position}</Text>
         )}
       </View>
-      <Avatar uri={null} displayName={entry.displayName} size={38} />
+      <Avatar isSelf={isYou} displayName={entry.displayName} size={38} />
       <View style={styles.textWrap}>
         <Text numberOfLines={1} style={[styles.name, { color: tokens.text }]}>
           {name}

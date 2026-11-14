@@ -170,7 +170,7 @@ export function GroupProfileScreen({ navigation, route }: Props) {
       <>
         {!compact && (
         <View style={[styles.groupCard, { backgroundColor: tokens.card }]}>
-          <Avatar uri={null} displayName={group.name} size={56} />
+          <Avatar displayName={group.name} size={56} />
           <View style={styles.groupInfo}>
             <Text numberOfLines={1} style={[styles.groupTitle, { color: tokens.text }]}>
               {group.name}
