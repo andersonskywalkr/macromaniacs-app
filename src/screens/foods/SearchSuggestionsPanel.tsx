@@ -26,17 +26,21 @@ interface SuggestionsProps {
   suggestions: FoodItem[];
   isLoading: boolean;
   isSettled: boolean;
+  errorKind: 'network' | 'service' | null;
+  isExternalUnavailable: boolean;
   onSearchFull: () => void;
   onPick: (food: FoodItem) => void;
 }
 
 // Lista logo abaixo do campo: primeiro "Buscar por 'texto'", depois até 8
-// sugestões. Erro de rede é silencioso (a busca completa segue disponível).
+// sugestões e um estado distinto para rede, serviço externo e resultado vazio.
 export function SuggestionsList({
   text,
   suggestions,
   isLoading,
   isSettled,
+  errorKind,
+  isExternalUnavailable,
   onSearchFull,
   onPick,
 }: SuggestionsProps) {
@@ -79,9 +83,27 @@ export function SuggestionsList({
         </Pressable>
       ))}
 
-      {isSettled && suggestions.length === 0 && (
+      {errorKind === 'network' && (
         <Text style={[styles.empty, { color: tokens.textSecondary }]}>
-          Nenhuma sugestão. Toque em Buscar para procurar em todas as fontes.
+          Sem conexão para carregar sugestões. Verifique a internet e tente novamente.
+        </Text>
+      )}
+
+      {errorKind === 'service' && (
+        <Text style={[styles.empty, { color: tokens.textSecondary }]}>
+          Não foi possível carregar sugestões agora. Tente novamente em instantes.
+        </Text>
+      )}
+
+      {!errorKind && isExternalUnavailable && (
+        <Text style={[styles.empty, { color: tokens.textSecondary }]}>
+          A busca externa está temporariamente indisponível. Exibindo apenas resultados locais.
+        </Text>
+      )}
+
+      {!errorKind && !isExternalUnavailable && isSettled && suggestions.length === 0 && (
+        <Text style={[styles.empty, { color: tokens.textSecondary }]}>
+          Nenhum alimento encontrado nas fontes disponíveis.
         </Text>
       )}
     </Card>
@@ -143,22 +165,44 @@ export function SearchHistoryList({ items, onPick, onRemove, onClear }: HistoryP
 
 const styles = StyleSheet.create({
   card: { padding: spacing.sm },
-  clear: { justifyContent: 'center', minHeight: touchTarget.minSize, paddingHorizontal: spacing.sm },
+  clear: {
+    justifyContent: 'center',
+    minHeight: touchTarget.minSize,
+    paddingHorizontal: spacing.sm,
+  },
   clearLabel: { fontFamily: fontFamily(800), fontSize: 13 },
   detail: { fontFamily: fontFamily(600), fontSize: 12, marginTop: 1 },
-  empty: { fontFamily: fontFamily(600), fontSize: 13, lineHeight: 19, padding: spacing.md },
+  empty: {
+    fontFamily: fontFamily(600),
+    fontSize: 13,
+    lineHeight: 19,
+    padding: spacing.md,
+  },
   historyHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingLeft: spacing.sm,
   },
-  historyText: { flex: 1, justifyContent: 'center', minHeight: touchTarget.minSize },
-  historyTitle: { fontFamily: fontFamily(800), fontSize: 12.5, letterSpacing: 0.5 },
+  historyText: {
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: touchTarget.minSize,
+  },
+  historyTitle: {
+    fontFamily: fontFamily(800),
+    fontSize: 12.5,
+    letterSpacing: 0.5,
+  },
   name: { fontSize: 15 },
   nameMatch: { fontFamily: fontFamily(800) },
   nameRest: { fontFamily: fontFamily(500) },
-  remove: { alignItems: 'center', height: touchTarget.minSize, justifyContent: 'center', width: touchTarget.minSize },
+  remove: {
+    alignItems: 'center',
+    height: touchTarget.minSize,
+    justifyContent: 'center',
+    width: touchTarget.minSize,
+  },
   removeLabel: { fontFamily: fontFamily(700), fontSize: 16 },
   row: {
     alignItems: 'center',

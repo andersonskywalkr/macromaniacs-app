@@ -1,11 +1,5 @@
 import type { FoodItem } from '@/api/types/domain';
-import {
-  isSuggestionQuery,
-  normalizeText,
-  rankSuggestions,
-  splitHighlight,
-  suggestionGroup,
-} from './foodSuggestions';
+import { isSuggestionQuery, normalizeText, rankSuggestions, splitHighlight, suggestionGroup } from './foodSuggestions';
 
 const food = (id: string, name: string, brand: string | null = null): FoodItem => ({
   id,
@@ -14,7 +8,13 @@ const food = (id: string, name: string, brand: string | null = null): FoodItem =
   source: 'TBCA',
   externalId: null,
   barcode: null,
-  nutritionPer100g: { calories: 100, protein: 1, carbohydrates: 1, fat: 1, fiber: 0 },
+  nutritionPer100g: {
+    calories: 100,
+    protein: 1,
+    carbohydrates: 1,
+    fat: 1,
+    fiber: 0,
+  },
 });
 
 describe('normalizeText', () => {
@@ -26,10 +26,11 @@ describe('normalizeText', () => {
 });
 
 describe('isSuggestionQuery', () => {
-  it('needs 2 to 100 characters (after trimming)', () => {
+  it('needs 3 to 100 characters (after trimming)', () => {
     expect(isSuggestionQuery('f')).toBe(false);
     expect(isSuggestionQuery(' f ')).toBe(false);
-    expect(isSuggestionQuery('fr')).toBe(true);
+    expect(isSuggestionQuery('fr')).toBe(false);
+    expect(isSuggestionQuery('fra')).toBe(true);
     expect(isSuggestionQuery('a'.repeat(100))).toBe(true);
     expect(isSuggestionQuery('a'.repeat(101))).toBe(false);
   });

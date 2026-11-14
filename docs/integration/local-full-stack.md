@@ -49,6 +49,25 @@ Cadastre uma conta nova; o fluxo esperado é cadastro → login → onboarding �
 Home. Depois registre uma refeição, confira progresso/pontos, crie ou entre em
 um grupo e abra “Conquistas e recompensas” no Perfil.
 
+### Verificação da busca de alimentos no Expo Go
+
+Abra “Adicionar alimento” e digite, aguardando aproximadamente 650 ms:
+
+- `sorvete`, `sorvete de chocolate`, `sorvete de creme`;
+- `arroz`, `feijão`, `feijao`, `pão`, `pao`, `banana`, `leite`.
+
+Confirme que as sugestões aparecem sem tocar em “Buscar”, que a seleção abre a
+tela de confirmação com valores por 100 g e que o item entra no rascunho da
+refeição. O botão “Buscar” deve continuar exibindo a busca completa e permitir
+“Carregar mais resultados”. Em modo avião deve aparecer erro de conexão; com o
+provedor externo indisponível, a mensagem deve indicar fallback local, não
+“nenhum alimento”.
+
+O Open Food Facts cobre principalmente produtos industrializados. Alimentos
+genéricos brasileiros podem depender do cache local; USDA exige chave e tende a
+ter nomes em inglês, e TBCA permanece desativada por falta de API pública
+estável adotada pelo projeto.
+
 ## 3. Verificações reproduzíveis
 
 Frontend:

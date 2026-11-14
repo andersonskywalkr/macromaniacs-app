@@ -29,7 +29,7 @@ abaixo usa dados simulados.
 | Cadastro e login | `POST /v1/auth/register`, `POST /v1/auth/login` | Cadastro trata 400/409; login persiste JWT e restaura sessão. |
 | Sessão | `GET /v1/auth/me` | 401 limpa token, cache e rascunho local. Logout é local porque não há endpoint de revogação. |
 | Onboarding/perfil | `GET/PATCH /v1/users/me` | Navegação usa `onboardingCompleted`; valores nutricionais derivados não são enviados pelo cliente. |
-| Alimentos | `GET /v1/foods`, `GET /v1/foods/:id`, `GET /v1/foods/barcode/:barcode`, `POST /v1/foods/manual` | Sugestões usam `external=false`; busca completa pagina e pode consultar provedores. |
+| Alimentos | `GET /v1/foods`, `GET /v1/foods/suggestions`, `GET /v1/foods/:id`, `GET /v1/foods/barcode/:barcode`, `POST /v1/foods/manual` | Após 3 caracteres e 650 ms, sugestões combinam catálogo e provedores no backend; busca completa continua paginada e acionada pelo botão. |
 | Refeições | `POST /v1/meals/manual`, `GET/PATCH/DELETE /v1/meals/:id`, `GET /v1/meals` | Criação, histórico paginado, edição de quantidades e exclusão lógica. O backend recalcula totais. |
 | Fila offline | Mesmo `POST /v1/meals/manual` | Fila é isolada por `userId`, persiste a chave idempotente, serializa flushes e só remove após resposta confirmada. Erros 400/403/404 ficam visíveis e não entram em loop. |
 | Progresso | `GET /v1/progress/daily`, `GET /v1/progress/history` | Home e histórico exibem snapshot canônico e meta do perfil/planejamento calculada no servidor. |
@@ -50,6 +50,11 @@ abaixo usa dados simulados.
 | 404 | Exibe recurso inexistente. Em progresso diário vazio, o contrato legado é convertido para consumo zero. |
 | 409 | Exibe conflito (conta duplicada, administrador tentando sair, saldo/inventário ou chave reutilizada em outra operação). |
 | 429/5xx/rede | Mantém operação idempotente pendente; retry posterior usa exatamente a mesma chave. |
+
+Na busca rápida, `externalStatus=UNAVAILABLE` é diferente de erro de conexão e
+de lista vazia: o app informa que a fonte externa está indisponível e ainda
+exibe resultados locais. Uma resposta bem-sucedida e vazia com
+`externalStatus=AVAILABLE` é o único caso apresentado como “nenhum alimento”.
 
 ## Limites intencionais
 

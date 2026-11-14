@@ -2,10 +2,10 @@ import type { FoodItem } from '@/api/types/domain';
 
 // Sugestões rápidas da busca de alimento (guia rápida enquanto digita).
 
-export const SUGGESTION_MIN_LENGTH = 2;
+export const SUGGESTION_MIN_LENGTH = 3;
 export const SUGGESTION_MAX_LENGTH = 100;
 export const SUGGESTION_LIMIT = 8;
-export const SUGGESTION_DEBOUNCE_MS = 300;
+export const SUGGESTION_DEBOUNCE_MS = 650;
 
 // Um caractere vira UM caractere (minúsculo, sem acento): assim a posição no
 // texto normalizado é a mesma posição no original (necessário para o destaque).
@@ -19,7 +19,8 @@ export function normalizeText(text: string): string {
   return Array.from(text).map(normalizeChar).join('');
 }
 
-// O texto digitado vale como sugestão a partir de 2 e até 100 caracteres.
+// Três caracteres e 650 ms evitam uma chamada externa por tecla. O backend
+// ainda aplica cache compartilhado, coalescência e limite por provedor.
 export function isSuggestionQuery(query: string): boolean {
   const length = query.trim().length;
   return length >= SUGGESTION_MIN_LENGTH && length <= SUGGESTION_MAX_LENGTH;

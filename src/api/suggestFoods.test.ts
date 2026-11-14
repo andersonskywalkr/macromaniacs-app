@@ -1,8 +1,8 @@
 import { httpClient } from './client';
 import { searchFoods, suggestFoods } from './foods';
 
-// Modo REAL: a busca completa NÃO manda external=false; as sugestões mandam
-// external=false e limit=8.
+// Modo REAL: a busca completa preserva seu endpoint paginado; sugestões usam
+// o endpoint próprio que combina catálogo local e provedores externos.
 jest.mock('./config', () => ({
   MOCK_LATENCY_MS: 0,
   USE_MOCK: false,
@@ -30,14 +30,14 @@ const backendFood = (id: string, name: string) => ({
 describe('food search API (real mode)', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('suggestions use GET /v1/foods with external=false and limit=8, and cancel with the signal', async () => {
-    get.mockResolvedValue({ data: { items: [], meta: {} } });
+  it('uses the suggestions endpoint with limit=8 and forwards cancellation', async () => {
+    get.mockResolvedValue({ data: { items: [], externalStatus: 'AVAILABLE' } });
     const controller = new AbortController();
 
     await suggestFoods('  frango fr ', controller.signal);
 
-    expect(get).toHaveBeenCalledWith('/v1/foods', {
-      params: { q: 'frango fr', page: 1, limit: 8, external: false },
+    expect(get).toHaveBeenCalledWith('/v1/foods/suggestions', {
+      params: { q: 'frango fr', limit: 8 },
       signal: controller.signal,
     });
   });
@@ -61,26 +61,32 @@ describe('food search API (real mode)', () => {
           backendFood('3', 'Frango frito'),
           backendFood('4', 'Frango grelhado'),
         ],
-        meta: {},
+        externalStatus: 'AVAILABLE',
       },
     });
 
     const suggestions = await suggestFoods('fr');
 
-    expect(suggestions.map((f) => f.name)).toEqual([
+    expect(suggestions.items.map((f) => f.name)).toEqual([
       'Frango frito',
       'Frango grelhado',
       'Peito de frango',
       'Refrigerante',
     ]);
     // o formato do backend foi convertido para o do app
-    expect(suggestions[0].nutritionPer100g).toMatchObject({ calories: 100, carbohydrates: 1 });
+    expect(suggestions.items[0].nutritionPer100g).toMatchObject({
+      calories: 100,
+      carbohydrates: 1,
+    });
   });
 
   it('never returns more than 8', async () => {
     get.mockResolvedValue({
-      data: { items: Array.from({ length: 12 }, (_, i) => backendFood(String(i), `Frango ${i}`)), meta: {} },
+      data: {
+        items: Array.from({ length: 12 }, (_, i) => backendFood(String(i), `Frango ${i}`)),
+        externalStatus: 'AVAILABLE',
+      },
     });
-    expect(await suggestFoods('fr')).toHaveLength(8);
+    expect((await suggestFoods('fr')).items).toHaveLength(8);
   });
 });

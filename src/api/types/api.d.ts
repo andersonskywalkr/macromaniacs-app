@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/foods/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sugerir alimentos locais e externos com cache e relevância */
+        get: operations["FoodProductsController_suggestions_v1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/foods/barcode/{barcode}": {
         parameters: {
             query?: never;
@@ -254,14 +271,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Consultar o próprio perfil nutricional */
+        /** Consultar o próprio perfil e avatar persistente */
         get: operations["UsersController_getMe_v1"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Atualizar o próprio perfil e recalcular métricas nutricionais */
+        /**
+         * Atualizar o próprio perfil, inclusive o avatar DiceBear
+         * @description Um PATCH somente de avatar não conclui o onboarding nem altera medidas ou dados nutricionais.
+         */
         patch: operations["UsersController_updateMe_v1"];
         trace?: never;
     };
@@ -761,6 +781,11 @@ export interface components {
             items: components["schemas"]["FoodResponseDto"][];
             meta: components["schemas"]["PaginationMetaDto"];
         };
+        FoodSuggestionsResponseDto: {
+            items: components["schemas"]["FoodResponseDto"][];
+            /** @enum {string} */
+            externalStatus: "AVAILABLE" | "UNAVAILABLE";
+        };
         CreateManualFoodDto: {
             /** @example Arroz integral cozido */
             name: string;
@@ -1018,6 +1043,18 @@ export interface components {
             /** @example 150 */
             amountGrams?: number;
         };
+        AvatarConfigDto: {
+            /**
+             * @example adventurer
+             * @enum {string}
+             */
+            style: "avataaars" | "adventurer" | "big-smile" | "fun-emoji";
+            /**
+             * @description Seed aleatória sem dados pessoais
+             * @example abc123xyz789
+             */
+            seed: string;
+        };
         BodyMeasurementResponseDto: {
             /** Format: uuid */
             id: string;
@@ -1064,6 +1101,8 @@ export interface components {
             username: string;
             /** @example Nicolly */
             displayName?: Record<string, never> | null;
+            /** @description Configuração visual DiceBear; null quando não escolhida */
+            avatar: components["schemas"]["AvatarConfigDto"] | null;
             /** Format: date */
             dateOfBirth?: Record<string, never> | null;
             /** @enum {string|null} */
@@ -1089,6 +1128,8 @@ export interface components {
             nutrition?: components["schemas"]["NutritionMetricsResponseDto"] | null;
         };
         UpdateMyProfileDto: {
+            /** @description Configuração DiceBear persistida. Envie null para remover o avatar. */
+            avatar?: components["schemas"]["AvatarConfigDto"] | null;
             /** @example Nicolly */
             displayName?: string;
             /** @example nicolly_28 */
@@ -1412,6 +1453,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FoodListResponseDto"];
+                };
+            };
+        };
+    };
+    FoodProductsController_suggestions_v1: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: components["schemas"]["Object"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodSuggestionsResponseDto"];
                 };
             };
         };
