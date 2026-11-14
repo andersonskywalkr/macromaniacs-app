@@ -6,6 +6,8 @@
  * domínio "amigáveis" que a UI consome, mapeados a partir daqueles.
  */
 
+import type { AvatarChoice } from '@/utils/avatar';
+
 // Valores conhecidos de origem do alimento. O backend pode devolver outros: o
 // valor é preservado como veio (por isso o `string & {}`, que mantém o
 // autocompletar dos conhecidos sem descartar os demais).
@@ -205,6 +207,7 @@ export interface UserProfile {
   email: string;
   username: string;
   displayName: string | null;
+  avatar: AvatarChoice | null;
   dateOfBirth: string | null;
   biologicalSex: BiologicalSex | null;
   goal: NutritionGoal | null;

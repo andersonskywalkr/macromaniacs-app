@@ -15,6 +15,7 @@ const profile = {
   email: 'user@example.com',
   username: 'macro_user',
   displayName: null,
+  avatar: null,
   dateOfBirth: null,
   biologicalSex: null,
   goal: null,
@@ -57,5 +58,38 @@ describe('users API', () => {
 
     await expect(updateMyProfile(payload)).resolves.toEqual(completed);
     expect(httpClient.patch).toHaveBeenCalledWith('/v1/users/me', payload);
+  });
+
+  it('saves and removes the canonical avatar through the profile endpoint', async () => {
+    const avatar = { style: 'adventurer', seed: 'abc123xyz789' } as const;
+    jest.mocked(httpClient.patch).mockResolvedValueOnce({
+      data: { ...profile, avatar },
+    });
+
+    await expect(updateMyProfile({ avatar })).resolves.toMatchObject({ avatar });
+    expect(httpClient.patch).toHaveBeenLastCalledWith('/v1/users/me', { avatar });
+
+    jest.mocked(httpClient.patch).mockResolvedValueOnce({ data: profile });
+    await expect(updateMyProfile({ avatar: null })).resolves.toMatchObject({
+      avatar: null,
+    });
+    expect(httpClient.patch).toHaveBeenLastCalledWith('/v1/users/me', {
+      avatar: null,
+    });
+  });
+
+  it('normalizes a malformed remote avatar to null', async () => {
+    jest.mocked(httpClient.get).mockResolvedValue({
+      data: {
+        ...profile,
+        avatar: {
+          style: 'adventurer',
+          seed: 'abc123xyz789',
+          url: 'https://evil.example/avatar.svg',
+        },
+      },
+    });
+
+    await expect(getMyProfile()).resolves.toMatchObject({ avatar: null });
   });
 });

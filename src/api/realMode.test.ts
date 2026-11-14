@@ -366,6 +366,7 @@ describe('profile (real mode): sex and timezone', () => {
     email: 'a@b.c',
     username: 'anderson',
     displayName: 'Anderson',
+    avatar: { style: 'adventurer', seed: 'abc123xyz789' },
     dateOfBirth: '1998-04-12',
     biologicalSex: 'NOT_INFORMED',
     goal: 'RECOMPOSITION',
@@ -388,6 +389,10 @@ describe('profile (real mode): sex and timezone', () => {
     expect(loaded.nutrition).toBeNull();
     expect(loaded.timezone).toBe('America/Sao_Paulo');
     expect(loaded.goal).toBe('RECOMPOSITION');
+    expect(loaded.avatar).toEqual({
+      style: 'adventurer',
+      seed: 'abc123xyz789',
+    });
   });
 
   it('sends the timezone and FEMALE or MALE on PATCH /v1/users/me', async () => {
@@ -407,6 +412,15 @@ describe('profile (real mode): sex and timezone', () => {
     });
     expect(patch).toHaveBeenCalledWith('/v1/users/me', { displayName: 'Anderson' });
     expect(JSON.stringify(patch.mock.calls)).not.toContain('NOT_INFORMED');
+  });
+
+  it('sends the avatar configuration on the authenticated profile PATCH', async () => {
+    patch.mockResolvedValue({ data: profile });
+    const avatar = { style: 'adventurer', seed: 'abc123xyz789' } as const;
+
+    await updateMyProfile({ avatar });
+
+    expect(patch).toHaveBeenCalledWith('/v1/users/me', { avatar });
   });
 });
 

@@ -14,6 +14,7 @@ import { CheckIcon } from '@/components/icons';
 import { InlineRetry } from '@/components/InlineRetry';
 import { useMyAvatar } from '@/hooks/useMyAvatar';
 import { useAuthStore } from '@/store/authStore';
+import { ApiError } from '@/api/ApiError';
 import {
   AVATAR_OPTIONS_COUNT,
   AVATAR_STYLES,
@@ -32,7 +33,16 @@ const GRID_IMAGE_SIZE = 128;
 const STAGGER_MS = 130;
 const TILE_BORDER = 3;
 
-// Escolha do avatar de desenho. Fica só neste aparelho (avatarStore).
+function saveErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.isNetworkError) {
+    return 'Sem conexão com o servidor. Confira a internet e tente novamente.';
+  }
+  if (error instanceof ApiError && error.message) return error.message;
+  return 'Não foi possível salvar o avatar. Tente novamente.';
+}
+
+// Escolha do avatar de desenho. No modo real, o backend confirma a escolha
+// antes de a tela voltar; no modo mock, o cache local mantém o comportamento.
 export function AvatarPickerScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const { width } = useWindowDimensions();
@@ -46,7 +56,9 @@ export function AvatarPickerScreen({ navigation }: Props) {
   const [failed, setFailed] = useState<Set<string>>(() => new Set());
   const [reloadKey, setReloadKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const touched = useRef(false);
+  const savingRef = useRef(false);
 
   // Mostra o avatar atual como primeira opção, já selecionado (se a pessoa
   // ainda não mexeu em nada quando ele terminar de carregar).
@@ -84,10 +96,19 @@ export function AvatarPickerScreen({ navigation }: Props) {
   }
 
   async function handleSave() {
-    if (!selected || saving) return;
+    if (!selected || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
-    await save({ style, seed: selected });
-    navigation.goBack();
+    setSaveError(null);
+    try {
+      await save({ style, seed: selected });
+      navigation.goBack();
+    } catch (error) {
+      setSaveError(saveErrorMessage(error));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   }
 
   return (
@@ -99,7 +120,7 @@ export function AvatarPickerScreen({ navigation }: Props) {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.note, { color: tokens.textSecondary }]}>
-          Fica só neste aparelho: os outros membros dos grupos continuam vendo suas iniciais.
+          Sua escolha fica vinculada à conta e será restaurada em outros dispositivos.
         </Text>
 
         <View accessibilityRole="radiogroup" style={styles.styles}>
@@ -172,6 +193,12 @@ export function AvatarPickerScreen({ navigation }: Props) {
           Ilustrações pela DiceBear (dicebear.com). Avataaars: Pablo Stanley. Adventurer: Lisa Wischofsky,
           Big Smile: Ashley Seo e Fun Emoji: Davis Uche, sob licença CC BY 4.0.
         </Text>
+
+        {saveError && (
+          <Text accessibilityRole="alert" style={[styles.saveError, { color: tokens.danger }]}>
+            {saveError}
+          </Text>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -179,7 +206,7 @@ export function AvatarPickerScreen({ navigation }: Props) {
         <Button
           label="Salvar"
           onPress={handleSave}
-          disabled={!selected}
+          disabled={!selected || saving}
           loading={saving}
           accessibilityHint="Usa o avatar escolhido no seu perfil"
           style={styles.footerButton}
@@ -214,6 +241,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   note: { fontFamily: fontFamily(600), fontSize: 13 },
+  saveError: { fontFamily: fontFamily(600), fontSize: 13 },
   styles: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tile: {
     alignItems: 'center',

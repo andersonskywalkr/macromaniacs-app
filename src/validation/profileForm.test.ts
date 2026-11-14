@@ -7,6 +7,7 @@ const profile: UserProfile = {
   email: 'a@b.c',
   username: 'anderson',
   displayName: 'Anderson',
+  avatar: null,
   dateOfBirth: '1998-04-12',
   biologicalSex: 'FEMALE',
   goal: 'LOSE_WEIGHT',

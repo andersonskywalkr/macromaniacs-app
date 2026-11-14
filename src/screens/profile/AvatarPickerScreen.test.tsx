@@ -87,6 +87,38 @@ describe('AvatarPickerScreen', () => {
     expect(navigation.goBack).toHaveBeenCalled();
   });
 
+  it('shows a save error and stays on screen so the user can retry', async () => {
+    mockSave.mockRejectedValueOnce(new Error('offline'));
+    const navigation = renderPicker();
+    fireEvent.press(screen.getByLabelText('Avatar 1 de 12'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Salvar'));
+    });
+
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(navigation.goBack).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getByText(/Não foi possível salvar o avatar/)).toBeTruthy();
+    expect(screen.getByLabelText('Salvar').props.accessibilityState.busy).toBe(false);
+  });
+
+  it('prevents duplicate submissions while a save is pending', async () => {
+    let finish!: () => void;
+    mockSave.mockReturnValueOnce(new Promise<void>((resolve) => {
+      finish = resolve;
+    }));
+    renderPicker();
+    fireEvent.press(screen.getByLabelText('Avatar 1 de 12'));
+
+    fireEvent.press(screen.getByLabelText('Salvar'));
+    fireEvent.press(screen.getByLabelText('Salvar'));
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Salvar').props.accessibilityState.busy).toBe(true);
+
+    await act(async () => finish());
+  });
+
   it('Cancelar goes back without saving', () => {
     const navigation = renderPicker();
 

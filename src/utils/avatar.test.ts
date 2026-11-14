@@ -17,19 +17,18 @@ describe('buildAvatarUrl', () => {
   });
 
   it('uses the 10.x endpoint', () => {
-    expect(buildAvatarUrl({ style: 'avataaars', seed: 'a', size: 64 })).toContain('/10.x/avataaars/png');
+    expect(buildAvatarUrl({ style: 'avataaars', seed: 'abcdef123456', size: 64 })).toContain('/10.x/avataaars/png');
   });
 
-  it('encodes the seed', () => {
-    const url = buildAvatarUrl({ style: 'big-smile', seed: 'a b&c=d/é', size: 64 });
-    expect(url).toContain(`seed=${encodeURIComponent('a b&c=d/é')}`);
-    expect(url).not.toContain('a b');
-    expect(new URL(url).searchParams.get('seed')).toBe('a b&c=d/é');
+  it('rejects a seed that could inject arbitrary URL content', () => {
+    expect(() =>
+      buildAvatarUrl({ style: 'big-smile', seed: 'a b&c=d/é', size: 64 }),
+    ).toThrow('Invalid avatar configuration');
   });
 
   it('limits the size to what the API accepts (256 px)', () => {
-    expect(buildAvatarUrl({ style: 'fun-emoji', seed: 'abc', size: 1000 })).toContain('size=256');
-    expect(buildAvatarUrl({ style: 'fun-emoji', seed: 'abc', size: 0 })).toContain('size=1');
+    expect(buildAvatarUrl({ style: 'fun-emoji', seed: 'abcdef123456', size: 1000 })).toContain('size=256');
+    expect(buildAvatarUrl({ style: 'fun-emoji', seed: 'abcdef123456', size: 0 })).toContain('size=1');
   });
 });
 
@@ -85,6 +84,7 @@ describe('stored avatar', () => {
     JSON.stringify({ style: 'avataaars', seed: 'curto' }),
     JSON.stringify({ style: 'avataaars', seed: 'tem espaço e /' }),
     JSON.stringify({ style: 'avataaars' }),
+    JSON.stringify({ style: 'avataaars', seed: 'abc123def456', url: 'https://evil.example' }),
   ])('ignores invalid data (%p)', (raw) => {
     expect(parseStoredAvatar(raw)).toBeNull();
   });

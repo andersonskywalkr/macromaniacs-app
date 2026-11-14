@@ -27,6 +27,7 @@ export const mockUserProfile: UserProfile = {
   email: 'anderson@example.com',
   username: 'anderson',
   displayName: 'Anderson',
+  avatar: null,
   dateOfBirth: '1998-04-12',
   biologicalSex: 'MALE',
   goal: 'LOSE_WEIGHT',

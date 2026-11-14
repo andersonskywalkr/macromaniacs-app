@@ -32,6 +32,7 @@ const user = {
   email: 'user@example.com',
   username: 'macro_user',
   displayName: 'Macro User',
+  avatar: null,
   dateOfBirth: '1996-09-19',
   biologicalSex: 'MALE' as const,
   goal: 'MAINTAIN' as const,
@@ -102,6 +103,17 @@ describe('auth store', () => {
       accessToken: 'saved-token',
       user,
     });
+  });
+
+  it('restores the remote avatar with the authenticated profile', async () => {
+    const avatar = { style: 'adventurer', seed: 'abc123xyz789' } as const;
+    jest.mocked(SecureStore.getItemAsync).mockResolvedValue('saved-token');
+    mockGetMyProfile.mockResolvedValue({ ...user, avatar });
+
+    await useAuthStore.getState().bootstrap();
+
+    expect(useAuthStore.getState().user?.avatar).toEqual(avatar);
+    expect(mockGetMyProfile).toHaveBeenCalledTimes(1);
   });
 
   it('restores an incomplete profile so navigation can open onboarding', async () => {

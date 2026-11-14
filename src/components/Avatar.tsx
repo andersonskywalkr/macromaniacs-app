@@ -12,8 +12,9 @@ interface AvatarProps {
   displayName: string;
   size?: number;
   streakCount?: number; // se fornecido, mostra o indicador de foguinho
-  // É o usuário logado? Então usa o avatar de desenho escolhido neste aparelho
-  // (o backend não sabe o avatar de ninguém: os outros ficam com iniciais).
+  // É o usuário logado? Então usa a configuração persistida no perfil.
+  // Outros membros continuam com iniciais enquanto os DTOs sociais não expõem
+  // uma configuração visual pública.
   isSelf?: boolean;
   // Espera antes de pedir a imagem (a grade escalona os pedidos por causa do
   // limite de 10 PNG por segundo da DiceBear).
