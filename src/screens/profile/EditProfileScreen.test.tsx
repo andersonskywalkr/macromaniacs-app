@@ -96,7 +96,7 @@ describe('EditProfileScreen', () => {
     expect(isDisabled(screen.getByLabelText('Salvar alterações'))).toBe(true);
   });
 
-  it('is filled with the current data and the three sex options', () => {
+  it('is filled with the current data and the two sex options', () => {
     const { screen } = renderScreen();
 
     expect(screen.getByDisplayValue('Anderson')).toBeTruthy();
@@ -105,7 +105,7 @@ describe('EditProfileScreen', () => {
     expect(screen.getByDisplayValue('82')).toBeTruthy();
     expect(screen.getByLabelText('Feminino')).toBeTruthy();
     expect(screen.getByLabelText('Masculino').props.accessibilityState.selected).toBe(true);
-    expect(screen.getByLabelText('Prefiro não informar')).toBeTruthy();
+    expect(screen.queryByLabelText('Prefiro não informar')).toBeNull();
     expect(screen.queryByText(/biológico/i)).toBeNull();
   });
 
@@ -131,18 +131,18 @@ describe('EditProfileScreen', () => {
   });
 
   it('saves the whole form, updates the session user and returns to the profile', async () => {
-    const updated = { ...mockUser, biologicalSex: 'PREFER_NOT_TO_SAY' };
+    const updated = { ...mockUser, biologicalSex: 'FEMALE' };
     mockMutateAsync.mockResolvedValue(updated);
     const { navigation, screen } = renderScreen();
 
-    fireEvent.press(screen.getByLabelText('Prefiro não informar'));
+    fireEvent.press(screen.getByLabelText('Feminino'));
     fireEvent.changeText(screen.getByDisplayValue('82'), '80');
     fireEvent.press(screen.getByLabelText('Salvar alterações'));
 
     await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
     expect(mockMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        biologicalSex: 'NOT_INFORMED',
+        biologicalSex: 'FEMALE',
         currentWeightKg: 80,
         heightCm: 178,
         dateOfBirth: '1998-04-12',
@@ -153,6 +153,48 @@ describe('EditProfileScreen', () => {
     );
     await waitFor(() => expect(mockSetUser).toHaveBeenCalledWith(updated));
     expect(navigation.popTo).toHaveBeenCalledWith('ProfileHome', { saved: true });
+  });
+
+  describe('old account without sex (NOT_INFORMED or empty from the backend)', () => {
+    beforeEach(() => {
+      mockUser.biologicalSex = null as never;
+    });
+    afterEach(() => {
+      mockUser.biologicalSex = 'MALE';
+    });
+
+    it('shows the selector with nothing selected and asks to choose, with Salvar blocked', () => {
+      const { screen } = renderScreen();
+
+      expect(screen.getByLabelText('Feminino').props.accessibilityState.selected).toBe(false);
+      expect(screen.getByLabelText('Masculino').props.accessibilityState.selected).toBe(false);
+      expect(screen.getByText('Selecione feminino ou masculino para continuar.')).toBeTruthy();
+      expect(isDisabled(screen.getByLabelText('Salvar alterações'))).toBe(true);
+    });
+
+    it('keeps Salvar blocked when only other fields change', () => {
+      const { screen } = renderScreen();
+
+      fireEvent.changeText(screen.getByDisplayValue('82'), '80');
+
+      expect(screen.getByText('Selecione feminino ou masculino para continuar.')).toBeTruthy();
+      expect(isDisabled(screen.getByLabelText('Salvar alterações'))).toBe(true);
+    });
+
+    it('unlocks after choosing one and sends only FEMALE or MALE', async () => {
+      mockMutateAsync.mockResolvedValue({ ...mockUser, biologicalSex: 'MALE' });
+      const { screen } = renderScreen();
+
+      fireEvent.press(screen.getByLabelText('Masculino'));
+      expect(screen.queryByText('Selecione feminino ou masculino para continuar.')).toBeNull();
+      expect(isDisabled(screen.getByLabelText('Salvar alterações'))).toBe(false);
+
+      fireEvent.press(screen.getByLabelText('Salvar alterações'));
+
+      await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
+      expect(mockMutateAsync.mock.calls[0][0].biologicalSex).toBe('MALE');
+      expect(JSON.stringify(mockMutateAsync.mock.calls)).not.toContain('NOT_INFORMED');
+    });
   });
 
   it('keeps what was typed and shows the error when saving fails', async () => {

@@ -18,7 +18,7 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { useAuthStore } from '@/store/authStore';
 import { useUpdateProfile } from '@/queries/useUpdateProfile';
-import { buildOnboardingRequest, validateOnboarding } from '@/validation/onboarding';
+import { SEX_REQUIRED_MESSAGE, buildOnboardingRequest, validateOnboarding } from '@/validation/onboarding';
 import { hasFormChanges, profileToFormData } from '@/validation/profileForm';
 import type { OnboardingData } from '@/screens/onboarding/types';
 import { StepBasicInfo } from '@/screens/onboarding/steps/StepBasicInfo';
@@ -81,7 +81,9 @@ function EditProfileForm({ navigation, initial, onSaved, mutateAsync, isSaving }
   const avatarName = user?.displayName ?? user?.username ?? '';
 
   const dirty = hasFormChanges(snapshot, form);
-  const validationError = dirty ? validateOnboarding(form) : null;
+  // Conta antiga sem sexo: o aviso aparece desde o início e o botão só libera
+  // depois de escolher feminino ou masculino.
+  const validationError = dirty ? validateOnboarding(form) : form.sex ? null : SEX_REQUIRED_MESSAGE;
   const canSave = dirty && validationError === null && !isSaving;
 
   function patch(change: Partial<OnboardingData>) {

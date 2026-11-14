@@ -7,7 +7,7 @@ Este repositório é o **app (frontend)**. O backend (NestJS + PostgreSQL, publi
 ## O que já está pronto
 
 - **Conta:** cadastro, login, restauração da sessão, sair, "Esqueci a senha" (no modo mock é uma demonstração; no modo real mostra que o recurso ainda não está disponível).
-- **Onboarding:** sexo, idade, altura, peso, objetivo, nível de atividade e restrições alimentares, salvos no perfil.
+- **Onboarding:** sexo (feminino ou masculino, obrigatório), idade, altura, peso, objetivo, nível de atividade e restrições alimentares, salvos no perfil.
 - **Início:** anel de calorias do dia, macros (proteína, carboidrato, gordura), sequência de dias e pontos.
 - **Refeições:** montar, salvar, editar quantidades e excluir refeições; lista do dia com totais e fila offline idempotente por usuário.
 - **Busca de alimentos:** sugestões enquanto digita, histórico de buscas, busca completa e cadastro manual de alimento.
@@ -64,6 +64,7 @@ O app lê estas variáveis do `.env`. Elas começam com `EXPO_PUBLIC_` porque o 
 | `EXPO_PUBLIC_USE_AUTH_MOCK` | `true` = login, cadastro e perfil de demonstração (qualquer usuário e senha entram). `false` = login real. Se não for definida, acompanha `EXPO_PUBLIC_USE_MOCK`. |
 | `EXPO_PUBLIC_API_URL` | Endereço do backend, **sem `/v1` no final** (o app já põe `/v1` em todas as rotas). Obrigatória quando alguma das duas chaves acima for `false`; sem ela o app não abre. |
 | `EXPO_PUBLIC_MAINTENANCE_TABS` | Abas que mostram a tela "em construção" no lugar da tela real (`home`, `meals`, `group`, separadas por vírgula). **Hoje nenhuma aba fica em manutenção**: vazia ou não definida dá o mesmo resultado. Nos builds do EAS (APK) ela simplesmente **não é definida** (o EAS não aceita valor vazio em `env`); no desenvolvimento local vale a linha do `.env`. A aba Perfil nunca entra aqui. |
+| `EXPO_PUBLIC_TERMS_URL` | **Opcional.** Endereço do documento de Termos de Uso, Política de Privacidade e Termo de Consentimento (versão 2026-11-14), aberto pelo link do Cadastro e pela linha "Termos de Uso e Privacidade" do Perfil. Sem ela (ou vazia), vale o padrão: o PDF em `docs/legal/MacroManiacs_Termos_de_Aceite.pdf` no GitHub. Não vai no `eas.json`. |
 | `EXPO_PUBLIC_LANDING_PAGE_URL` | Página aberta pelo botão da tela "em construção". |
 
 Combinações mais usadas:
@@ -157,8 +158,7 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
 - **Histórico de busca:** fica só no aparelho (some ao limpar os dados do app ou trocar de celular).
 - **Recuperar senha:** no modo real ainda não está disponível.
 - **Meta batida:** a faixa de 90% a 110% da meta aguarda validação da Nutrição.
-- **"Prefiro não informar" (sexo):** o backend pode retornar `nutrition: null`;
-  nesse caso o app não inventa TMB/TDEE/meta e exibe o estado indisponível.
+- **Conta antiga sem sexo:** contas criadas antes da regra atual podem vir do backend com `NOT_INFORMED` ou sem sexo, e então `nutrition: null`. O app não inventa TMB/TDEE/meta: a Home e o Perfil mostram o aviso "Falta informar o seu sexo…" com o botão "Completar perfil", e o Editar perfil exige escolher feminino ou masculino antes de salvar.
 - **Chat:** usa o feed textual real do grupo com atualização periódica; não há
   endpoint WebSocket/tempo real dedicado.
 - **Desafios de grupo:** não há endpoint público; por isso não existe aba
@@ -185,6 +185,8 @@ Estilos oferecidos e licenças (conferidas em dicebear.com/styles):
 Os estilos CC BY exigem crédito ao criador e link para a licença: o crédito está aqui e também no rodapé da tela "Escolher avatar". Se a lista de estilos mudar, confira a licença de cada um antes.
 
 ## Decisões de projeto
+
+- **Sexo: só feminino e masculino.** Decisão do grupo: o app não oferece "Prefiro não informar", porque as fórmulas nutricionais do backend (TMB, TDEE e meta de calorias) dependem de FEMALE ou MALE; com `NOT_INFORMED` o backend devolve `nutrition: null`. O campo é obrigatório no Onboarding e no Editar perfil, e o app **nunca envia `NOT_INFORMED`** ao backend (o valor só é aceito na leitura de contas antigas).
 
 - Expo gerenciado (sem código nativo próprio) e TypeScript estrito.
 - Tokens de design em `src/theme/tokens.ts`; estilos com `StyleSheet.create`, sem Tailwind.

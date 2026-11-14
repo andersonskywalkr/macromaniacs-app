@@ -4,14 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '@/navigation/types';
 import { useTheme } from '@/theme/ThemeProvider';
-import { spacing } from '@/theme/tokens';
+import { radius, spacing, touchTarget } from '@/theme/tokens';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ChoicePill } from '@/components/ChoicePill';
 import { InlineRetry } from '@/components/InlineRetry';
 import { ProgressRing } from '@/components/ProgressRing';
-import { FireIcon } from '@/components/icons';
+import { ChevronRightIcon, FireIcon } from '@/components/icons';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore, type ThemePreference } from '@/store/themeStore';
 import { useGamificationStats } from '@/queries/useGamificationStats';
@@ -20,6 +20,8 @@ import { summarizeCalories } from '@/utils/dailyProgress';
 import { formatDecimal } from '@/utils/nutrition';
 import { buildStreakWeek } from '@/utils/streak';
 import { resolveCalorieGoal } from '@/utils/nutritionFallback';
+import { CompleteProfileNotice } from '@/components/CompleteProfileNotice';
+import { TERMS_OPEN_ERROR_MESSAGE, openTermsDocument } from '@/utils/terms';
 import { resolveTimezone, todayAsLocalDate } from '@/utils/today';
 import { GOAL_LABELS } from '@/screens/onboarding/types';
 
@@ -52,6 +54,7 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
   const gamification = useGamificationStats();
   const progress = useProgressToday();
   const [showSaved, setShowSaved] = useState(false);
+  const [termsLinkError, setTermsLinkError] = useState(false);
 
   // Confirmação curta depois de salvar no Editar perfil.
   const savedParam = route.params?.saved;
@@ -73,12 +76,21 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
     );
   }
 
+  async function handleOpenTerms() {
+    setTermsLinkError(false);
+    const opened = await openTermsDocument();
+    if (!opened) setTermsLinkError(true);
+  }
+
   const name = user.displayName ?? user.username;
   const calorieGoal = resolveCalorieGoal(user) ?? progress.data?.calories.goal ?? null;
   const goalLabel = user.goal ? GOAL_LABELS[user.goal] : undefined;
   const currentWeight = user.currentMeasurement?.weightKg;
 
   function renderToday() {
+    if (!calorieGoal && !user!.biologicalSex) {
+      return <CompleteProfileNotice onPress={() => navigation.navigate('EditProfile')} />;
+    }
     if (progress.isLoading) {
       return <ActivityIndicator color={tokens.primary} accessibilityLabel="Carregando seu dia" />;
     }
@@ -244,7 +256,7 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
             <GoalRow label="Objetivo" value={goalLabel ?? '—'} />
             <GoalRow
               label="Meta calórica"
-              value={calorieGoal === null ? '—' : `${Math.round(calorieGoal)} kcal/dia`}
+              value={!calorieGoal ? '—' : `${Math.round(calorieGoal)} kcal/dia`}
             />
             <GoalRow
               label="Peso atual"
@@ -272,6 +284,27 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
           </View>
         </View>
 
+        <View style={styles.account}>
+          <Text style={[styles.section, { color: tokens.textSecondary }]}>CONTA</Text>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Termos de Uso e Privacidade"
+            accessibilityHint="Abre o documento no navegador"
+            onPress={handleOpenTerms}
+            style={[styles.accountRow, { backgroundColor: tokens.card }]}
+          >
+            <Text style={[styles.accountRowText, { color: tokens.text }]}>Termos de Uso e Privacidade</Text>
+            <View style={styles.accountChevron}>
+              <ChevronRightIcon size={10} color={tokens.textSecondary} />
+            </View>
+          </Pressable>
+          {termsLinkError && (
+            <Text accessibilityRole="alert" style={[styles.accountError, { color: tokens.textSecondary }]}>
+              {TERMS_OPEN_ERROR_MESSAGE}
+            </Text>
+          )}
+        </View>
+
         <Button label="Sair" variant="secondary" onPress={confirmSignOut} style={styles.signOutButton} />
       </ScrollView>
     </SafeAreaView>
@@ -289,6 +322,20 @@ function GoalRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  account: { marginTop: spacing.sm },
+  accountChevron: { alignItems: 'center', justifyContent: 'center' },
+  accountError: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: spacing.sm },
+  accountRow: {
+    alignItems: 'center',
+    borderRadius: radius.card / 2,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+    minHeight: touchTarget.minSize,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  accountRowText: { flex: 1, fontFamily: fontFamily(700), fontSize: 15 },
   appearance: { marginTop: spacing.sm },
   bigValue: { fontFamily: fontFamily(800), fontSize: 20 },
   card: { padding: spacing.lg },

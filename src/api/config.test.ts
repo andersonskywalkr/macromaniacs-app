@@ -1,4 +1,4 @@
-import { parseMaintenanceTabs } from './config';
+import { DEFAULT_TERMS_URL, TERMS_VERSION, parseMaintenanceTabs, resolveTermsUrl } from './config';
 
 describe('parseMaintenanceTabs', () => {
   it('defaults to no tab in maintenance: Início, Refeições and Grupo are real', () => {
@@ -47,5 +47,47 @@ describe('MAINTENANCE_TABS with the variable absent (EAS builds do not define it
       const { MAINTENANCE_TABS } = require('./config') as typeof import('./config');
       expect([...MAINTENANCE_TABS]).toEqual(['group']);
     });
+  });
+});
+
+describe('terms document url', () => {
+  const original = process.env.EXPO_PUBLIC_TERMS_URL;
+
+  afterEach(() => {
+    if (original === undefined) delete process.env.EXPO_PUBLIC_TERMS_URL;
+    else process.env.EXPO_PUBLIC_TERMS_URL = original;
+  });
+
+  it('uses the default public address when the variable is not set or is empty', () => {
+    expect(resolveTermsUrl(undefined)).toBe(DEFAULT_TERMS_URL);
+    expect(resolveTermsUrl('')).toBe(DEFAULT_TERMS_URL);
+    expect(resolveTermsUrl('   ')).toBe(DEFAULT_TERMS_URL);
+  });
+
+  it('uses the variable when it is set', () => {
+    expect(resolveTermsUrl(' https://exemplo.com/termos.pdf ')).toBe('https://exemplo.com/termos.pdf');
+  });
+
+  it('TERMS_URL falls back to the default when the variable is absent, and follows it when set', () => {
+    delete process.env.EXPO_PUBLIC_TERMS_URL;
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { TERMS_URL } = require('./config') as typeof import('./config');
+      expect(TERMS_URL).toBe(DEFAULT_TERMS_URL);
+    });
+
+    process.env.EXPO_PUBLIC_TERMS_URL = 'https://exemplo.com/termos.pdf';
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { TERMS_URL } = require('./config') as typeof import('./config');
+      expect(TERMS_URL).toBe('https://exemplo.com/termos.pdf');
+    });
+  });
+
+  it('points to the PDF in docs/legal and keeps the version', () => {
+    expect(DEFAULT_TERMS_URL).toBe(
+      'https://github.com/andersonskywalkr/macromaniacs-app/blob/master/docs/legal/MacroManiacs_Termos_de_Aceite.pdf',
+    );
+    expect(TERMS_VERSION).toBe('2026-11-14');
   });
 });

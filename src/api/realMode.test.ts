@@ -381,22 +381,32 @@ describe('profile (real mode): sex and timezone', () => {
     timezone: 'America/Sao_Paulo',
   };
 
-  it('converts NOT_INFORMED from the backend to PREFER_NOT_TO_SAY', async () => {
+  it('reads NOT_INFORMED from the backend as a profile without sex (null) and does not break', async () => {
     get.mockResolvedValue({ data: profile });
     const loaded = await getMyProfile();
-    expect(loaded.biologicalSex).toBe('PREFER_NOT_TO_SAY');
+    expect(loaded.biologicalSex).toBeNull();
     expect(loaded.nutrition).toBeNull();
     expect(loaded.timezone).toBe('America/Sao_Paulo');
     expect(loaded.goal).toBe('RECOMPOSITION');
   });
 
-  it('sends the timezone and the mapped sex on PATCH /v1/users/me', async () => {
+  it('sends the timezone and FEMALE or MALE on PATCH /v1/users/me', async () => {
     patch.mockResolvedValue({ data: profile });
-    await updateMyProfile({ biologicalSex: 'NOT_INFORMED', timezone: 'America/Sao_Paulo' });
+    await updateMyProfile({ biologicalSex: 'FEMALE', timezone: 'America/Sao_Paulo' });
     expect(patch).toHaveBeenCalledWith('/v1/users/me', {
-      biologicalSex: 'NOT_INFORMED',
+      biologicalSex: 'FEMALE',
       timezone: 'America/Sao_Paulo',
     });
+  });
+
+  it('never sends NOT_INFORMED (or any other value) to the backend', async () => {
+    patch.mockResolvedValue({ data: profile });
+    await updateMyProfile({
+      biologicalSex: 'NOT_INFORMED' as never,
+      displayName: 'Anderson',
+    });
+    expect(patch).toHaveBeenCalledWith('/v1/users/me', { displayName: 'Anderson' });
+    expect(JSON.stringify(patch.mock.calls)).not.toContain('NOT_INFORMED');
   });
 });
 

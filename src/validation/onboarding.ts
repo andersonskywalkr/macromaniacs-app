@@ -3,6 +3,8 @@ import type { UpdateMyProfileRequest } from '@/api/users';
 import { toApiSex } from '@/api/sexMapping';
 import { getDeviceTimezone } from '@/utils/today';
 
+export const SEX_REQUIRED_MESSAGE = 'Selecione feminino ou masculino para continuar.';
+
 export function toIsoDate(value: string): string | null {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
   if (!match) return null;
@@ -68,7 +70,7 @@ export function validateOnboardingStep(
     }
   }
 
-  if (step === 1 && !data.sex) return 'Selecione uma opção para continuar.';
+  if (step === 1 && !data.sex) return SEX_REQUIRED_MESSAGE;
   if (step === 2 && !data.goal) return 'Selecione uma opção para continuar.';
   if (step === 3 && !data.activityLevel) {
     return 'Selecione uma opção para continuar.';
@@ -126,7 +128,8 @@ export function buildOnboardingRequest(
     dateOfBirth: toIsoDate(data.birthDate)!,
     heightCm: Number(data.heightCm),
     currentWeightKg: Number(data.weightKg.replace(',', '.')),
-    biologicalSex: data.sex ? toApiSex(data.sex) : null,
+    // validateOnboarding garante o sexo (FEMALE ou MALE) antes de chegar aqui.
+    biologicalSex: toApiSex(data.sex as NonNullable<OnboardingData['sex']>),
     goal: data.goal,
     activityLevel: data.activityLevel,
     targetWeightKg: data.targetWeightKg.trim()

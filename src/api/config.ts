@@ -50,5 +50,23 @@ export function parseMaintenanceTabs(raw: string | undefined): ReadonlySet<Maint
 
 export const MAINTENANCE_TABS = parseMaintenanceTabs(process.env.EXPO_PUBLIC_MAINTENANCE_TABS);
 
+// Documento de Termos de Uso, Política de Privacidade e Termo de Consentimento
+// (PDF em docs/legal/). EXPO_PUBLIC_TERMS_URL é OPCIONAL: se não estiver
+// definida (ou vier vazia), vale o endereço público padrão abaixo. Não coloque
+// essa variável no eas.json (o EAS não aceita valor vazio).
+export const DEFAULT_TERMS_URL =
+  'https://github.com/andersonskywalkr/macromaniacs-app/blob/master/docs/legal/MacroManiacs_Termos_de_Aceite.pdf';
+
+export function resolveTermsUrl(raw: string | undefined): string {
+  const value = raw?.trim();
+  return value ? value : DEFAULT_TERMS_URL;
+}
+
+export const TERMS_URL = resolveTermsUrl(process.env.EXPO_PUBLIC_TERMS_URL);
+
+// Versão do documento mostrada no Cadastro. O backend grava a versão pelo
+// próprio TERMS_VERSION dele: o app só envia termsAccepted: true.
+export const TERMS_VERSION = '2026-11-14';
+
 // URL da landing page oficial, aberta pelo botão da MaintenanceScreen.
 export const LANDING_PAGE_URL = process.env.EXPO_PUBLIC_LANDING_PAGE_URL ?? '';

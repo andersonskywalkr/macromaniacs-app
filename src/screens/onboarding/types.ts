@@ -10,8 +10,8 @@ export interface OnboardingData {
   birthDate: string;
   heightCm: string;
   weightKg: string;
-  // Usado só no cálculo do gasto de energia do corpo; "Prefiro não informar"
-  // é uma das 3 opções válidas.
+  // Obrigatório (feminino ou masculino): o backend só calcula TMB, TDEE e meta
+  // calórica para essas duas opções.
   sex: BiologicalSex | null;
   goal: NutritionGoal | null;
   activityLevel: ActivityLevel | null;
@@ -40,7 +40,6 @@ export const INITIAL_ONBOARDING_DATA: OnboardingData = {
 export const SEX_OPTIONS: { label: string; value: OnboardingData['sex'] }[] = [
   { label: 'Feminino', value: 'FEMALE' },
   { label: 'Masculino', value: 'MALE' },
-  { label: 'Prefiro não informar', value: 'PREFER_NOT_TO_SAY' },
 ];
 
 export const GOAL_OPTIONS: { label: string; value: NutritionGoal }[] = [

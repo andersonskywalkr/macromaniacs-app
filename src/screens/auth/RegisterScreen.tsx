@@ -19,6 +19,8 @@ import { register, login } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getAuthErrorMessage } from '@/api/authErrors';
 import { validateRegister } from '@/validation/auth';
+import { TERMS_VERSION } from '@/api/config';
+import { TERMS_OPEN_ERROR_MESSAGE, openTermsDocument } from '@/utils/terms';
 
 import { fontFamily } from '@/theme/fonts';
 import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
@@ -40,6 +42,7 @@ export function RegisterScreen({ navigation }: Props) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [termsLinkError, setTermsLinkError] = useState(false);
   const checkboxColor = {
     backgroundColor: form.termsAccepted ? tokens.primary : tokens.background,
     borderColor: tokens.primary,
@@ -47,6 +50,13 @@ export function RegisterScreen({ navigation }: Props) {
 
   function setField(field: keyof typeof form, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  // Abre o documento SEM mexer na caixa de aceite. Se não abrir, só avisa.
+  async function handleOpenTerms() {
+    setTermsLinkError(false);
+    const opened = await openTermsDocument();
+    if (!opened) setTermsLinkError(true);
   }
 
   async function handleRegister() {
@@ -127,25 +137,50 @@ export function RegisterScreen({ navigation }: Props) {
               onChangeText={(v) => setField('confirmPassword', v)}
               secureTextEntry
             />
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: form.termsAccepted }}
-              accessibilityLabel="Aceitar os termos de uso"
-              onPress={() => setField('termsAccepted', !form.termsAccepted)}
-              style={styles.termsRow}
-            >
-              <View
-                style={[
-                  styles.checkbox,
-                  checkboxColor,
-                ]}
+            <View style={styles.terms}>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: form.termsAccepted }}
+                accessibilityLabel="Aceitar os termos de uso e a política de privacidade"
+                accessibilityHint="Toque para marcar. O link abaixo abre o documento."
+                onPress={() => setField('termsAccepted', !form.termsAccepted)}
+                style={styles.termsRow}
               >
-                {form.termsAccepted && (
-                  <Text style={[styles.checkmark, { color: tokens.background }]}>✓</Text>
-                )}
-              </View>
-              <Text style={[styles.termsLabel, { color: tokens.text }]}>Aceito os termos de uso</Text>
-            </Pressable>
+                <View
+                  style={[
+                    styles.checkbox,
+                    checkboxColor,
+                  ]}
+                >
+                  {form.termsAccepted && (
+                    <Text style={[styles.checkmark, { color: tokens.background }]}>✓</Text>
+                  )}
+                </View>
+                <Text style={[styles.termsLabel, { color: tokens.text }]}>Li e aceito os</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Termos de Uso e a Política de Privacidade"
+                accessibilityHint="Abre o documento no navegador"
+                onPress={handleOpenTerms}
+                style={styles.termsLink}
+              >
+                <Text style={[styles.termsLinkText, { color: tokens.primary }]}>
+                  Termos de Uso e a Política de Privacidade
+                </Text>
+              </Pressable>
+
+              <Text style={[styles.termsVersion, { color: tokens.textSecondary }]}>
+                Versão {TERMS_VERSION}
+              </Text>
+
+              {termsLinkError && (
+                <Text accessibilityRole="alert" style={[styles.termsError, { color: tokens.textSecondary }]}>
+                  {TERMS_OPEN_ERROR_MESSAGE}
+                </Text>
+              )}
+            </View>
           </View>
 
           {error && (
@@ -185,6 +220,9 @@ export function RegisterScreen({ navigation }: Props) {
   );
 }
 
+// Alinha o link e a versão ao texto "Li e aceito os" (caixa de 22 + espaço).
+const TERMS_INDENT = 22 + spacing.sm;
+
 const styles = StyleSheet.create({
   checkbox: {
     alignItems: 'center',
@@ -216,7 +254,12 @@ const styles = StyleSheet.create({
   },
   socialRow: { flexDirection: 'row', gap: spacing.md - 2, justifyContent: 'center', marginTop: spacing.lg - 2 },
   subtitle: { fontFamily: fontFamily(600), fontSize: 15, marginTop: spacing.xs + 4 },
+  terms: { gap: spacing.xs },
+  termsError: { fontFamily: fontFamily(600), fontSize: 12.5, marginLeft: TERMS_INDENT },
   termsLabel: { flex: 1, fontFamily: fontFamily(600), fontSize: 14 },
+  termsLink: { justifyContent: 'center', marginLeft: TERMS_INDENT, minHeight: 44 },
+  termsLinkText: { fontFamily: fontFamily(700), fontSize: 14, textDecorationLine: 'underline' },
   termsRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, minHeight: 44 },
+  termsVersion: { fontFamily: fontFamily(600), fontSize: 11.5, marginLeft: TERMS_INDENT },
   title: { fontFamily: fontFamily(800), fontSize: 30, lineHeight: 36 },
 });
