@@ -1,10 +1,11 @@
 import { httpClient } from './client';
 import { ApiError } from './ApiError';
 import { createManualFood, getFoodByBarcode, searchFoods } from './foods';
-import { createMeal, getMealsByDateRange, getMealsToday } from './meals';
+import { createMeal, deleteMeal, getMealsByDateRange, getMealsToday, updateMealItems } from './meals';
 import { getProgressHistory, getProgressToday } from './progress';
-import { getGamificationStats } from './gamification';
-import { getGroupFeed, getGroupRanking, getMyGroups, joinGroup } from './groups';
+import { getAchievements, getDailyMissions, getGamificationStats } from './gamification';
+import { createGroup, getGroupFeed, getGroupRanking, getMyGroups, joinGroup, leaveGroup, setGroupPostReaction } from './groups';
+import { equipReward, getRewardBalance, getRewardCatalog, getRewardInventory, purchaseReward } from './rewards';
 import { getMyProfile, updateMyProfile } from './users';
 
 // Modo REAL (USE_MOCK=false): confere rotas (com /v1), parâmetros, corpos
@@ -15,12 +16,14 @@ jest.mock('./config', () => ({
   USE_AUTH_MOCK: false,
 }));
 jest.mock('./client', () => ({
-  httpClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn() },
+  httpClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), put: jest.fn(), delete: jest.fn() },
 }));
 
 const get = jest.mocked(httpClient.get);
 const post = jest.mocked(httpClient.post);
 const patch = jest.mocked(httpClient.patch);
+const put = jest.mocked(httpClient.put);
+const remove = jest.mocked(httpClient.delete);
 
 const backendFood = {
   id: '3f0c6a52-6d3a-4a53-9a1c-0a5d3f3a1b11',
@@ -46,7 +49,10 @@ describe('foods (real mode)', () => {
 
     const foods = await searchFoods('  arroz ');
 
-    expect(get).toHaveBeenCalledWith('/v1/foods', { params: { q: 'arroz', limit: 20 } });
+    expect(get).toHaveBeenCalledWith('/v1/foods', {
+      params: { q: 'arroz', page: 1, limit: 20 },
+      signal: undefined,
+    });
     expect(foods).toHaveLength(1);
     expect(foods[0]).toMatchObject({
       name: 'Arroz, tipo 1, cozido',
@@ -124,13 +130,18 @@ describe('meals (real mode)', () => {
       name: 'Almoço de segunda',
       consumedAt: '2026-10-22T15:00:00.000Z',
       items: [{ foodId: 'f1', amountGrams: 150 }],
+      idempotencyKey: 'meal-test-1',
     });
 
-    expect(post).toHaveBeenCalledWith('/v1/meals/manual', {
-      name: 'Almoço - Almoço de segunda',
-      consumedAt: '2026-10-22T15:00:00.000Z',
-      items: [{ foodId: 'f1', amountGrams: 150 }],
-    });
+    expect(post).toHaveBeenCalledWith(
+      '/v1/meals/manual',
+      {
+        name: 'Almoço - Almoço de segunda',
+        consumedAt: '2026-10-22T15:00:00.000Z',
+        items: [{ foodId: 'f1', amountGrams: 150 }],
+      },
+      { headers: { 'Idempotency-Key': 'meal-test-1' } },
+    );
     expect(meal).toMatchObject({ id: 'm1', mealType: 'LUNCH', name: 'Almoço de segunda' });
     expect(meal.items[0]).toMatchObject({ foodId: '', foodName: 'Alimento', calories: 192 });
   });
@@ -142,6 +153,7 @@ describe('meals (real mode)', () => {
       mealType: 'LUNCH',
       consumedAt: 'x',
       items: [{ foodId: 'f1', amountGrams: 1 }],
+      idempotencyKey: 'meal-test-2',
       // entrada antiga da fila offline
       ...({ plannedMealId: 'abc' } as object),
     });
@@ -156,13 +168,13 @@ describe('meals (real mode)', () => {
     try {
       const meals = await getMealsToday('America/Sao_Paulo');
       expect(get).toHaveBeenCalledWith('/v1/meals', {
-        params: { from: '2026-10-22', to: '2026-10-22', limit: 50 },
+        params: { from: '2026-10-22', to: '2026-10-22', page: 1, limit: 50 },
       });
       expect(meals).toHaveLength(1);
 
       await getMealsToday('UTC');
       expect(get).toHaveBeenLastCalledWith('/v1/meals', {
-        params: { from: '2026-10-23', to: '2026-10-23', limit: 50 },
+        params: { from: '2026-10-23', to: '2026-10-23', page: 1, limit: 50 },
       });
     } finally {
       jest.useRealTimers();
@@ -173,8 +185,20 @@ describe('meals (real mode)', () => {
     get.mockResolvedValue({ data: { items: [] } });
     await getMealsByDateRange('2026-10-01', '2026-10-07');
     expect(get).toHaveBeenCalledWith('/v1/meals', {
-      params: { from: '2026-10-01', to: '2026-10-07', limit: 50 },
+      params: { from: '2026-10-01', to: '2026-10-07', page: 1, limit: 50 },
     });
+  });
+
+  it('updates items and soft-deletes an owned meal', async () => {
+    patch.mockResolvedValue({ data: backendMeal });
+    await updateMealItems('m1', [{ foodId: 'f1', amountGrams: 200 }]);
+    expect(patch).toHaveBeenCalledWith('/v1/meals/m1', {
+      items: [{ foodId: 'f1', amountGrams: 200 }],
+    });
+
+    remove.mockResolvedValue({ data: undefined });
+    await deleteMeal('m1');
+    expect(remove).toHaveBeenCalledWith('/v1/meals/m1');
   });
 });
 
@@ -231,6 +255,18 @@ describe('progress and gamification (real mode)', () => {
     expect(await getGamificationStats()).toEqual({ points: 640, currentStreak: 3, bestStreak: 8 });
     expect(get).toHaveBeenCalledWith('/v1/gamification/summary');
   });
+
+  it('reads achievements and dated missions', async () => {
+    get.mockResolvedValueOnce({ data: [{ id: 'a1', code: 'FIRST_MEAL', title: 'Primeiro prato', description: null, iconUrl: null, unlockedAt: 'x' }] });
+    expect(await getAchievements()).toHaveLength(1);
+    expect(get).toHaveBeenCalledWith('/v1/gamification/achievements');
+
+    get.mockResolvedValueOnce({ data: [{ id: 'd1', code: 'LOG_THREE_MEALS', title: 'Três refeições', targetCount: 3, pointsReward: 10, currentProgress: 1, completed: false, rewardGranted: false }] });
+    jest.useFakeTimers().setSystemTime(new Date('2026-11-13T15:00:00.000Z'));
+    expect(await getDailyMissions('America/Sao_Paulo')).toHaveLength(1);
+    jest.useRealTimers();
+    expect(get).toHaveBeenLastCalledWith('/v1/gamification/missions', { params: { date: '2026-11-13' } });
+  });
 });
 
 describe('groups (real mode)', () => {
@@ -268,8 +304,57 @@ describe('groups (real mode)', () => {
       },
     });
     const feed = await getGroupFeed('g1');
-    expect(get).toHaveBeenCalledWith('/v1/groups/g1/feed', { params: { limit: 50 } });
+    expect(get).toHaveBeenCalledWith('/v1/groups/g1/feed', { params: { page: 1, limit: 50 } });
     expect(feed[0]).toMatchObject({ content: 'Oi', displayName: 'Maria' });
+  });
+
+  it('creates and leaves a group, then adds and removes a reaction', async () => {
+    post.mockResolvedValue({ data: { id: 'g1', name: 'Equipe', description: null, isPrivate: true, role: 'ADMIN', inviteCode: 'ABCD1234' } });
+    await createGroup({ name: ' Equipe ', description: ' ' });
+    expect(post).toHaveBeenCalledWith('/v1/groups', {
+      name: 'Equipe', description: null, isPrivate: true,
+    });
+
+    put.mockResolvedValue({ data: { id: 'f1', groupId: 'g1', userId: 'u1', username: 'ana', displayName: 'Ana', mealLogId: null, content: 'Oi', reactions: { FIRE: 1 }, viewerReaction: 'FIRE', createdAt: 'x' } });
+    await setGroupPostReaction('g1', 'f1', 'FIRE');
+    expect(put).toHaveBeenCalledWith('/v1/groups/g1/feed/f1/reaction', { reactionType: 'FIRE' });
+
+    remove.mockResolvedValue({ data: undefined });
+    await setGroupPostReaction('g1', 'f1', null);
+    await leaveGroup('g1');
+    expect(remove).toHaveBeenNthCalledWith(1, '/v1/groups/g1/feed/f1/reaction');
+    expect(remove).toHaveBeenNthCalledWith(2, '/v1/groups/g1/members/me');
+  });
+});
+
+describe('rewards (real mode)', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  const reward = { id: 'r1', code: 'FRAME', name: 'Borda', description: null, type: 'FRAME', price: 50, assetUrl: 'frame' };
+
+  it('loads catalog, balance and inventory', async () => {
+    get.mockResolvedValueOnce({ data: [reward] });
+    expect(await getRewardCatalog()).toEqual([reward]);
+    get.mockResolvedValueOnce({ data: { balance: 80 } });
+    expect(await getRewardBalance()).toBe(80);
+    get.mockResolvedValueOnce({ data: [{ ...reward, acquiredAt: 'x', isEquipped: false }] });
+    expect(await getRewardInventory()).toHaveLength(1);
+    expect(get.mock.calls.map(([path]) => path)).toEqual([
+      '/v1/rewards/catalog', '/v1/rewards/balance', '/v1/rewards/inventory',
+    ]);
+  });
+
+  it('purchases idempotently and equips an inventory item', async () => {
+    const item = { ...reward, acquiredAt: 'x', isEquipped: false };
+    post.mockResolvedValue({ data: { item, balance: 30 } });
+    await purchaseReward('r1', 'purchase-stable-key');
+    expect(post).toHaveBeenCalledWith('/v1/rewards/purchases/r1', undefined, {
+      headers: { 'Idempotency-Key': 'purchase-stable-key' },
+    });
+
+    put.mockResolvedValue({ data: { ...item, isEquipped: true } });
+    expect((await equipReward('r1')).isEquipped).toBe(true);
+    expect(put).toHaveBeenCalledWith('/v1/rewards/inventory/r1/equip');
   });
 });
 

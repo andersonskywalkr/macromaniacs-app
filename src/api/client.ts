@@ -31,6 +31,12 @@ function mapApiErrors(client: AxiosInstance, clearSessionOn401: boolean): void {
         return Promise.reject(new ApiError(error.response.data));
       }
 
+      if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+        return Promise.reject(
+          new ApiError({ message: 'Requisição cancelada.', code: 'REQUEST_CANCELLED' }),
+        );
+      }
+
       return Promise.reject(
         new ApiError({ message: 'Não foi possível conectar ao servidor.' }),
       );

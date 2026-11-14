@@ -22,24 +22,15 @@ const base: UserProfile = {
   nutrition: null,
 };
 
-describe('resolveNutrition (fallback for backends that do not calculate)', () => {
-  it('calculates locally when the profile is complete and nutrition is null ("prefer not to say")', () => {
-    // 25 anos, 80 kg, 180 cm, constante -78: TMB 1722; TDEE 2669,1
-    expect(resolveNutrition(base, today)).toMatchObject({
-      ageYears: 25,
-      bmrKcalPerDay: 1722,
-      tdeeKcalPerDay: 2669,
-      calorieTargetKcalPerDay: 2669,
-    });
+describe('resolveNutrition (backend is the canonical source)', () => {
+  it('does not invent a local recommendation when the backend returns null', () => {
+    expect(resolveNutrition(base, today)).toBeNull();
+    expect(resolveCalorieGoal(base)).toBeNull();
   });
 
-  it('applies the goal rule to the local target', () => {
-    const lose = resolveNutrition({ ...base, goal: 'LOSE_WEIGHT' }, today);
-    // déficit = 10% de 2669,1 = 266,9 (< 500)
-    expect(lose?.calorieTargetKcalPerDay).toBe(2402);
-    const gain = resolveNutrition({ ...base, goal: 'GAIN_MUSCLE' }, today);
-    // superávit = min(266,9; 300)
-    expect(gain?.calorieTargetKcalPerDay).toBe(2936);
+  it('keeps null regardless of the goal when canonical metrics are absent', () => {
+    expect(resolveNutrition({ ...base, goal: 'LOSE_WEIGHT' }, today)).toBeNull();
+    expect(resolveNutrition({ ...base, goal: 'GAIN_MUSCLE' }, today)).toBeNull();
   });
 
   it('always uses the backend nutrition when it exists', () => {

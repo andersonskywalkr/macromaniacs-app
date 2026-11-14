@@ -61,6 +61,43 @@ export interface GamificationStats {
   bestStreak: number;
 }
 
+export interface Achievement {
+  id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  unlockedAt: string;
+}
+
+export interface DailyMission {
+  id: string;
+  code: string;
+  title: string;
+  date: string;
+  currentProgress: number;
+  targetCount: number;
+  pointsReward: number;
+  completed: boolean;
+  rewardGranted: boolean;
+}
+
+export type RewardType = 'TAG' | 'AVATAR' | 'FRAME' | 'BACKGROUND' | (string & Record<never, never>);
+
+export interface RewardItem {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  type: RewardType;
+  price: number;
+  assetUrl: string;
+}
+
+export interface InventoryItem extends RewardItem {
+  acquiredAt: string;
+  isEquipped: boolean;
+}
+
 export interface MealLogItem {
   id: string;
   foodId: string;
@@ -113,10 +150,12 @@ export interface GroupFeedItem {
   displayName: string;
   mealLogId: string | null;
   content: string | null;
-  reactions: unknown;
-  viewerReaction: string | null;
+  reactions: Partial<Record<GroupReaction, number>> | null;
+  viewerReaction: GroupReaction | null;
   createdAt: string;
 }
+
+export type GroupReaction = 'FIRE' | 'CLAP' | 'STRONG';
 
 export interface RankingEntry {
   position: number;

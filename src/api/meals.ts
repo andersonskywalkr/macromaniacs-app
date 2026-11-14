@@ -2,15 +2,20 @@ import { httpClient } from './client';
 import { USE_MOCK, MOCK_LATENCY_MS } from './config';
 import { v1 } from './paths';
 import { mockFoods, mockMealLogs } from '@/mocks/data';
-import { addMockMeal, getMockMealsToday } from '@/mocks/mealStore';
+import { addMockMeal, deleteMockMeal, getMockMealsToday, replaceMockMeal } from '@/mocks/mealStore';
 import { scaleNutrition } from '@/utils/nutrition';
 import { resolveTimezone, todayInTimezone } from '@/utils/today';
 import { unwrapItems, type Paginated } from './adapters/common';
-import { fromApiMeal, toApiCreateMeal, type ApiMeal } from './adapters/meals';
+import {
+  fromApiMeal,
+  toApiCreateMeal,
+  type ApiMeal,
+  type ApiUpdateMealBody,
+} from './adapters/meals';
 import type { MealLog, MealLogItem, MealType } from './types/domain';
 
-// Sem paginação (a forma do `meta` não foi confirmada): pede uma página grande
-// e lê só `items`. Um dia tem poucas refeições; o intervalo de datas pode ter mais.
+// Página moderada; intervalos maiores percorrem todas as páginas informadas em
+// `meta.totalPages` para não truncar o histórico.
 const MEALS_PAGE_LIMIT = 50;
 
 function delay<T>(value: T): Promise<T> {
@@ -46,6 +51,9 @@ export interface CreateMealInput {
   photoUrl?: string;
   consumedAt: string;
   items: Array<Pick<MealLogItem, 'foodId' | 'amountGrams'>>;
+  // Identifica a operação lógica. É gerada antes da primeira tentativa e
+  // preservada na fila offline para todos os reenvios.
+  idempotencyKey?: string;
 }
 
 // POST /v1/meals/manual. O backend só tem `name`: tipo e nome viajam juntos
@@ -68,15 +76,57 @@ export async function createMeal(input: CreateMealInput): Promise<MealLog> {
     addMockMeal(meal);
     return delay(meal);
   }
-  const { data } = await httpClient.post<ApiMeal>(v1('/meals/manual'), toApiCreateMeal(input));
+  if (!input.idempotencyKey) {
+    throw new Error('A chave de idempotência da refeição é obrigatória.');
+  }
+  const { data } = await httpClient.post<ApiMeal>(
+    v1('/meals/manual'),
+    toApiCreateMeal(input),
+    { headers: { 'Idempotency-Key': input.idempotencyKey } },
+  );
   return fromApiMeal(data);
 }
 
 async function fetchMealsBetween(from: string, to: string): Promise<MealLog[]> {
-  const { data } = await httpClient.get<Paginated<ApiMeal> | ApiMeal[]>(v1('/meals'), {
-    params: { from, to, limit: MEALS_PAGE_LIMIT },
-  });
-  return unwrapItems(data).map(fromApiMeal);
+  const meals: MealLog[] = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const { data } = await httpClient.get<Paginated<ApiMeal> | ApiMeal[]>(v1('/meals'), {
+      params: { from, to, page, limit: MEALS_PAGE_LIMIT },
+    });
+    meals.push(...unwrapItems(data).map(fromApiMeal));
+    totalPages = Array.isArray(data) ? 1 : (data.meta?.totalPages ?? 1);
+    page += 1;
+  } while (page <= totalPages);
+  return meals;
+}
+
+export async function updateMealItems(
+  mealId: string,
+  items: NonNullable<ApiUpdateMealBody['items']>,
+): Promise<MealLog> {
+  if (USE_MOCK) {
+    const current = getMockMealsToday().find((meal) => meal.id === mealId);
+    if (!current) throw new Error('Refeição não encontrada.');
+    const updated = {
+      ...current,
+      items: items.map((item, index) => buildMockItem(item, index)),
+    };
+    replaceMockMeal(updated);
+    return delay(updated);
+  }
+  const { data } = await httpClient.patch<ApiMeal>(v1(`/meals/${mealId}`), { items });
+  return fromApiMeal(data);
+}
+
+export async function deleteMeal(mealId: string): Promise<void> {
+  if (USE_MOCK) {
+    deleteMockMeal(mealId);
+    await delay(undefined);
+    return;
+  }
+  await httpClient.delete(v1(`/meals/${mealId}`));
 }
 
 // GET /v1/meals?from=HOJE&to=HOJE (não existe /meals/today). HOJE é a data no

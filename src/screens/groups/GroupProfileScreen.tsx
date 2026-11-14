@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -25,11 +25,12 @@ import { useAuthStore } from '@/store/authStore';
 import { GroupAboutTab } from './GroupAboutTab';
 import { GroupChatTab } from './GroupChatTab';
 import { GroupRankingTab } from './GroupRankingTab';
+import { useLeaveGroup } from '@/queries/useLeaveGroup';
 
 import { KeyboardAwareScreen } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<GroupStackParamList, 'GroupProfile'>;
 
-export const GROUP_TABS = ['Ranking', 'Chat', 'Metas', 'Sobre'] as const;
+export const GROUP_TABS = ['Ranking', 'Chat', 'Sobre'] as const;
 export type GroupTab = (typeof GROUP_TABS)[number];
 
 export function memberCountLabel(count: number | undefined): string | null {
@@ -49,6 +50,7 @@ export function GroupProfileScreen({ navigation, route }: Props) {
   const currentUserId = useAuthStore((state) => state.user?.id);
   const groups = useMyGroups();
   const ranking = useGroupRanking(groupId);
+  const leave = useLeaveGroup();
   const [activeTab, setActiveTab] = useState<GroupTab>('Ranking');
   const keyboardVisible = useKeyboardState((state) => state.isVisible);
   // Digitando no chat o teclado ocupa metade da tela: o cartão do grupo some
@@ -84,6 +86,24 @@ export function GroupProfileScreen({ navigation, route }: Props) {
     }
   }
 
+  function confirmLeave() {
+    Alert.alert('Sair do grupo?', 'Você deixará de ver o feed e o ranking deste grupo.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await leave.mutateAsync(groupId);
+            navigation.reset({ index: 0, routes: [{ name: 'GroupsList' }] });
+          } catch {
+            Alert.alert('Não foi possível sair', 'Tente novamente ou verifique seu papel no grupo.');
+          }
+        },
+      },
+    ]);
+  }
+
   function renderContent() {
     if (!group) return null;
     switch (activeTab) {
@@ -101,15 +121,6 @@ export function GroupProfileScreen({ navigation, route }: Props) {
         );
       case 'Chat':
         return <GroupChatTab groupId={groupId} live={isFocused} />;
-      case 'Metas':
-        return (
-          <ScrollView contentContainerStyle={styles.metas}>
-            <EmptyState
-              title="Metas do grupo chegam em breve"
-              description="Aqui vão aparecer as metas que o grupo define em conjunto."
-            />
-          </ScrollView>
-        );
       case 'Sobre':
         return (
           <GroupAboutTab
@@ -117,6 +128,8 @@ export function GroupProfileScreen({ navigation, route }: Props) {
             entries={ranking.data}
             memberCount={memberCount}
             currentUserId={currentUserId}
+            onLeave={confirmLeave}
+            leaving={leave.isPending}
           />
         );
     }
@@ -241,7 +254,6 @@ const styles = StyleSheet.create({
   groupTagline: { fontFamily: fontFamily(500), fontSize: 13, marginTop: 4 },
   groupTitle: { fontFamily: fontFamily(700), fontSize: 18 },
   headerTitle: { fontFamily: fontFamily(800), fontSize: 22 },
-  metas: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
   tabContent: { flex: 1 },
   tabItem: {
     alignItems: 'center',

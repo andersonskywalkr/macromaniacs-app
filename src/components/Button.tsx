@@ -4,6 +4,10 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing, touchTarget } from '@/theme/tokens';
 
 import { fontFamily } from '@/theme/fonts';
+// Rótulo sempre em uma linha: se faltar espaço (tela estreita, fonte do sistema
+// ampliada, rótulo longo) o texto encolhe até 85% em vez de quebrar.
+const LABEL_MIN_FONT_SCALE = 0.85;
+
 // Sobrescreve `style` do PressableProps: aqui ele é sempre um objeto/array
 // estático (nunca a variante função-de-estado), como em todo uso atual do Button.
 interface ButtonProps extends Omit<PressableProps, 'style'> {
@@ -62,7 +66,14 @@ export function Button({
       ) : (
         <>
           {icon}
-          <Text style={[styles.label, { color: contentColor }]}>{label}</Text>
+          <Text
+            style={[styles.label, { color: contentColor }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={LABEL_MIN_FONT_SCALE}
+          >
+            {label}
+          </Text>
         </>
       )}
     </Pressable>
@@ -80,7 +91,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   label: {
+    flexShrink: 1,
     fontFamily: fontFamily(700),
     fontSize: 16,
+    textAlign: 'center',
   },
 });

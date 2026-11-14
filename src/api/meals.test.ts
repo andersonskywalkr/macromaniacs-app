@@ -1,4 +1,4 @@
-import { createMeal, getMealsToday } from './meals';
+import { createMeal, deleteMeal, getMealsToday, updateMealItems } from './meals';
 import { getProgressToday } from './progress';
 import { resetMockMeals } from '@/mocks/mealStore';
 import { mockFoods } from '@/mocks/data';
@@ -52,6 +52,23 @@ describe('mock daily consumption', () => {
     await createMeal(input('food-7'));
 
     expect((await getProgressToday()).calories.consumed).toBe(196);
+  });
+
+  it('edits and deletes the in-memory meal in mock mode', async () => {
+    const created = await createMeal({
+      mealType: 'LUNCH',
+      consumedAt: new Date().toISOString(),
+      items: [{ foodId: 'food-1', amountGrams: 100 }],
+    });
+    const updated = await updateMealItems(created.id, [
+      { foodId: 'food-1', amountGrams: 200 },
+    ]);
+    expect(updated.items[0].amountGrams).toBe(200);
+    expect((await getProgressToday()).calories.consumed).toBe(256);
+
+    await deleteMeal(created.id);
+    expect(await getMealsToday()).toEqual([]);
+    expect((await getProgressToday()).calories.consumed).toBe(0);
   });
 });
 

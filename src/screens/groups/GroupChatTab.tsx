@@ -10,8 +10,8 @@ import {
   View,
 } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import type { GroupFeedItem } from '@/api/types/domain';
-import { sendGroupMessage } from '@/api/groups';
+import type { GroupFeedItem, GroupReaction } from '@/api/types/domain';
+import { sendGroupMessage, setGroupPostReaction } from '@/api/groups';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontFamily } from '@/theme/fonts';
 import { spacing, touchTarget } from '@/theme/tokens';
@@ -53,6 +53,8 @@ interface ChatMessage {
   content: string | null;
   mealShare: boolean;
   createdAt: string;
+  reactions: GroupFeedItem['reactions'];
+  viewerReaction: GroupReaction | null;
   status?: 'sending' | 'failed';
 }
 
@@ -64,6 +66,8 @@ function fromFeedItem(item: GroupFeedItem): ChatMessage {
     content: item.content,
     mealShare: isMealShare(item),
     createdAt: item.createdAt,
+    reactions: item.reactions,
+    viewerReaction: item.viewerReaction,
   };
 }
 
@@ -71,10 +75,12 @@ function MessageBubble({
   message,
   isMe,
   onRetry,
+  onReact,
 }: {
   message: ChatMessage;
   isMe: boolean;
   onRetry: (id: string) => void;
+  onReact: (id: string) => void;
 }) {
   const { tokens } = useTheme();
   const text = message.mealShare ? 'compartilhou uma refeição' : (message.content ?? '');
@@ -119,6 +125,18 @@ function MessageBubble({
           style={styles.retry}
         >
           <Text style={[styles.retryLabel, { color: tokens.primary }]}>Tentar de novo</Text>
+        </Pressable>
+      )}
+      {!message.status && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={message.viewerReaction === 'FIRE' ? 'Remover reação fogo' : 'Reagir com fogo'}
+          onPress={() => onReact(message.id)}
+          style={styles.reaction}
+        >
+          <Text style={[styles.reactionLabel, { color: message.viewerReaction === 'FIRE' ? tokens.primary : tokens.textSecondary }]}>
+            🔥 {message.reactions?.FIRE ?? 0}
+          </Text>
         </Pressable>
       )}
     </View>
@@ -186,15 +204,9 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
   async function deliver(id: string, content: string) {
     try {
       const sent = await sendGroupMessage(groupId, content);
+      void sent;
       const key = groupFeedKey(groupId);
-      const cached = queryClient.getQueryData<GroupFeedItem[]>(key);
-      if (cached) {
-        if (!cached.some((item) => item.id === sent.id)) {
-          queryClient.setQueryData<GroupFeedItem[]>(key, [...cached, sent]);
-        }
-      } else {
-        void queryClient.invalidateQueries({ queryKey: key });
-      }
+      await queryClient.invalidateQueries({ queryKey: key });
       setPending((current) => current.filter((message) => message.id !== id));
     } catch {
       setPending((current) =>
@@ -216,6 +228,8 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
         content,
         mealShare: false,
         createdAt: new Date().toISOString(),
+        reactions: null,
+        viewerReaction: null,
         status: 'sending',
       },
     ]);
@@ -235,6 +249,18 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
       current.map((item) => (item.id === id ? { ...item, status: 'sending' } : item)),
     );
     void deliver(id, message.content);
+  }
+
+  async function handleReaction(id: string) {
+    const message = (feed.data ?? []).find((item) => item.id === id);
+    if (!message) return;
+    const next = message.viewerReaction === 'FIRE' ? null : 'FIRE';
+    try {
+      await setGroupPostReaction(groupId, id, next);
+      await queryClient.invalidateQueries({ queryKey: groupFeedKey(groupId) });
+    } catch {
+      // A mensagem continua utilizável; a próxima atualização restaura o estado canônico.
+    }
   }
 
   async function handleRefresh() {
@@ -302,6 +328,17 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        ListHeaderComponent={
+          feed.hasNextPage ? (
+            <Button
+              label="Carregar mensagens anteriores"
+              variant="secondary"
+              onPress={() => feed.fetchNextPage?.()}
+              loading={feed.isFetchingNextPage}
+              style={styles.loadOlder}
+            />
+          ) : undefined
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={[styles.emptyTitle, { color: tokens.text }]}>Nenhuma mensagem ainda.</Text>
@@ -322,6 +359,7 @@ export function GroupChatTab({ groupId, live }: GroupChatTabProps) {
               message={row.message}
               isMe={row.message.userId === currentUserId}
               onRetry={handleRetry}
+              onReact={handleReaction}
             />
           )
         }
@@ -418,6 +456,7 @@ const styles = StyleSheet.create({
     paddingVertical: (touchTarget.minSize - CHAT_INPUT_LINE_HEIGHT) / 2,
   },
   listContent: { flexGrow: 1, paddingBottom: spacing.md, paddingHorizontal: spacing.md },
+  loadOlder: { marginBottom: spacing.sm, marginTop: spacing.sm },
   mealShare: { fontFamily: fontFamily(600), fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
   messageText: { fontFamily: fontFamily(500), fontSize: 13.5, lineHeight: 19 },
   messageTime: { fontFamily: fontFamily(500), fontSize: 10.5 },
@@ -431,6 +470,8 @@ const styles = StyleSheet.create({
   },
   otherBubble: { marginLeft: spacing.sm },
   otherRow: { alignItems: 'flex-end', flexDirection: 'row', marginBottom: spacing.md },
+  reaction: { alignSelf: 'flex-start', marginTop: spacing.xs, paddingVertical: 2 },
+  reactionLabel: { fontFamily: fontFamily(700), fontSize: 12 },
   retry: { justifyContent: 'center', minHeight: touchTarget.minSize },
   retryLabel: { fontFamily: fontFamily(800), fontSize: 13 },
   sendButton: {

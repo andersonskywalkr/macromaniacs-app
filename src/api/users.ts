@@ -4,6 +4,7 @@ import { fromApiSex } from './sexMapping';
 import { getMockProfile, updateMockProfile } from '@/mocks/mockProfile';
 import { getMockOnboardingCompleted, setMockOnboardingCompleted } from '@/mocks/mockSession';
 import type { UserProfile } from './types/domain';
+import { v1 } from './paths';
 
 export type UpdateMyProfileRequest = {
   displayName?: string | null;
@@ -39,7 +40,7 @@ export async function getMyProfile(): Promise<UserProfile> {
   if (USE_AUTH_MOCK) {
     return delay({ ...getMockProfile(), onboardingCompleted: getMockOnboardingCompleted() });
   }
-  const { data } = await httpClient.get<ApiUserProfile>('/v1/users/me');
+  const { data } = await httpClient.get<ApiUserProfile>(v1('/users/me'));
   return fromApiProfile(data);
 }
 
@@ -51,6 +52,6 @@ export async function updateMyProfile(
     setMockOnboardingCompleted(true);
     return delay(updateMockProfile(patch));
   }
-  const { data } = await httpClient.patch<ApiUserProfile>('/v1/users/me', patch);
+  const { data } = await httpClient.patch<ApiUserProfile>(v1('/users/me'), patch);
   return fromApiProfile(data);
 }

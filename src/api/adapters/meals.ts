@@ -39,6 +39,10 @@ export interface ApiCreateMealBody {
   items: { foodId: string; amountGrams: number }[];
 }
 
+export interface ApiUpdateMealBody {
+  items?: { foodId: string; amountGrams: number }[];
+}
+
 export interface CreateMealParams {
   // Tipo (obrigatório) e nome do prato (opcional) ficam separados no app.
   mealType: MealType;

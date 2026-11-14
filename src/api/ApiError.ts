@@ -11,7 +11,7 @@ export class ApiError extends Error {
   readonly code: string;
   readonly path?: string;
 
-  constructor(shape: ApiErrorShape | { message: string }) {
+  constructor(shape: ApiErrorShape | { message: string; code?: string }) {
     const message = Array.isArray(shape.message)
       ? shape.message.join('; ')
       : shape.message;
@@ -26,7 +26,7 @@ export class ApiError extends Error {
     } else {
       // Erro de rede/timeout, sem resposta estruturada do backend
       this.statusCode = 0;
-      this.code = 'NETWORK_ERROR';
+      this.code = shape.code ?? 'NETWORK_ERROR';
     }
   }
 
@@ -36,5 +36,9 @@ export class ApiError extends Error {
 
   get isAuthError(): boolean {
     return this.statusCode === 401;
+  }
+
+  get isCancelled(): boolean {
+    return this.code === 'REQUEST_CANCELLED';
   }
 }

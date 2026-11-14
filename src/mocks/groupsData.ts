@@ -1,4 +1,4 @@
-import type { GroupFeedItem, GroupSummary, RankingEntry } from '@/api/types/domain';
+import type { GroupFeedItem, GroupReaction, GroupSummary, RankingEntry } from '@/api/types/domain';
 import { rankMembers, type RankableMember } from '@/utils/ranking';
 import { mockGamificationStats, mockUserProfile } from './data';
 
@@ -112,7 +112,7 @@ const joinableDefinition: MockGroupDefinition = {
 };
 
 let joinedGroupIds: string[] = joinedDefinitions.map((d) => d.group.id);
-const allDefinitions = [...joinedDefinitions, joinableDefinition];
+let allDefinitions = [...joinedDefinitions, joinableDefinition];
 // Quem entrou depois do estado inicial (por id do grupo)
 let membersByGroup: Record<string, RankableMember[]> = Object.fromEntries(
   allDefinitions.map((d) => [d.group.id, d.members]),
@@ -158,6 +158,43 @@ export function joinMockGroup(inviteCode: string): MockJoinResult {
     status: 'joined',
     group: { ...definition.group, memberCount: membersByGroup[id].length },
   };
+}
+
+export function createMockGroup(input: {
+  name: string;
+  description?: string | null;
+  isPrivate?: boolean;
+}): GroupSummary {
+  const id = `group-${Date.now()}`;
+  const inviteCode = Math.random().toString(36).slice(2, 10).toUpperCase().padEnd(8, '0');
+  const definition: MockGroupDefinition = {
+    group: {
+      id,
+      name: input.name,
+      description: input.description ?? null,
+      isPrivate: input.isPrivate ?? true,
+      role: 'ADMIN',
+      inviteCode,
+    },
+    members: [me],
+  };
+  allDefinitions = [...allDefinitions, definition];
+  joinedGroupIds = [...joinedGroupIds, id];
+  membersByGroup = { ...membersByGroup, [id]: [me] };
+  feedByGroup = { ...feedByGroup, [id]: [] };
+  return { ...definition.group, memberCount: 1 };
+}
+
+export function leaveMockGroup(groupId: string): boolean {
+  const definition = definitionOf(groupId);
+  if (!definition || !joinedGroupIds.includes(groupId)) return false;
+  if (definition.group.role?.toUpperCase() === 'ADMIN') return false;
+  joinedGroupIds = joinedGroupIds.filter((id) => id !== groupId);
+  membersByGroup = {
+    ...membersByGroup,
+    [groupId]: (membersByGroup[groupId] ?? []).filter((entry) => entry.userId !== MOCK_USER_ID),
+  };
+  return true;
 }
 
 // --- Chat (feed) ---
@@ -227,6 +264,28 @@ export function addMockMessage(groupId: string, content: string): GroupFeedItem 
   };
   feedByGroup = { ...feedByGroup, [groupId]: [...(feedByGroup[groupId] ?? []), item] };
   return item;
+}
+
+export function reactToMockPost(
+  groupId: string,
+  postId: string,
+  reactionType: GroupReaction | null,
+): GroupFeedItem | null {
+  let changed: GroupFeedItem | null = null;
+  feedByGroup = {
+    ...feedByGroup,
+    [groupId]: (feedByGroup[groupId] ?? []).map((item) => {
+      if (item.id !== postId) return item;
+      const reactions = { ...(item.reactions ?? {}) };
+      if (item.viewerReaction) {
+        reactions[item.viewerReaction] = Math.max(0, (reactions[item.viewerReaction] ?? 1) - 1);
+      }
+      if (reactionType) reactions[reactionType] = (reactions[reactionType] ?? 0) + 1;
+      changed = { ...item, reactions, viewerReaction: reactionType };
+      return changed;
+    }),
+  };
+  return changed;
 }
 
 export function resetMockGroups(): void {

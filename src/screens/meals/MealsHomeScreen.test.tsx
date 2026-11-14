@@ -28,6 +28,9 @@ const mockRefetch = jest.fn();
 jest.mock('@/queries/useMealsToday', () => ({
   useMealsToday: () => ({ ...mockMeals, refetch: mockRefetch }),
 }));
+jest.mock('@/queries/usePendingMeals', () => ({
+  usePendingMeals: () => ({ data: [] }),
+}));
 jest.mock('@/theme/ThemeProvider', () => ({
   useTheme: () => ({
     tokens: {

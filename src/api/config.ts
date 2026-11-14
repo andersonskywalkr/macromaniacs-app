@@ -9,8 +9,8 @@
  */
 export const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK !== 'false';
 
-// Permite integrar autenticação com o backend real enquanto os demais
-// domínios, ainda não implementados no backend, continuam usando mocks.
+// Mantido para apresentações legadas que combinam autenticação real e dados
+// de demonstração. A integração completa usa as duas chaves em false.
 export const USE_AUTH_MOCK =
   process.env.EXPO_PUBLIC_USE_AUTH_MOCK === undefined
     ? USE_MOCK

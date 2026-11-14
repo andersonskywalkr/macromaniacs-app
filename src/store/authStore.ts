@@ -10,6 +10,7 @@ import {
   setApiUnauthorizedHandler,
 } from '@/api/authSession';
 import { queryClient } from '@/queries/queryClient';
+import { useMealDraftStore } from './mealDraftStore';
 
 // O SecureStore aceita apenas caracteres alfanuméricos, ponto, hífen e
 // sublinhado nas chaves. Dois-pontos funcionam no AsyncStorage, mas fazem
@@ -119,6 +120,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   signIn: async (accessToken) => {
+    // Nenhuma consulta ou rascunho da conta anterior pode sobreviver à troca
+    // de credenciais, mesmo quando o usuário entra sem tocar em "Sair".
+    queryClient.clear();
+    useMealDraftStore.getState().clear();
     await tokenStorage.setItem(accessToken);
     setApiAccessToken(accessToken);
     set({ accessToken, sessionRestoreError: false });
@@ -150,6 +155,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     setApiAccessToken(null);
     await tokenStorage.deleteItem().catch(() => undefined);
     queryClient.clear();
+    useMealDraftStore.getState().clear();
     set({
       accessToken: null,
       user: null,

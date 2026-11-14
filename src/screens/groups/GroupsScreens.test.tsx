@@ -1,6 +1,6 @@
 import React from 'react';
-import { Share } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Dimensions, Share, StyleSheet } from 'react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { GroupsListScreen } from './GroupsListScreen';
 import { GroupProfileScreen } from './GroupProfileScreen';
 import { RankingFullScreen } from './RankingFullScreen';
@@ -39,6 +39,12 @@ jest.mock('@/queries/useGroupRanking', () => ({
 }));
 jest.mock('@/queries/useJoinGroup', () => ({
   useJoinGroup: () => ({ mutateAsync: mockMutateAsync, isPending: mockJoinPending }),
+}));
+jest.mock('@/queries/useCreateGroup', () => ({
+  useCreateGroup: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}));
+jest.mock('@/queries/useLeaveGroup', () => ({
+  useLeaveGroup: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 jest.mock('@/screens/groups/GroupChatTab', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
@@ -136,7 +142,7 @@ describe('GroupsListScreen', () => {
     mockMutateAsync.mockResolvedValue({ id: 'g4', name: 'Corrida de Domingo' });
     const { screen } = renderList();
 
-    fireEvent.press(screen.getByLabelText('Entrar em um grupo'));
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
     fireEvent.changeText(screen.getByLabelText('Código de convite'), 'corrida7');
     expect(screen.getByLabelText('Código de convite').props.value).toBe('CORRIDA7');
     fireEvent.press(screen.getByLabelText('Entrar'));
@@ -148,7 +154,7 @@ describe('GroupsListScreen', () => {
   it('validates the code format before calling the API', () => {
     const { screen } = renderList();
 
-    fireEvent.press(screen.getByLabelText('Entrar em um grupo'));
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
     fireEvent.changeText(screen.getByLabelText('Código de convite'), 'ABC');
     fireEvent.press(screen.getByLabelText('Entrar'));
 
@@ -162,11 +168,61 @@ describe('GroupsListScreen', () => {
     );
     const { screen } = renderList();
 
-    fireEvent.press(screen.getByLabelText('Entrar em um grupo'));
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
     fireEvent.changeText(screen.getByLabelText('Código de convite'), 'ZZZZZZZZ');
     fireEvent.press(screen.getByLabelText('Entrar'));
 
     expect(await screen.findByText('Código inválido. Confira com quem te convidou.')).toBeTruthy();
+  });
+
+  it('uses short labels: the open form turns its button into "Cancelar" and the other keeps its name', () => {
+    const { screen } = renderList();
+    expect(screen.getByLabelText('Entrar em grupo')).toBeTruthy();
+    expect(screen.getByLabelText('Criar grupo')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
+    expect(screen.getByLabelText('Código de convite')).toBeTruthy();
+    expect(screen.getAllByLabelText('Cancelar')).toHaveLength(1);
+    expect(screen.getByLabelText('Criar grupo')).toBeTruthy();
+    expect(screen.queryByText('Cancelar entrada')).toBeNull();
+
+    // abrir o outro formulário troca o "Cancelar" de lugar
+    fireEvent.press(screen.getByLabelText('Criar grupo'));
+    expect(screen.queryByLabelText('Código de convite')).toBeNull();
+    expect(screen.getByLabelText('Entrar em grupo')).toBeTruthy();
+    expect(screen.getAllByLabelText('Cancelar')).toHaveLength(1);
+    expect(screen.queryByText('Cancelar criação')).toBeNull();
+
+    fireEvent.press(screen.getByLabelText('Cancelar'));
+    expect(screen.queryByLabelText('Cancelar')).toBeNull();
+    expect(screen.getByLabelText('Criar grupo')).toBeTruthy();
+  });
+
+  describe('action buttons layout', () => {
+    const original = Dimensions.get('window');
+
+    afterEach(() => {
+      act(() => Dimensions.set({ window: original }));
+    });
+
+    const actionsDirection = (screen: ReturnType<typeof renderList>['screen']) => {
+      return StyleSheet.flatten(screen.getByTestId('group-actions').props.style).flexDirection;
+    };
+
+    it('keeps the two buttons side by side on a normal screen', () => {
+      Dimensions.set({ window: { width: 392, height: 800, scale: 2.75, fontScale: 1 } });
+      expect(actionsDirection(renderList().screen)).toBe('row');
+    });
+
+    it('stacks them on a narrow screen', () => {
+      Dimensions.set({ window: { width: 320, height: 640, scale: 2, fontScale: 1 } });
+      expect(actionsDirection(renderList().screen)).toBe('column');
+    });
+
+    it('stacks them when the system font is enlarged', () => {
+      Dimensions.set({ window: { width: 392, height: 800, scale: 2.75, fontScale: 1.4 } });
+      expect(actionsDirection(renderList().screen)).toBe('column');
+    });
   });
 });
 
@@ -186,12 +242,12 @@ describe('GroupProfileScreen', () => {
     return { navigation, parent, screen };
   }
 
-  it('shows the group header and the four tabs, starting on Ranking with the podium', () => {
+  it('shows the group header and the available tabs, starting on Ranking with the podium', () => {
     const { navigation, screen } = renderProfile();
 
     expect(screen.getByText('Los Maniacs')).toBeTruthy();
     expect(screen.getByText('4 membros')).toBeTruthy();
-    for (const tab of ['Ranking', 'Chat', 'Metas', 'Sobre']) {
+    for (const tab of ['Ranking', 'Chat', 'Sobre']) {
       expect(screen.getByLabelText(tab)).toBeTruthy();
     }
     expect(screen.getByLabelText('Ranking').props.accessibilityState.selected).toBe(true);
@@ -206,15 +262,11 @@ describe('GroupProfileScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('RankingFull', { groupId: 'g1' });
   });
 
-  it('switches tabs: Chat turns the live refresh on, Metas is empty, Sobre shows the group', () => {
+  it('switches tabs: Chat turns the live refresh on and Sobre shows the group', () => {
     const { screen } = renderProfile();
 
     fireEvent.press(screen.getByLabelText('Chat'));
     expect(screen.getByText('CHAT live=true')).toBeTruthy();
-
-    fireEvent.press(screen.getByLabelText('Metas'));
-    expect(screen.queryByText(/CHAT/)).toBeNull();
-    expect(screen.getByText('Metas do grupo chegam em breve')).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText('Sobre'));
     // descrição no cabeçalho e na aba Sobre

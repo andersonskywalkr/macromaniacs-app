@@ -29,6 +29,7 @@ export type ProfileStackParamList = {
   EditProfile: undefined;
   // origin 'home': aberto pelo atalho "Desempenho semanal" da Home
   History: { origin?: 'home' } | undefined;
+  GamificationRewards: undefined;
 };
 
 export type HomeStackParamList = {

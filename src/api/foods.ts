@@ -2,7 +2,7 @@ import { httpClient } from './client';
 import { USE_MOCK, MOCK_LATENCY_MS } from './config';
 import { v1 } from './paths';
 import { mockFoods } from '@/mocks/data';
-import { unwrapItems, type Paginated } from './adapters/common';
+import { unwrapItems, type Paginated, type PaginationMeta } from './adapters/common';
 import { fromApiFood, toApiManualFood, type ApiFood } from './adapters/foods';
 import { ApiError } from './ApiError';
 import { rankSuggestions, SUGGESTION_LIMIT } from '@/utils/foodSuggestions';
@@ -29,34 +29,57 @@ export interface SearchFoodsOptions {
   external?: boolean;
   limit?: number;
   signal?: AbortSignal;
+  page?: number;
+}
+
+export interface FoodSearchPage {
+  items: FoodItem[];
+  meta: PaginationMeta;
 }
 
 // GET /v1/foods?q= (2 a 100 letras; a tela bloqueia busca menor) — seção 51.
-// Sem paginação (o `meta` não foi confirmado): lê só `items` da primeira página.
+// A tela consome `items` e `meta` página a página.
 // A busca completa NÃO manda `external` (o padrão do backend é consultar as
 // fontes externas); só as sugestões mandam external=false.
 // IMPORTANTE (seção 28/108): a busca completa só dispara por botão — nunca a
 // cada tecla, por causa do limite de 10 req/min do Open Food Facts.
-export async function searchFoods(
+export async function searchFoodsPage(
   query: string,
   options: SearchFoodsOptions = {},
-): Promise<FoodItem[]> {
+): Promise<FoodSearchPage> {
   if (USE_MOCK) {
     const term = normalize(query.trim());
     // O limite vale para a requisição real; no mock, suggestFoods reordena e
     // só depois corta em 8 (assim a melhor sugestão não fica de fora).
     const filtered = mockFoods.filter((f) => normalize(`${f.name} ${f.brand ?? ''}`).includes(term));
-    return delay(filtered);
+    const limit = options.limit ?? FOODS_PAGE_LIMIT;
+    const page = options.page ?? 1;
+    return delay({
+      items: filtered.slice((page - 1) * limit, page * limit),
+      meta: { page, limit, totalItems: filtered.length, totalPages: Math.max(1, Math.ceil(filtered.length / limit)) },
+    });
   }
   const { data } = await httpClient.get<Paginated<ApiFood> | ApiFood[]>(v1('/foods'), {
     params: {
       q: query.trim(),
+      page: options.page ?? 1,
       limit: options.limit ?? FOODS_PAGE_LIMIT,
       ...(options.external === false ? { external: false } : {}),
     },
     signal: options.signal,
   });
-  return unwrapItems(data).map(fromApiFood);
+  const items = unwrapItems(data).map(fromApiFood);
+  return {
+    items,
+    meta: Array.isArray(data) ? { page: 1, limit: items.length, totalItems: items.length, totalPages: 1 } : (data.meta ?? {}),
+  };
+}
+
+export async function searchFoods(
+  query: string,
+  options: SearchFoodsOptions = {},
+): Promise<FoodItem[]> {
+  return (await searchFoodsPage(query, options)).items;
 }
 
 // Sugestões da busca: até 8, só do banco (external=false), reordenadas

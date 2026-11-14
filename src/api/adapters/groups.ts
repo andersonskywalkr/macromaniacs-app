@@ -1,4 +1,9 @@
-import type { GroupFeedItem, GroupSummary, RankingEntry } from '../types/domain';
+import type {
+  GroupFeedItem,
+  GroupReaction,
+  GroupSummary,
+  RankingEntry,
+} from '../types/domain';
 import { buildInitials } from '@/utils/ranking';
 import { toNumber } from './common';
 
@@ -62,6 +67,7 @@ export function fromApiRankingEntry(entry: ApiRankingEntry): RankingEntry {
 }
 
 export function fromApiFeedItem(item: ApiFeedItem): GroupFeedItem {
+  const reaction = item.viewerReaction;
   return {
     id: item.id,
     groupId: item.groupId,
@@ -70,8 +76,14 @@ export function fromApiFeedItem(item: ApiFeedItem): GroupFeedItem {
     displayName: item.displayName?.trim() || item.username,
     mealLogId: item.mealLogId ?? null,
     content: item.content ?? null,
-    reactions: item.reactions ?? null,
-    viewerReaction: item.viewerReaction ?? null,
+    reactions:
+      item.reactions && typeof item.reactions === 'object'
+        ? (item.reactions as Partial<Record<GroupReaction, number>>)
+        : null,
+    viewerReaction:
+      reaction === 'FIRE' || reaction === 'CLAP' || reaction === 'STRONG'
+        ? reaction
+        : null,
     createdAt: item.createdAt,
   };
 }

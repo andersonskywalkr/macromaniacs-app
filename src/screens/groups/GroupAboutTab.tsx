@@ -14,6 +14,8 @@ interface GroupAboutTabProps {
   entries: RankingEntry[] | undefined;
   memberCount: number | undefined;
   currentUserId: string | undefined;
+  onLeave?: () => void;
+  leaving?: boolean;
 }
 
 // Papel do usuário no grupo, como vem do backend (valores desconhecidos
@@ -37,7 +39,7 @@ export function buildInviteMessage(group: Pick<GroupSummary, 'name' | 'inviteCod
 
 // Aba Sobre: dados do grupo (somente leitura), código de convite com
 // "Compartilhar" (Share nativo) e a lista de membros.
-export function GroupAboutTab({ group, entries, memberCount, currentUserId }: GroupAboutTabProps) {
+export function GroupAboutTab({ group, entries, memberCount, currentUserId, onLeave, leaving }: GroupAboutTabProps) {
   const { tokens } = useTheme();
 
   async function handleShare() {
@@ -100,6 +102,12 @@ export function GroupAboutTab({ group, entries, memberCount, currentUserId }: Gr
           A lista de membros não está disponível agora.
         </Text>
       )}
+
+      {onLeave && (group.role?.toUpperCase() === 'ADMIN' || group.role?.toUpperCase() === 'OWNER') ? (
+        <Text style={[styles.infoLabel, { color: tokens.textSecondary }]}>Transfira a administração antes de sair do grupo.</Text>
+      ) : onLeave ? (
+        <Button label="Sair do grupo" variant="secondary" onPress={onLeave} loading={leaving} />
+      ) : null}
     </ScrollView>
   );
 }
