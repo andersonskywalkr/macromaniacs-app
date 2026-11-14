@@ -45,7 +45,7 @@ function PodiumColumn({
     >
       <MedalIcon rank={(place + 1) as 1 | 2 | 3} size={22} />
       <View style={[styles.avatarRing, isYou && styles.avatarRingYou, isYou && { borderColor: tokens.primary }]}>
-        <Avatar uri={null} displayName={entry.displayName} size={place === 0 ? 60 : 50} />
+        <Avatar isSelf={isYou} displayName={entry.displayName} size={place === 0 ? 60 : 50} />
       </View>
       <Text numberOfLines={1} style={[styles.podiumName, { color: isYou ? tokens.primary : tokens.text }]}>
         {name}

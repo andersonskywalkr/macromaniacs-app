@@ -117,6 +117,14 @@ describe('ProfileHomeScreen', () => {
     };
   });
 
+  it('opens the avatar picker when tapping the avatar', () => {
+    const { navigation, screen } = renderProfile();
+
+    fireEvent.press(screen.getByLabelText('Escolher avatar'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('AvatarPicker');
+  });
+
   it('shows the header, today, points and the goal summary', () => {
     const { screen } = renderProfile();
 

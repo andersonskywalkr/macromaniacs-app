@@ -14,7 +14,7 @@ Este repositório é o **app (frontend)**. O backend (NestJS + PostgreSQL, publi
 - **Grupos:** listar, criar, entrar/sair, ranking, aba Sobre e chat baseado no feed, com paginação, reações e retentativa.
 - **Gamificação e recompensas:** pontos, streak, missões, conquistas, catálogo, compra idempotente, inventário e item equipado.
 - **Histórico:** desempenho dos últimos dias, com "meta batida" (de 90% a 110% da meta).
-- **Perfil:** dados da conta, editar perfil, tema claro/escuro/automático.
+- **Perfil:** dados da conta, editar perfil, tema claro/escuro/automático e **avatar de desenho** (escolha entre 12 opções e 4 estilos; toque no avatar ou use "Escolher avatar" no Editar perfil).
 - **Funciona sem internet:** refeições salvas sem rede ficam numa fila e são enviadas quando a conexão volta.
 - **Teclado:** campos nunca ficam escondidos atrás do teclado (Android e iOS).
 
@@ -152,6 +152,7 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
 - **Login com Google:** botão mostra "Em breve"; ainda não funciona.
 - **Sino de notificações (Início):** é só um espaço reservado; não abre nenhuma tela.
 - **Fotos de refeição e leitura de código de barras pela câmera:** não existem ainda.
+- **Avatar:** fica **só no aparelho** (por usuário). Não sincroniza entre aparelhos e **não aparece para os outros membros**: no ranking, no chat e nos grupos, os outros continuam com as iniciais; só a sua própria linha mostra o seu avatar. Sem internet (ou se a imagem falhar), aparecem as iniciais.
 - **Sugestões de busca (modo real):** vêm apenas do que já está no banco do backend. A busca completa também consulta fontes externas.
 - **Histórico de busca:** fica só no aparelho (some ao limpar os dados do app ou trocar de celular).
 - **Recuperar senha:** no modo real ainda não está disponível.
@@ -162,6 +163,26 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
   endpoint WebSocket/tempo real dedicado.
 - **Desafios de grupo:** não há endpoint público; por isso não existe aba
   estática/fictícia no modo real.
+
+## Avatares (DiceBear)
+
+Os avatares de desenho vêm da API gratuita [DiceBear](https://www.dicebear.com) (`https://api.dicebear.com/10.x/<estilo>/png?seed=...`). A versão do endpoint fica em um só lugar: `DICEBEAR_VERSION` em `src/utils/avatar.ts`.
+
+- O app pede PNG pequeno (128 px na grade) e **escalona** os pedidos (um a cada 130 ms), porque a API limita o PNG a 10 por segundo.
+- O *seed* é uma sequência aleatória gerada pelo app (nunca nome, e-mail ou id do usuário), porque ele vai na URL para um serviço de terceiros.
+- A escolha (`{ estilo, seed }`) é guardada no AsyncStorage, numa chave por usuário (`avatarStore`).
+- **Para salvar na conta** (sincronizar entre aparelhos e aparecer para os outros membros), o backend precisaria expor o campo `avatar_config`, que já existe no banco, no `PATCH /v1/users/me` e no `GET` do perfil. Hoje o PATCH recusa campos extras, então isso não é possível só pelo app.
+
+Estilos oferecidos e licenças (conferidas em dicebear.com/styles):
+
+| Estilo | Criador | Licença |
+|---|---|---|
+| Avataaars | Pablo Stanley | Uso pessoal e comercial livre |
+| Adventurer | Lisa Wischofsky | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Big Smile | Ashley Seo | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Fun Emoji | Davis Uche | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+
+Os estilos CC BY exigem crédito ao criador e link para a licença: o crédito está aqui e também no rodapé da tela "Escolher avatar". Se a lista de estilos mudar, confira a licença de cada um antes.
 
 ## Decisões de projeto
 

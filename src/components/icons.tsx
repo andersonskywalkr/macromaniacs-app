@@ -140,6 +140,15 @@ export function PlusIcon({ size = 14, color = '#000' }: IconProps) {
   );
 }
 
+// Check (opção selecionada, sem depender só de cor).
+export function CheckIcon({ size = 14, color = '#000' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Path d="M3 9.5l4 4 8-9" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
 // Avião de papel (enviar mensagem do chat).
 export function SendIcon({ size = 18, color = '#000' }: IconProps) {
   return (

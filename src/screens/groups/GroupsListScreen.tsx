@@ -70,7 +70,7 @@ function GroupCard({
     >
       <Card style={styles.groupCard}>
         <View style={styles.cardHeader}>
-          <Avatar uri={null} displayName={group.name} size={48} />
+          <Avatar displayName={group.name} size={48} />
           <View style={styles.cardTitleWrap}>
             <Text numberOfLines={1} style={[styles.groupName, { color: tokens.text }]}>
               {group.name}
@@ -95,7 +95,7 @@ function GroupCard({
               return (
                 <View key={entry.userId} style={styles.previewRow}>
                   <MedalIcon rank={entry.position as 1 | 2 | 3} size={18} />
-                  <Avatar uri={null} displayName={entry.displayName} size={28} />
+                  <Avatar isSelf={isYou} displayName={entry.displayName} size={28} />
                   <Text
                     numberOfLines={1}
                     style={[styles.previewName, { color: isYou ? tokens.primary : tokens.text }]}

@@ -146,13 +146,13 @@ function MessageBubble({
     return (
       <View style={styles.myRow}>
         {bubble}
-        <Avatar uri={null} displayName={message.displayName} size={34} />
+        <Avatar isSelf displayName={message.displayName} size={34} />
       </View>
     );
   }
   return (
     <View style={styles.otherRow}>
-      <Avatar uri={null} displayName={message.displayName} size={34} />
+      <Avatar displayName={message.displayName} size={34} />
       {bubble}
     </View>
   );

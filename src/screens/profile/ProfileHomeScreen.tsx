@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '@/navigation/types';
@@ -187,7 +187,15 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
         <Card style={styles.card}>
           <View style={styles.headerRow}>
-            <Avatar uri={null} displayName={name} size={64} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Escolher avatar"
+              accessibilityHint="Abre a escolha de avatar de desenho"
+              hitSlop={8}
+              onPress={() => navigation.navigate('AvatarPicker')}
+            >
+              <Avatar isSelf displayName={name} size={64} />
+            </Pressable>
             <View style={styles.headerText}>
               <Text numberOfLines={1} style={[styles.name, { color: tokens.text }]}>
                 {name}
