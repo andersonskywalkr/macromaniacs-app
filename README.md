@@ -14,7 +14,7 @@ Este repositório é o **app (frontend)**. O backend (NestJS + PostgreSQL, publi
 - **Grupos:** listar, criar, entrar/sair, ranking, aba Sobre e chat baseado no feed, com paginação, reações e retentativa.
 - **Gamificação e recompensas:** pontos, streak, missões, conquistas, catálogo, compra idempotente, inventário e item equipado.
 - **Histórico:** desempenho dos últimos dias, com "meta batida" (de 90% a 110% da meta).
-- **Perfil:** dados da conta, editar perfil, tema claro/escuro/automático e **avatar de desenho** (escolha entre 12 opções e 4 estilos; toque no avatar ou use "Escolher avatar" no Editar perfil).
+- **Perfil:** dados da conta, editar perfil, tema claro/escuro/automático e **avatar personalizável** (estilo Avataaars, gerado no aparelho: pele, cabelo, roupa, acessórios, expressão, barba e fundo; toque no avatar ou use "Personalizar avatar" no Editar perfil).
 - **Funciona sem internet:** refeições salvas sem rede ficam numa fila e são enviadas quando a conexão volta.
 - **Teclado:** campos nunca ficam escondidos atrás do teclado (Android e iOS).
 
@@ -148,12 +148,18 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
 - As variáveis `EXPO_PUBLIC_*` ficam **gravadas dentro do APK na hora do build**. Se a URL do backend mudar, é preciso gerar um **novo APK**.
 - Cada build novo que for entregue deve ter a `version` do `app.json` conferida (hoje `0.1.0`).
 
+### Permissões do Android
+
+O app **não pede câmera nem microfone** (o `expo-camera` foi removido do projeto e do `app.json`). Estas mudanças só aparecem num **APK novo**; o Expo Go continua com as permissões dele.
+
+O APK declara apenas permissões de rede e de sistema que vêm do Expo e das bibliotecas: acesso à internet e ao estado da rede (`INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`), armazenamento só até o Android 12 (`READ_EXTERNAL_STORAGE` e `WRITE_EXTERNAL_STORAGE`, do `expo-file-system` e do modelo do Expo), `VIBRATE` e `SYSTEM_ALERT_WINDOW` (ambas do modelo padrão do Expo) e, por causa do `expo-notifications` (hoje sem uso no código), `POST_NOTIFICATIONS` e `RECEIVE_BOOT_COMPLETED`.
+
 ## Limitações conhecidas
 
 - **Login com Google:** botão mostra "Em breve"; ainda não funciona.
 - **Sino de notificações (Início):** é só um espaço reservado; não abre nenhuma tela.
-- **Fotos de refeição e leitura de código de barras pela câmera:** não existem ainda.
-- **Avatar:** fica **só no aparelho** (por usuário). Não sincroniza entre aparelhos e **não aparece para os outros membros**: no ranking, no chat e nos grupos, os outros continuam com as iniciais; só a sua própria linha mostra o seu avatar. Sem internet (ou se a imagem falhar), aparecem as iniciais.
+- **Fotos de refeição e leitura de código de barras pela câmera:** não existem nesta versão (por isso o app não pede permissão de câmera).
+- **Avatar:** é gerado e fica **só no aparelho** (por usuário). Não sincroniza entre aparelhos e **não aparece para os outros membros**: no ranking, no chat e nos grupos, os outros continuam com as iniciais; só a sua própria linha mostra o seu avatar. Sem avatar salvo, aparecem as iniciais.
 - **Sugestões de busca (modo real):** vêm apenas do que já está no banco do backend. A busca completa também consulta fontes externas.
 - **Histórico de busca:** fica só no aparelho (some ao limpar os dados do app ou trocar de celular).
 - **Recuperar senha:** no modo real ainda não está disponível.
@@ -164,25 +170,19 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
 - **Desafios de grupo:** não há endpoint público; por isso não existe aba
   estática/fictícia no modo real.
 
-## Avatares (DiceBear)
+## Avatar personalizável (DiceBear, Avataaars)
 
-Os avatares de desenho vêm da API gratuita [DiceBear](https://www.dicebear.com) (`https://api.dicebear.com/10.x/<estilo>/png?seed=...`). A versão do endpoint fica em um só lugar: `DICEBEAR_VERSION` em `src/utils/avatar.ts`.
+O avatar é **gerado no próprio aparelho**, pela biblioteca [DiceBear](https://www.dicebear.com) (código MIT), com o estilo **Avataaars**. **Não há chamada de rede**: nenhuma API da DiceBear é usada e funciona no modo avião.
 
-- O app pede PNG pequeno (128 px na grade) e **escalona** os pedidos (um a cada 130 ms), porque a API limita o PNG a 10 por segundo.
-- O *seed* é uma sequência aleatória gerada pelo app (nunca nome, e-mail ou id do usuário), porque ele vai na URL para um serviço de terceiros.
-- A escolha (`{ estilo, seed }`) é guardada no AsyncStorage, numa chave por usuário (`avatarStore`).
-- **Para salvar na conta** (sincronizar entre aparelhos e aparecer para os outros membros), o backend precisaria expor o campo `avatar_config`, que já existe no banco, no `PATCH /v1/users/me` e no `GET` do perfil. Hoje o PATCH recusa campos extras, então isso não é possível só pelo app.
+- Tela "Personalizar avatar" (Perfil e Editar perfil): boneco ao vivo, categorias (Pele, Cabelo, Cor do cabelo, Roupa, Acessórios, Expressão, Barba e Fundo), "Aleatório", "Salvar" e "Cancelar".
+- A configuração (`{ version: 1, style: 'avataaars', options }`) é guardada no AsyncStorage, numa chave por usuário (`avatarStore`). Valores desconhecidos voltam ao padrão ao ler; versão desconhecida volta às iniciais.
+- O SVG é gerado em `src/utils/avatarSvg.ts` (com cache) e desenhado com `SvgXml`. Chapéus e véus usam `hatColor`; os demais cabelos usam `hairColor`.
+- Os valores permitidos de cada opção ficam em `src/utils/avatarConfig.ts`, e um teste os compara com o schema do pacote instalado.
+- **Só no aparelho:** o avatar não sincroniza entre aparelhos e não aparece para outros membros (o backend não guarda avatar). Para salvar na conta, o backend precisaria expor o campo `avatar_config` (JSON, que já existe no banco) no `PATCH /v1/users/me` e no `GET` do perfil; hoje o PATCH recusa campos extras.
 
-Estilos oferecidos e licenças (conferidas em dicebear.com/styles):
+**Versões fixas do DiceBear:** `@dicebear/core` **9.4.3** e `@dicebear/avataaars` **9.4.2** (e o `pnpm-lock.yaml` as mantém). **Não atualize para o core 10**: ele tem outra API (sem `createAvatar`) e não tem o estilo `avataaars` no npm. No Jest, o `package.json` libera a transformação de `@dicebear` (`transformIgnorePatterns`) porque os pacotes são ESM.
 
-| Estilo | Criador | Licença |
-|---|---|---|
-| Avataaars | Pablo Stanley | Uso pessoal e comercial livre |
-| Adventurer | Lisa Wischofsky | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
-| Big Smile | Ashley Seo | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
-| Fun Emoji | Davis Uche | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
-
-Os estilos CC BY exigem crédito ao criador e link para a licença: o crédito está aqui e também no rodapé da tela "Escolher avatar". Se a lista de estilos mudar, confira a licença de cada um antes.
+**Créditos e licença:** estilo **Avataaars**, arte de **Pablo Stanley** (https://avataaars.com/), licença "Free for personal and commercial use"; gerado com a biblioteca DiceBear (código sob licença MIT). O crédito também aparece no rodapé da tela "Personalizar avatar".
 
 ## Decisões de projeto
 
