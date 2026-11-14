@@ -3,15 +3,22 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { FoodConfirmScreen } from './FoodConfirmScreen';
 import { useMealDraftStore } from '@/store/mealDraftStore';
+import type { FoodItem } from '@/api/types/domain';
 
-const chicken = {
+const chicken: FoodItem = {
   id: 'food-3',
   name: 'Frango peito grelhado',
   brand: null,
-  source: 'TBCA' as const,
+  source: 'TBCA',
   externalId: null,
   barcode: null,
-  nutritionPer100g: { calories: 160, protein: 32, carbohydrates: 0, fat: 4, fiber: 0 },
+  nutritionPer100g: {
+    calories: 160,
+    protein: 32,
+    carbohydrates: 0,
+    fat: 4,
+    fiber: 0,
+  },
 };
 
 jest.mock('@/theme/ThemeProvider', () => ({
@@ -33,15 +40,18 @@ jest.mock('@/theme/ThemeProvider', () => ({
 }));
 jest.mock('@/components/icons', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
-  const { View: MockView } =
-    jest.requireActual<typeof import('react-native')>('react-native');
+  const { View: MockView } = jest.requireActual<typeof import('react-native')>('react-native');
   const MockIcon = () => ReactModule.createElement(MockView);
-  return { ChevronRightIcon: MockIcon, EyeIcon: MockIcon, EyeOffIcon: MockIcon };
+  return {
+    ChevronRightIcon: MockIcon,
+    EyeIcon: MockIcon,
+    EyeOffIcon: MockIcon,
+  };
 });
 
 let routesInStack: { name: string }[] = [{ name: 'FoodSearch' }, { name: 'FoodConfirm' }];
 
-function renderScreen() {
+function renderScreen(food = chicken) {
   const navigation = {
     navigate: jest.fn(),
     goBack: jest.fn(),
@@ -49,12 +59,7 @@ function renderScreen() {
     popTo: jest.fn(),
     getState: jest.fn(() => ({ routes: routesInStack })),
   };
-  const screen = render(
-    <FoodConfirmScreen
-      navigation={navigation as never}
-      route={{ params: { food: chicken } } as never}
-    />,
-  );
+  const screen = render(<FoodConfirmScreen navigation={navigation as never} route={{ params: { food } } as never} />);
   return { navigation, screen };
 }
 
@@ -98,7 +103,33 @@ describe('FoodConfirmScreen', () => {
 
     expect(useMealDraftStore.getState().items).toEqual([{ food: chicken, amountGrams: 150 }]);
     // primeira vez: o hub vira a raiz da pilha
-    expect(navigation.reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: 'MealBuilder' }] });
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'MealBuilder' }],
+    });
+  });
+
+  it('keeps the identity and nutrition of an external suggestion in the meal draft', () => {
+    const externalFood = {
+      ...chicken,
+      id: 'food-off-1',
+      name: 'Sorvete de creme',
+      source: 'OPEN_FOOD_FACTS' as const,
+      externalId: '7890000000001',
+      barcode: '7890000000001',
+      nutritionPer100g: {
+        calories: 180,
+        protein: 3,
+        carbohydrates: 25,
+        fat: 8,
+        fiber: 0,
+      },
+    };
+    const { screen } = renderScreen(externalFood);
+
+    fireEvent.press(screen.getByLabelText('Adicionar à refeição'));
+
+    expect(useMealDraftStore.getState().items).toEqual([{ food: externalFood, amountGrams: 100 }]);
   });
 
   it('returns to the meal hub when it is already open', () => {

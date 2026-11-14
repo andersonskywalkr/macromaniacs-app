@@ -1,17 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MealsStackParamList } from '@/navigation/types';
 import type { FoodItem } from '@/api/types/domain';
+import { ApiError } from '@/api/ApiError';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing, touchTarget } from '@/theme/tokens';
 import { BackButton } from '@/components/BackButton';
@@ -57,10 +50,10 @@ function FoodResultRow({ food, onPress }: { food: FoodItem; onPress: () => void 
   );
 }
 
-// Reconstruída a partir de "Busca de Alimento.dc.html". A busca só dispara
-// ao tocar em "Buscar" (nunca a cada tecla — limite do Open Food Facts,
-// seção 28/108). Os filtros do protótipo (favoritos, meus, marcas) ficam de
-// fora: ainda não há dado nem endpoint para eles.
+// Reconstruída a partir de "Busca de Alimento.dc.html". A busca completa só
+// dispara ao tocar em "Buscar"; o autocomplete tem debounce, mínimo de três
+// caracteres e proteção de cota no backend. Os filtros do protótipo
+// (favoritos, meus, marcas) ficam de fora: ainda não há contrato para eles.
 export function FoodSearchScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const [text, setText] = useState('');
@@ -132,7 +125,11 @@ export function FoodSearchScreen({ navigation }: Props) {
   function handleClearHistory() {
     Alert.alert('Limpar histórico?', 'As buscas recentes serão apagadas deste aparelho.', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Limpar', style: 'destructive', onPress: () => void history.clear() },
+      {
+        text: 'Limpar',
+        style: 'destructive',
+        onPress: () => void history.clear(),
+      },
     ]);
   }
 
@@ -145,12 +142,7 @@ export function FoodSearchScreen({ navigation }: Props) {
 
   function renderBody() {
     if (searchId === 0) {
-      return (
-        <EmptyState
-          title="Busque um alimento"
-          description="Digite o nome ou a marca e toque em Buscar."
-        />
-      );
+      return <EmptyState title="Busque um alimento" description="Digite o nome ou a marca e toque em Buscar." />;
     }
 
     if (search.isLoading) {
@@ -162,12 +154,15 @@ export function FoodSearchScreen({ navigation }: Props) {
     }
 
     if (search.isError) {
+      const description =
+        search.error instanceof ApiError && search.error.isNetworkError
+          ? 'Sem conexão com o servidor. Verifique sua internet e tente novamente.'
+          : search.error instanceof ApiError && search.error.statusCode === 503
+            ? 'As fontes externas estão temporariamente indisponíveis. Tente novamente em instantes.'
+            : 'O serviço não conseguiu concluir a busca. Tente novamente.';
       return (
         <View style={styles.centered}>
-          <EmptyState
-            title="Não foi possível buscar"
-            description="Verifique sua conexão e tente novamente."
-          />
+          <EmptyState title="Não foi possível buscar" description={description} />
           <Button label="Tentar de novo" onPress={() => search.refetch()} style={styles.fullWidth} />
         </View>
       );
@@ -190,11 +185,7 @@ export function FoodSearchScreen({ navigation }: Props) {
           {foods.length === 1 ? '1 resultado' : `${foods.length} resultados`}
         </Text>
         {foods.map((food) => (
-          <FoodResultRow
-            key={food.id}
-            food={food}
-            onPress={() => navigation.navigate('FoodConfirm', { food })}
-          />
+          <FoodResultRow key={food.id} food={food} onPress={() => navigation.navigate('FoodConfirm', { food })} />
         ))}
         {search.hasNextPage && (
           <Button
@@ -258,6 +249,8 @@ export function FoodSearchScreen({ navigation }: Props) {
               suggestions={suggestions.suggestions}
               isLoading={suggestions.isLoading}
               isSettled={suggestions.isSettled}
+              errorKind={suggestions.errorKind}
+              isExternalUnavailable={suggestions.isExternalUnavailable}
               onSearchFull={() => runFullSearch(text)}
               onPick={handlePickSuggestion}
             />
@@ -279,7 +272,11 @@ export function FoodSearchScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  centered: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },
+  centered: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+  },
   container: { flex: 1 },
   content: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.md },
   flex: { flex: 1 },

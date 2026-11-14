@@ -10,10 +10,7 @@ import type { FoodItem } from './types/domain';
 
 // Ignora maiúsculas e acentos na busca do mock ("feijao" acha "Feijão").
 function normalize(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
 // Tamanho da página de resultados da busca.
@@ -37,16 +34,23 @@ export interface FoodSearchPage {
   meta: PaginationMeta;
 }
 
+export type FoodExternalSearchStatus = 'AVAILABLE' | 'UNAVAILABLE';
+
+export interface FoodSuggestionsResult {
+  items: FoodItem[];
+  externalStatus: FoodExternalSearchStatus;
+}
+
+interface ApiFoodSuggestionsResponse {
+  items: ApiFood[];
+  externalStatus: FoodExternalSearchStatus;
+}
+
 // GET /v1/foods?q= (2 a 100 letras; a tela bloqueia busca menor) — seção 51.
 // A tela consome `items` e `meta` página a página.
-// A busca completa NÃO manda `external` (o padrão do backend é consultar as
-// fontes externas); só as sugestões mandam external=false.
-// IMPORTANTE (seção 28/108): a busca completa só dispara por botão — nunca a
-// cada tecla, por causa do limite de 10 req/min do Open Food Facts.
-export async function searchFoodsPage(
-  query: string,
-  options: SearchFoodsOptions = {},
-): Promise<FoodSearchPage> {
+// A busca completa não manda `external` (o padrão do backend consulta as
+// fontes externas) e continua disparando somente pelo botão.
+export async function searchFoodsPage(query: string, options: SearchFoodsOptions = {}): Promise<FoodSearchPage> {
   if (USE_MOCK) {
     const term = normalize(query.trim());
     // O limite vale para a requisição real; no mock, suggestFoods reordena e
@@ -56,7 +60,12 @@ export async function searchFoodsPage(
     const page = options.page ?? 1;
     return delay({
       items: filtered.slice((page - 1) * limit, page * limit),
-      meta: { page, limit, totalItems: filtered.length, totalPages: Math.max(1, Math.ceil(filtered.length / limit)) },
+      meta: {
+        page,
+        limit,
+        totalItems: filtered.length,
+        totalPages: Math.max(1, Math.ceil(filtered.length / limit)),
+      },
     });
   }
   const { data } = await httpClient.get<Paginated<ApiFood> | ApiFood[]>(v1('/foods'), {
@@ -71,22 +80,40 @@ export async function searchFoodsPage(
   const items = unwrapItems(data).map(fromApiFood);
   return {
     items,
-    meta: Array.isArray(data) ? { page: 1, limit: items.length, totalItems: items.length, totalPages: 1 } : (data.meta ?? {}),
+    meta: Array.isArray(data)
+      ? {
+          page: 1,
+          limit: items.length,
+          totalItems: items.length,
+          totalPages: 1,
+        }
+      : (data.meta ?? {}),
   };
 }
 
-export async function searchFoods(
-  query: string,
-  options: SearchFoodsOptions = {},
-): Promise<FoodItem[]> {
+export async function searchFoods(query: string, options: SearchFoodsOptions = {}): Promise<FoodItem[]> {
   return (await searchFoodsPage(query, options)).items;
 }
 
-// Sugestões da busca: até 8, só do banco (external=false), reordenadas
-// (começa com o texto, depois palavra que começa, depois o resto).
-export async function suggestFoods(query: string, signal?: AbortSignal): Promise<FoodItem[]> {
-  const foods = await searchFoods(query, { external: false, limit: SUGGESTION_LIMIT, signal });
-  return rankSuggestions(foods, query, SUGGESTION_LIMIT);
+// O endpoint próprio combina catálogo local e provedores externos no backend.
+// No mock, preserva a mesma ordenação sem realizar rede.
+export async function suggestFoods(query: string, signal?: AbortSignal): Promise<FoodSuggestionsResult> {
+  if (USE_MOCK) {
+    const foods = await searchFoods(query, { limit: SUGGESTION_LIMIT, signal });
+    return {
+      items: rankSuggestions(foods, query, SUGGESTION_LIMIT),
+      externalStatus: 'AVAILABLE',
+    };
+  }
+
+  const { data } = await httpClient.get<ApiFoodSuggestionsResponse>(v1('/foods/suggestions'), {
+    params: { q: query.trim(), limit: SUGGESTION_LIMIT },
+    signal,
+  });
+  return {
+    items: rankSuggestions(data.items.map(fromApiFood), query, SUGGESTION_LIMIT),
+    externalStatus: data.externalStatus,
+  };
 }
 
 // GET /v1/foods/barcode/:barcode — seção 51
@@ -106,9 +133,7 @@ export async function getFoodByBarcode(barcode: string): Promise<FoodItem | null
 
 // POST /v1/foods/manual — seção 51. O backend não tem marca: ela é juntada ao
 // nome (ver adapters/foods.ts).
-export async function createManualFood(
-  input: Omit<FoodItem, 'id' | 'source' | 'externalId'>,
-): Promise<FoodItem> {
+export async function createManualFood(input: Omit<FoodItem, 'id' | 'source' | 'externalId'>): Promise<FoodItem> {
   if (USE_MOCK) {
     const created: FoodItem = {
       ...input,

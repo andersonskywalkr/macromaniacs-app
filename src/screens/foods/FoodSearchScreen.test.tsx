@@ -10,10 +10,20 @@ const food = (id: string, name: string) => ({
   source: 'TBCA',
   externalId: null,
   barcode: null,
-  nutritionPer100g: { calories: 100, protein: 10, carbohydrates: 5, fat: 2, fiber: 0 },
+  nutritionPer100g: {
+    calories: 100,
+    protein: 10,
+    carbohydrates: 5,
+    fat: 2,
+    fiber: 0,
+  },
 });
 
-let mockSearchResult: { data?: unknown[]; isLoading: boolean; isError: boolean };
+let mockSearchResult: {
+  data?: unknown[];
+  isLoading: boolean;
+  isError: boolean;
+};
 const mockUseFoodsSearch = jest.fn();
 
 let mockSuggestions: {
@@ -21,6 +31,8 @@ let mockSuggestions: {
   isLoading: boolean;
   isError: boolean;
   isSettled: boolean;
+  errorKind: 'network' | 'service' | null;
+  isExternalUnavailable: boolean;
 };
 let mockHistoryItems: string[];
 const mockHistoryAdd = jest.fn();
@@ -64,10 +76,13 @@ jest.mock('@/theme/ThemeProvider', () => ({
 }));
 jest.mock('@/components/icons', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
-  const { View: MockView } =
-    jest.requireActual<typeof import('react-native')>('react-native');
+  const { View: MockView } = jest.requireActual<typeof import('react-native')>('react-native');
   const MockIcon = () => ReactModule.createElement(MockView);
-  return { ChevronRightIcon: MockIcon, EyeIcon: MockIcon, EyeOffIcon: MockIcon };
+  return {
+    ChevronRightIcon: MockIcon,
+    EyeIcon: MockIcon,
+    EyeOffIcon: MockIcon,
+  };
 });
 
 function renderScreen() {
@@ -84,7 +99,14 @@ function search(screen: ReturnType<typeof render>, term: string) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockSearchResult = { data: undefined, isLoading: false, isError: false };
-  mockSuggestions = { suggestions: [], isLoading: false, isError: false, isSettled: false };
+  mockSuggestions = {
+    suggestions: [],
+    isLoading: false,
+    isError: false,
+    isSettled: false,
+    errorKind: null,
+    isExternalUnavailable: false,
+  };
   mockHistoryItems = [];
 });
 
@@ -117,7 +139,11 @@ describe('FoodSearchScreen', () => {
   });
 
   it('goes straight to the confirmation when there is a single result', () => {
-    mockSearchResult = { data: [food('1', 'Banana prata')], isLoading: false, isError: false };
+    mockSearchResult = {
+      data: [food('1', 'Banana prata')],
+      isLoading: false,
+      isError: false,
+    };
     const { navigation, screen } = renderScreen();
 
     search(screen, 'banana');
@@ -170,8 +196,7 @@ describe('FoodSearchScreen', () => {
 });
 
 describe('FoodSearchScreen suggestions and history', () => {
-  const field = (screen: ReturnType<typeof render>) =>
-    screen.getByLabelText('Nome ou marca do alimento');
+  const field = (screen: ReturnType<typeof render>) => screen.getByLabelText('Nome ou marca do alimento');
 
   it('shows the quick suggestions while typing, starting with "Buscar por..."', () => {
     mockSuggestions = {
@@ -179,6 +204,8 @@ describe('FoodSearchScreen suggestions and history', () => {
       isLoading: false,
       isError: false,
       isSettled: true,
+      errorKind: null,
+      isExternalUnavailable: false,
     };
     const { screen } = renderScreen();
 
@@ -191,7 +218,7 @@ describe('FoodSearchScreen suggestions and history', () => {
     expect(mockUseFoodsSearch).toHaveBeenLastCalledWith('', false);
   });
 
-  it('does not show suggestions with fewer than 2 characters', () => {
+  it('does not show suggestions with fewer than 3 characters', () => {
     const { screen } = renderScreen();
 
     fireEvent.changeText(field(screen), 'f');
@@ -201,22 +228,34 @@ describe('FoodSearchScreen suggestions and history', () => {
 
   it('opens the confirmation directly when a suggestion is tapped, and remembers it', () => {
     mockSuggestions = {
-      suggestions: [food('2', 'Frango frito')],
+      suggestions: [
+        {
+          ...food('2', 'Sorvete de creme'),
+          source: 'OPEN_FOOD_FACTS',
+          externalId: 'off-2',
+        },
+      ],
       isLoading: false,
       isError: false,
       isSettled: true,
+      errorKind: null,
+      isExternalUnavailable: false,
     };
     const { navigation, screen } = renderScreen();
 
-    fireEvent.changeText(field(screen), 'frango');
-    fireEvent.press(screen.getByLabelText('Frango frito, 100 calorias por 100 gramas'));
+    fireEvent.changeText(field(screen), 'sorvete');
+    fireEvent.press(screen.getByLabelText('Sorvete de creme, 100 calorias por 100 gramas'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('FoodConfirm', {
-      food: expect.objectContaining({ id: '2' }),
+      food: expect.objectContaining({
+        id: '2',
+        source: 'OPEN_FOOD_FACTS',
+        externalId: 'off-2',
+      }),
     });
-    expect(mockHistoryAdd).toHaveBeenCalledWith('Frango frito');
+    expect(mockHistoryAdd).toHaveBeenCalledWith('Sorvete de creme');
     // sem nova busca completa
-    expect(mockUseFoodsSearch).not.toHaveBeenCalledWith('frango', true);
+    expect(mockUseFoodsSearch).not.toHaveBeenCalledWith('sorvete', true);
   });
 
   it('runs the full search from "Buscar por..." and saves the term', () => {
@@ -230,24 +269,53 @@ describe('FoodSearchScreen suggestions and history', () => {
   });
 
   it('says there is no suggestion and points to the full search', () => {
-    mockSuggestions = { suggestions: [], isLoading: false, isError: false, isSettled: true };
+    mockSuggestions = {
+      suggestions: [],
+      isLoading: false,
+      isError: false,
+      isSettled: true,
+      errorKind: null,
+      isExternalUnavailable: false,
+    };
     const { screen } = renderScreen();
 
     fireEvent.changeText(field(screen), 'xyzw');
 
-    expect(
-      screen.getByText('Nenhuma sugestão. Toque em Buscar para procurar em todas as fontes.'),
-    ).toBeTruthy();
+    expect(screen.getByText('Nenhum alimento encontrado nas fontes disponíveis.')).toBeTruthy();
   });
 
-  it('keeps a silent error: no message, and the full search is still there', () => {
-    mockSuggestions = { suggestions: [], isLoading: false, isError: true, isSettled: false };
+  it('distinguishes a network error from no results', () => {
+    mockSuggestions = {
+      suggestions: [],
+      isLoading: false,
+      isError: true,
+      isSettled: false,
+      errorKind: 'network',
+      isExternalUnavailable: false,
+    };
     const { screen } = renderScreen();
 
     fireEvent.changeText(field(screen), 'frango');
 
     expect(screen.getByLabelText('Buscar por frango')).toBeTruthy();
-    expect(screen.queryByText(/Não foi possível/)).toBeNull();
+    expect(screen.getByText(/Sem conexão para carregar sugestões/)).toBeTruthy();
+  });
+
+  it('reports provider unavailability without claiming no results', () => {
+    mockSuggestions = {
+      suggestions: [],
+      isLoading: false,
+      isError: false,
+      isSettled: true,
+      errorKind: null,
+      isExternalUnavailable: true,
+    };
+    const { screen } = renderScreen();
+
+    fireEvent.changeText(field(screen), 'sorvete');
+
+    expect(screen.getByText(/busca externa está temporariamente indisponível/)).toBeTruthy();
+    expect(screen.queryByText('Nenhum alimento encontrado nas fontes disponíveis.')).toBeNull();
   });
 
   it('shows a small loading indicator without hiding the previous list', () => {
@@ -256,6 +324,8 @@ describe('FoodSearchScreen suggestions and history', () => {
       isLoading: true,
       isError: false,
       isSettled: false,
+      errorKind: null,
+      isExternalUnavailable: false,
     };
     const { screen } = renderScreen();
 

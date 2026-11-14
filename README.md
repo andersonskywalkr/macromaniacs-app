@@ -10,7 +10,8 @@ Este repositório é o **app (frontend)**. O backend (NestJS + PostgreSQL, publi
 - **Onboarding:** sexo (feminino ou masculino, obrigatório), idade, altura, peso, objetivo, nível de atividade e restrições alimentares, salvos no perfil.
 - **Início:** anel de calorias do dia, macros (proteína, carboidrato, gordura), sequência de dias e pontos.
 - **Refeições:** montar, salvar, editar quantidades e excluir refeições; lista do dia com totais e fila offline idempotente por usuário.
-- **Busca de alimentos:** sugestões enquanto digita, histórico de buscas, busca completa e cadastro manual de alimento.
+- **Busca de alimentos:** sugestões locais e externas enquanto digita, histórico,
+  busca completa paginada e cadastro manual de alimento.
 - **Grupos:** listar, criar, entrar/sair, ranking, aba Sobre e chat baseado no feed, com paginação, reações e retentativa.
 - **Gamificação e recompensas:** pontos, streak, missões, conquistas, catálogo, compra idempotente, inventário e item equipado.
 - **Histórico:** desempenho dos últimos dias, com "meta batida" (de 90% a 110% da meta).
