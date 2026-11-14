@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { PlusIcon } from '@/components/icons';
 import { useMealsToday } from '@/queries/useMealsToday';
 import { useMealDraftStore } from '@/store/mealDraftStore';
+import { usePendingMeals } from '@/queries/usePendingMeals';
 import {
   filterMealsByType,
   formatTime,
@@ -86,6 +87,7 @@ function MealRow({ meal, onPress }: { meal: MealLog; onPress: () => void }) {
 export function MealsHomeScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const meals = useMealsToday();
+  const pendingMeals = usePendingMeals();
   const draftCount = useMealDraftStore((s) => s.items.length);
   const [filter, setFilter] = useState<MealTypeFilter>('ALL');
 
@@ -166,6 +168,16 @@ export function MealsHomeScreen({ navigation }: Props) {
 
       <ScrollView contentContainerStyle={styles.content}>{renderBody()}</ScrollView>
 
+      {pendingMeals.data && pendingMeals.data.length > 0 && (
+        <View style={styles.pendingWrap}>
+          <Text accessibilityRole="alert" style={[styles.pending, { color: tokens.text }]}>
+            {pendingMeals.data.some((entry) => entry.lastError)
+              ? `${pendingMeals.data.length} refeição pendente precisa de atenção.`
+              : `${pendingMeals.data.length} refeição pendente será sincronizada quando a conexão voltar.`}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.footer}>
         <Button
           label="Adicionar refeição"
@@ -193,6 +205,8 @@ const styles = StyleSheet.create({
   mealDetail: { fontFamily: fontFamily(600), fontSize: 12.5, marginTop: 2 },
   mealName: { flexShrink: 1, fontFamily: fontFamily(800), fontSize: 16 },
   mealTime: { fontFamily: fontFamily(700), fontSize: 13 },
+  pending: { fontFamily: fontFamily(700), fontSize: 12.5, textAlign: 'center' },
+  pendingWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   rowHeader: { alignItems: 'baseline', flexDirection: 'row', justifyContent: 'space-between' },
   title: {
     fontFamily: fontFamily(800),

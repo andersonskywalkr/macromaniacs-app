@@ -9,9 +9,10 @@ Este repositório é o **app (frontend)**. O backend (NestJS + PostgreSQL, publi
 - **Conta:** cadastro, login, restauração da sessão, sair, "Esqueci a senha" (no modo mock é uma demonstração; no modo real mostra que o recurso ainda não está disponível).
 - **Onboarding:** sexo, idade, altura, peso, objetivo, nível de atividade e restrições alimentares, salvos no perfil.
 - **Início:** anel de calorias do dia, macros (proteína, carboidrato, gordura), sequência de dias e pontos.
-- **Refeições:** montar uma refeição com vários alimentos, escolher o tipo (café da manhã, almoço…), revisar e salvar; lista do dia com totais.
+- **Refeições:** montar, salvar, editar quantidades e excluir refeições; lista do dia com totais e fila offline idempotente por usuário.
 - **Busca de alimentos:** sugestões enquanto digita, histórico de buscas, busca completa e cadastro manual de alimento.
-- **Grupos:** lista de grupos, entrar com código de convite, ranking, aba Sobre e chat do grupo (campo que cresce com o texto, envio com retentativa).
+- **Grupos:** listar, criar, entrar/sair, ranking, aba Sobre e chat baseado no feed, com paginação, reações e retentativa.
+- **Gamificação e recompensas:** pontos, streak, missões, conquistas, catálogo, compra idempotente, inventário e item equipado.
 - **Histórico:** desempenho dos últimos dias, com "meta batida" (de 90% a 110% da meta).
 - **Perfil:** dados da conta, editar perfil, tema claro/escuro/automático.
 - **Funciona sem internet:** refeições salvas sem rede ficam numa fila e são enviadas quando a conexão volta.
@@ -36,13 +37,14 @@ Este repositório é o **app (frontend)**. O backend (NestJS + PostgreSQL, publi
 ## Instalação
 
 ```bash
-npm install
+corepack pnpm install --frozen-lockfile
 cp .env.example .env
 ```
 
 O `.env.example` já vem no modo **mock** (tudo funciona sem backend e sem internet).
 
-> O repositório tem um `pnpm-lock.yaml`. O `npm install` funciona normalmente; o pnpm é opcional.
+O `pnpm-lock.yaml` é o lockfile canônico. Para conectar ao backend local, copie
+`.env.integration.example` no lugar de `.env.example`.
 
 ## Como rodar
 
@@ -74,7 +76,10 @@ Combinações mais usadas:
 
 Exemplos de `EXPO_PUBLIC_API_URL`: `http://10.0.2.2:3000` (emulador Android), `http://localhost:3000` (simulador iOS), `http://IP_DA_SUA_MAQUINA:3000` (celular físico na mesma rede) ou a URL do backend publicado.
 
-Como o app conversa com o backend (rotas, conversões, limitações): [docs/INTEGRACAO_BACKEND.md](docs/INTEGRACAO_BACKEND.md).
+O contrato validado de todos os fluxos está em
+[docs/integration/frontend-backend-contract.md](docs/integration/frontend-backend-contract.md),
+com o passo a passo local em
+[docs/integration/local-full-stack.md](docs/integration/local-full-stack.md).
 
 ## Testes e verificações
 
@@ -116,7 +121,7 @@ O APK é gerado na nuvem pelo EAS Build, com a conta Expo do time. Existem dois 
 | Perfil | Para quê | Backend |
 |---|---|---|
 | `preview-mock` | Apresentação offline (tudo de demonstração) | não usa |
-| `preview-real` | App conectado ao backend | usa a URL definida em `eas.json` |
+| `preview-real` | App conectado ao backend | usa `EXPO_PUBLIC_API_URL` do ambiente EAS `preview` |
 
 Passo a passo:
 
@@ -137,7 +142,8 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
 
 **Atenção ao `preview-real`:**
 
-- Em `eas.json`, o campo `EXPO_PUBLIC_API_URL` do perfil `preview-real` está com um **valor provisório** (`https://COLOQUE-AQUI-A-URL-DO-BACKEND`). Troque pela URL do backend publicado, **sem `/v1` no final**, antes de gerar o APK.
+- Cadastre `EXPO_PUBLIC_API_URL` no ambiente EAS `preview`, sem `/v1` no final,
+  antes de gerar o APK. O repositório não contém URL provisória nem credencial.
 - As variáveis `EXPO_PUBLIC_*` ficam **gravadas dentro do APK na hora do build**. Se a URL do backend mudar, é preciso gerar um **novo APK**.
 - Cada build novo que for entregue deve ter a `version` do `app.json` conferida (hoje `0.1.0`).
 
@@ -150,8 +156,12 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
 - **Histórico de busca:** fica só no aparelho (some ao limpar os dados do app ou trocar de celular).
 - **Recuperar senha:** no modo real ainda não está disponível.
 - **Meta batida:** a faixa de 90% a 110% da meta aguarda validação da Nutrição.
-- **"Prefiro não informar" (sexo):** o backend não calcula metas; o app calcula localmente (constante também aguardando a Nutrição).
-- **Sem paginação:** listas pedem uma página grande (o formato do `meta` do backend não foi confirmado).
+- **"Prefiro não informar" (sexo):** o backend pode retornar `nutrition: null`;
+  nesse caso o app não inventa TMB/TDEE/meta e exibe o estado indisponível.
+- **Chat:** usa o feed textual real do grupo com atualização periódica; não há
+  endpoint WebSocket/tempo real dedicado.
+- **Desafios de grupo:** não há endpoint público; por isso não existe aba
+  estática/fictícia no modo real.
 
 ## Decisões de projeto
 
@@ -160,4 +170,5 @@ Ao terminar (alguns minutos), o terminal mostra um link e um QR code para baixar
 - Fonte sempre via `fontFamily(peso)` (nunca `fontWeight`).
 - O formato do backend nunca chega às telas: tudo passa pelos adaptadores em `src/api/adapters/`.
 - Token de login só em `expo-secure-store`, nunca em AsyncStorage.
-- Quando o backend publicar o Swagger, os tipos podem ser gerados com `npm run generate:types`.
+- O contrato Swagger está versionado em `src/api/types/api.d.ts`; regenere com
+  `SWAGGER_URL=http://localhost:3000/docs-json pnpm run generate:types`.

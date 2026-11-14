@@ -7,6 +7,10 @@ import { progressHistoryKey } from './useProgressHistory';
 import { gamificationStatsKey } from './useGamificationStats';
 import { mealsTodayKey } from './useMealsToday';
 import { enqueueOfflineMeal } from '@/offline/outbox';
+import { useAuthStore } from '@/store/authStore';
+import { createIdempotencyKey } from '@/api/idempotency';
+import { pendingMealsKey } from './usePendingMeals';
+import { USE_MOCK } from '@/api/config';
 
 /**
  * Fluxo de registro de refeição (UC-08, seção 127.2):
@@ -15,9 +19,15 @@ import { enqueueOfflineMeal } from '@/offline/outbox';
  */
 export function useCreateMeal() {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((state) => state.user?.id);
 
   return useMutation({
-    mutationFn: (input: CreateMealInput) => createMeal(input),
+    mutationFn: (input: CreateMealInput) => {
+      const operationUserId = userId ?? (USE_MOCK ? 'mock-user-id' : null);
+      if (!operationUserId) throw new Error('Sessão autenticada obrigatória.');
+      input.idempotencyKey ??= createIdempotencyKey('meal', operationUserId);
+      return createMeal(input);
+    },
 
     onSuccess: (meal) => {
       // Coloca a refeição nova na lista do dia já, pra o Detalhe abrir sem
@@ -33,8 +43,9 @@ export function useCreateMeal() {
 
     onError: async (error, input) => {
       const isNetworkError = error instanceof ApiError && error.isNetworkError;
-      if (isNetworkError) {
-        await enqueueOfflineMeal(input);
+      if (isNetworkError && userId) {
+        await enqueueOfflineMeal(userId, input);
+        queryClient.invalidateQueries({ queryKey: pendingMealsKey(userId) });
         // A tela deve tratar esse caso mostrando o badge "pendente de
         // sincronização" em vez de um erro — ver seção 125.2.
       }

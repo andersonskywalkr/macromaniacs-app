@@ -1,6 +1,7 @@
 import { httpClient, publicHttpClient } from './client';
 import { MOCK_LATENCY_MS, USE_AUTH_MOCK } from './config';
 import type { CurrentUser } from './types/domain';
+import { v1 } from './paths';
 import { getMockOnboardingCompleted, setMockOnboardingCompleted } from '@/mocks/mockSession';
 
 function delay<T>(value: T): Promise<T> {
@@ -45,7 +46,7 @@ export async function login(input: LoginRequest): Promise<LoginResponse> {
   }
 
   const { data } = await publicHttpClient.post<LoginResponse>(
-    '/v1/auth/login',
+    v1('/auth/login'),
     input,
   );
   return data;
@@ -65,7 +66,7 @@ export async function register(
   }
 
   const { data } = await publicHttpClient.post<RegisterResponse>(
-    '/v1/auth/register',
+    v1('/auth/register'),
     input,
   );
   return data;
@@ -76,7 +77,7 @@ export async function getMe(): Promise<CurrentUser> {
     return delay(buildMockCurrentUser());
   }
 
-  const { data } = await httpClient.get<CurrentUser>('/v1/auth/me');
+  const { data } = await httpClient.get<CurrentUser>(v1('/auth/me'));
   return data;
 }
 

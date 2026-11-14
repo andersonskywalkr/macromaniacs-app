@@ -40,6 +40,12 @@ jest.mock('@/queries/useGroupRanking', () => ({
 jest.mock('@/queries/useJoinGroup', () => ({
   useJoinGroup: () => ({ mutateAsync: mockMutateAsync, isPending: mockJoinPending }),
 }));
+jest.mock('@/queries/useCreateGroup', () => ({
+  useCreateGroup: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}));
+jest.mock('@/queries/useLeaveGroup', () => ({
+  useLeaveGroup: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}));
 jest.mock('@/screens/groups/GroupChatTab', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
   const { Text: MockText } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -136,7 +142,7 @@ describe('GroupsListScreen', () => {
     mockMutateAsync.mockResolvedValue({ id: 'g4', name: 'Corrida de Domingo' });
     const { screen } = renderList();
 
-    fireEvent.press(screen.getByLabelText('Entrar em um grupo'));
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
     fireEvent.changeText(screen.getByLabelText('Código de convite'), 'corrida7');
     expect(screen.getByLabelText('Código de convite').props.value).toBe('CORRIDA7');
     fireEvent.press(screen.getByLabelText('Entrar'));
@@ -148,7 +154,7 @@ describe('GroupsListScreen', () => {
   it('validates the code format before calling the API', () => {
     const { screen } = renderList();
 
-    fireEvent.press(screen.getByLabelText('Entrar em um grupo'));
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
     fireEvent.changeText(screen.getByLabelText('Código de convite'), 'ABC');
     fireEvent.press(screen.getByLabelText('Entrar'));
 
@@ -162,7 +168,7 @@ describe('GroupsListScreen', () => {
     );
     const { screen } = renderList();
 
-    fireEvent.press(screen.getByLabelText('Entrar em um grupo'));
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
     fireEvent.changeText(screen.getByLabelText('Código de convite'), 'ZZZZZZZZ');
     fireEvent.press(screen.getByLabelText('Entrar'));
 
@@ -186,12 +192,12 @@ describe('GroupProfileScreen', () => {
     return { navigation, parent, screen };
   }
 
-  it('shows the group header and the four tabs, starting on Ranking with the podium', () => {
+  it('shows the group header and the available tabs, starting on Ranking with the podium', () => {
     const { navigation, screen } = renderProfile();
 
     expect(screen.getByText('Los Maniacs')).toBeTruthy();
     expect(screen.getByText('4 membros')).toBeTruthy();
-    for (const tab of ['Ranking', 'Chat', 'Metas', 'Sobre']) {
+    for (const tab of ['Ranking', 'Chat', 'Sobre']) {
       expect(screen.getByLabelText(tab)).toBeTruthy();
     }
     expect(screen.getByLabelText('Ranking').props.accessibilityState.selected).toBe(true);
@@ -206,15 +212,11 @@ describe('GroupProfileScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('RankingFull', { groupId: 'g1' });
   });
 
-  it('switches tabs: Chat turns the live refresh on, Metas is empty, Sobre shows the group', () => {
+  it('switches tabs: Chat turns the live refresh on and Sobre shows the group', () => {
     const { screen } = renderProfile();
 
     fireEvent.press(screen.getByLabelText('Chat'));
     expect(screen.getByText('CHAT live=true')).toBeTruthy();
-
-    fireEvent.press(screen.getByLabelText('Metas'));
-    expect(screen.queryByText(/CHAT/)).toBeNull();
-    expect(screen.getByText('Metas do grupo chegam em breve')).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText('Sobre'));
     // descrição no cabeçalho e na aba Sobre

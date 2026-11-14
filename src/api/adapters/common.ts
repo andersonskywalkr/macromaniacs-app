@@ -7,7 +7,15 @@
 // então o app NÃO pagina: pede uma página grande (limit) e lê só `items`.
 export interface Paginated<T> {
   items: T[];
-  meta?: unknown;
+  meta?: PaginationMeta;
+}
+
+export interface PaginationMeta {
+  page?: number;
+  limit?: number;
+  totalItems?: number;
+  totalPages?: number;
+  total?: number;
 }
 
 export function unwrapItems<T>(data: Paginated<T> | T[] | null | undefined): T[] {

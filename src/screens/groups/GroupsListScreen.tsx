@@ -24,6 +24,7 @@ import { TextField } from '@/components/TextField';
 import { useGroupRanking } from '@/queries/useGroupRanking';
 import { useJoinGroup } from '@/queries/useJoinGroup';
 import { useMyGroups } from '@/queries/useMyGroups';
+import { useCreateGroup } from '@/queries/useCreateGroup';
 import { useAuthStore } from '@/store/authStore';
 import { findEntry, sortByPosition } from '@/utils/ranking';
 import {
@@ -113,13 +114,18 @@ function GroupCard({
   );
 }
 
-// Grupos, lista (item 12). Criar grupo fica de fora (não há tela nem fluxo).
+// Lista, entrada por convite e criação de grupos reais.
 export function GroupsListScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const groups = useMyGroups();
   const join = useJoinGroup();
+  const create = useCreateGroup();
   const currentUserId = useAuthStore((state) => state.user?.id);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinedName, setJoinedName] = useState<string | null>(null);
@@ -152,6 +158,28 @@ export function GroupsListScreen({ navigation }: Props) {
       setJoinOpen(false);
     } catch (error) {
       setJoinError(getJoinGroupErrorMessage(error));
+    }
+  }
+
+  async function handleCreate() {
+    const name = groupName.trim();
+    if (name.length < 2) {
+      setCreateError('Digite um nome com pelo menos 2 caracteres.');
+      return;
+    }
+    setCreateError(null);
+    try {
+      const created = await create.mutateAsync({
+        name,
+        description: groupDescription.trim() || null,
+        isPrivate: true,
+      });
+      setGroupName('');
+      setGroupDescription('');
+      setCreateOpen(false);
+      navigation.navigate('GroupProfile', { groupId: created.id });
+    } catch {
+      setCreateError('Não foi possível criar o grupo. Tente novamente.');
     }
   }
 
@@ -208,15 +236,29 @@ export function GroupsListScreen({ navigation }: Props) {
       >
         <Text style={[styles.title, { color: tokens.text }]}>Grupos</Text>
 
-        <Button
-          label={joinOpen ? 'Cancelar' : 'Entrar em um grupo'}
-          variant="secondary"
-          onPress={() => {
-            setJoinOpen((open) => !open);
-            setJoinError(null);
-          }}
-          accessibilityHint="Mostra o campo do código de convite"
-        />
+        <View style={styles.actionsRow}>
+          <Button
+            label={joinOpen ? 'Cancelar entrada' : 'Entrar em grupo'}
+            variant="secondary"
+            onPress={() => {
+              setJoinOpen((open) => !open);
+              setCreateOpen(false);
+              setJoinError(null);
+            }}
+            accessibilityHint="Mostra o campo do código de convite"
+            style={styles.actionButton}
+          />
+          <Button
+            label={createOpen ? 'Cancelar criação' : 'Criar grupo'}
+            variant="secondary"
+            onPress={() => {
+              setCreateOpen((open) => !open);
+              setJoinOpen(false);
+              setCreateError(null);
+            }}
+            style={styles.actionButton}
+          />
+        </View>
 
         {joinOpen && (
           <Card style={styles.joinCard}>
@@ -244,6 +286,29 @@ export function GroupsListScreen({ navigation }: Props) {
           </Card>
         )}
 
+        {createOpen && (
+          <Card style={styles.joinCard}>
+            <Text style={[styles.joinLabel, { color: tokens.textSecondary }]}>Novo grupo</Text>
+            <TextField
+              accessibilityLabel="Nome do grupo"
+              placeholder="Nome do grupo"
+              value={groupName}
+              onChangeText={(value) => { setGroupName(value); setCreateError(null); }}
+              maxLength={100}
+            />
+            <TextField
+              accessibilityLabel="Descrição do grupo"
+              placeholder="Descrição (opcional)"
+              value={groupDescription}
+              onChangeText={setGroupDescription}
+              maxLength={1000}
+              multiline
+            />
+            {createError && <Text accessibilityRole="alert" style={[styles.joinError, { color: tokens.danger }]}>{createError}</Text>}
+            <Button label="Criar grupo privado" onPress={handleCreate} loading={create.isPending} style={styles.joinButton} />
+          </Card>
+        )}
+
         {joinedName && (
           <Text accessibilityRole="alert" style={[styles.joined, { color: tokens.primary }]}>
             Você entrou em “{joinedName}”.
@@ -258,6 +323,8 @@ export function GroupsListScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  actionButton: { flex: 1 },
+  actionsRow: { flexDirection: 'row', gap: spacing.sm },
   cardHeader: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   cardTitleWrap: { flex: 1, minWidth: 0 },
   centered: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },

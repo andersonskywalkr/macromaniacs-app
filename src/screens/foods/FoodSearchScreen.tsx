@@ -196,6 +196,15 @@ export function FoodSearchScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('FoodConfirm', { food })}
           />
         ))}
+        {search.hasNextPage && (
+          <Button
+            label="Carregar mais resultados"
+            variant="secondary"
+            onPress={() => search.fetchNextPage()}
+            loading={search.isFetchingNextPage}
+            style={styles.loadMore}
+          />
+        )}
       </View>
     );
   }
@@ -284,6 +293,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.sm,
   },
+  loadMore: { marginTop: spacing.sm },
   macro: { fontFamily: fontFamily(800), fontSize: 13 },
   macroRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   manualButton: { marginTop: spacing.lg },

@@ -16,6 +16,14 @@ export function getMockMealsToday(): MealLog[] {
   return [...meals];
 }
 
+export function replaceMockMeal(meal: MealLog): void {
+  meals = meals.map((current) => (current.id === meal.id ? meal : current));
+}
+
+export function deleteMockMeal(mealId: string): void {
+  meals = meals.filter((meal) => meal.id !== mealId);
+}
+
 export function resetMockMeals(): void {
   meals = [];
 }

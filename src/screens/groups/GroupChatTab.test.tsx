@@ -2,14 +2,15 @@ import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GroupChatTab } from './GroupChatTab';
-import { getGroupFeed, sendGroupMessage } from '@/api/groups';
+import { getGroupFeedPage, sendGroupMessage } from '@/api/groups';
 
-const mockGetFeed = jest.mocked(getGroupFeed);
+const mockGetFeed = jest.mocked(getGroupFeedPage);
 const mockSend = jest.mocked(sendGroupMessage);
 
 jest.mock('@/api/groups', () => ({
-  getGroupFeed: jest.fn(),
+  getGroupFeedPage: jest.fn(),
   sendGroupMessage: jest.fn(),
+  setGroupPostReaction: jest.fn(),
 }));
 jest.mock('@/store/authStore', () => ({
   useAuthStore: (selector: (state: unknown) => unknown) =>
@@ -54,6 +55,11 @@ const item = (id: string, userId: string, name: string, content: string | null, 
   createdAt: new Date(Date.now() - minutesAgo * 60 * 1000).toISOString(),
 });
 
+const feedPage = (items: ReturnType<typeof item>[]) => ({
+  items,
+  meta: { page: 1, limit: 50, totalItems: items.length, totalPages: 1 },
+});
+
 let queryClient: QueryClient;
 
 function renderChat(live = true) {
@@ -79,11 +85,11 @@ describe('GroupChatTab', () => {
   });
 
   it('shows my messages and the others, in time order, under the "Hoje" separator', async () => {
-    mockGetFeed.mockResolvedValue([
+    mockGetFeed.mockResolvedValue(feedPage([
       item('2', 'me', 'Anderson', 'Eu mesmo', 5),
       item('1', 'u2', 'Maria', 'Oi, pessoal', 30),
       item('3', 'u2', 'Maria', null, 2, 'meal-1'),
-    ]);
+    ]));
     renderChat();
 
     expect(await screen.findByText('Oi, pessoal')).toBeTruthy();
@@ -97,7 +103,7 @@ describe('GroupChatTab', () => {
   });
 
   it('shows the friendly empty state', async () => {
-    mockGetFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(feedPage([]));
     renderChat();
 
     expect(await screen.findByText('Nenhuma mensagem ainda.')).toBeTruthy();
@@ -109,13 +115,13 @@ describe('GroupChatTab', () => {
     renderChat();
 
     expect(await screen.findByText('Não foi possível carregar o chat')).toBeTruthy();
-    mockGetFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(feedPage([]));
     fireEvent.press(screen.getByLabelText('Tentar de novo'));
     expect(await screen.findByText('Nenhuma mensagem ainda.')).toBeTruthy();
   });
 
   it('keeps the send button disabled with an empty field, and sends optimistically', async () => {
-    mockGetFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(feedPage([]));
     let resolveSend: (value: ReturnType<typeof item>) => void = () => undefined;
     mockSend.mockReturnValue(new Promise((resolve) => (resolveSend = resolve)));
     renderChat();
@@ -133,6 +139,9 @@ describe('GroupChatTab', () => {
     expect(mockSend).toHaveBeenCalledWith('g1', 'Bora treinar!');
     expect(screen.getByLabelText('Mensagem').props.value).toBe('');
 
+    mockGetFeed.mockResolvedValue(
+      feedPage([item('server-1', 'me', 'Anderson', 'Bora treinar!', 0)]),
+    );
     await act(async () => {
       resolveSend(item('server-1', 'me', 'Anderson', 'Bora treinar!', 0));
     });
@@ -142,7 +151,7 @@ describe('GroupChatTab', () => {
   });
 
   it('marks a failed message as "Não enviada" and retries', async () => {
-    mockGetFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(feedPage([]));
     mockSend.mockRejectedValueOnce(new Error('sem rede'));
     renderChat();
     await screen.findByText('Nenhuma mensagem ainda.');
@@ -153,6 +162,7 @@ describe('GroupChatTab', () => {
     expect(await screen.findByText('Não enviada')).toBeTruthy();
 
     mockSend.mockResolvedValueOnce(item('server-2', 'me', 'Anderson', 'Oi', 0));
+    mockGetFeed.mockResolvedValue(feedPage([item('server-2', 'me', 'Anderson', 'Oi', 0)]));
     fireEvent.press(screen.getByLabelText('Tentar de novo'));
 
     await act(async () => undefined);
@@ -162,7 +172,7 @@ describe('GroupChatTab', () => {
   });
 
   it('limits the message to 2000 characters and warns near the limit', async () => {
-    mockGetFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(feedPage([]));
     renderChat();
     await screen.findByText('Nenhuma mensagem ainda.');
 
@@ -183,7 +193,7 @@ describe('GroupChatTab auto refresh', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { gcTime: 0 } },
     });
-    mockGetFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(feedPage([]));
   });
 
   afterEach(() => {
@@ -223,7 +233,7 @@ describe('GroupChatTab message field (WhatsApp style)', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { gcTime: 0 } },
     });
-    mockGetFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(feedPage([]));
   });
 
   afterEach(() => {

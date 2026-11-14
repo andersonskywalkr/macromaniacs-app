@@ -222,6 +222,12 @@ export function ProfileHomeScreen({ navigation, route }: Props) {
         <Card style={styles.card}>
           <Text style={[styles.section, { color: tokens.textSecondary }]}>PONTOS E SEQUÊNCIA</Text>
           {renderStreak()}
+          <Button
+            label="Ver conquistas e recompensas"
+            variant="secondary"
+            onPress={() => navigation.navigate('GamificationRewards')}
+            style={styles.rewardsButton}
+          />
         </Card>
 
         <Card style={styles.card}>
@@ -290,6 +296,7 @@ const styles = StyleSheet.create({
   muted: { fontFamily: fontFamily(600), fontSize: 13, marginTop: 2 },
   name: { fontFamily: fontFamily(800), fontSize: 20 },
   options: { gap: spacing.sm },
+  rewardsButton: { marginTop: spacing.lg },
   ringCenter: {
     alignItems: 'center',
     bottom: 0,

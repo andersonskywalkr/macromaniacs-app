@@ -37,7 +37,7 @@ describe('food search API (real mode)', () => {
     await suggestFoods('  frango fr ', controller.signal);
 
     expect(get).toHaveBeenCalledWith('/v1/foods', {
-      params: { q: 'frango fr', limit: 8, external: false },
+      params: { q: 'frango fr', page: 1, limit: 8, external: false },
       signal: controller.signal,
     });
   });
@@ -48,7 +48,7 @@ describe('food search API (real mode)', () => {
     await searchFoods('frango');
 
     const config = get.mock.calls[0][1] as { params: Record<string, unknown> };
-    expect(config.params).toEqual({ q: 'frango', limit: 20 });
+    expect(config.params).toEqual({ q: 'frango', page: 1, limit: 20 });
     expect(config.params).not.toHaveProperty('external');
   });
 
