@@ -1,6 +1,8 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { Linking } from 'react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { TERMS_URL } from '@/api/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileHomeScreen } from './ProfileHomeScreen';
 import { useThemeStore } from '@/store/themeStore';
@@ -81,7 +83,10 @@ jest.mock('@/components/ProgressRing', () => {
 jest.mock('@/components/icons', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
   const { View: MockView } = jest.requireActual<typeof import('react-native')>('react-native');
-  return { FireIcon: () => ReactModule.createElement(MockView) };
+  return {
+    FireIcon: () => ReactModule.createElement(MockView),
+    ChevronRightIcon: () => ReactModule.createElement(MockView),
+  };
 });
 
 function renderProfile(params?: { saved?: boolean }) {
@@ -117,6 +122,43 @@ describe('ProfileHomeScreen', () => {
     };
   });
 
+  describe('terms row', () => {
+    let openURL: jest.SpyInstance;
+
+    beforeEach(() => {
+      openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      openURL.mockRestore();
+    });
+
+    it('opens the terms document with TERMS_URL', async () => {
+      const { screen } = renderProfile();
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Termos de Uso e Privacidade'));
+      });
+
+      expect(openURL).toHaveBeenCalledWith(TERMS_URL);
+      expect(screen.queryByText(/Não foi possível abrir o documento/)).toBeNull();
+    });
+
+    it('shows a discreet message when the document does not open', async () => {
+      openURL.mockRejectedValue(new Error('sem navegador'));
+      const { screen } = renderProfile();
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Termos de Uso e Privacidade'));
+      });
+
+      expect(
+        screen.getByText('Não foi possível abrir o documento. Tente novamente com internet.'),
+      ).toBeTruthy();
+      expect(screen.getByLabelText('Sair')).toBeTruthy(); // o resto da tela segue normal
+    });
+  });
+
   it('opens the avatar picker when tapping the avatar', () => {
     const { navigation, screen } = renderProfile();
 
@@ -139,6 +181,38 @@ describe('ProfileHomeScreen', () => {
     expect(screen.getByText('2500 kcal/dia')).toBeTruthy();
     expect(screen.getByText('82,5 kg')).toBeTruthy();
     expect(screen.getByText('75 kg')).toBeTruthy();
+  });
+
+  describe('old account without sex (backend returns nutrition: null)', () => {
+    const user = mockUser as { nutrition?: unknown; biologicalSex?: string | null };
+    const saved = mockUser.nutrition;
+
+    beforeEach(() => {
+      user.nutrition = undefined;
+      user.biologicalSex = null;
+      (mockProgress.data as { calories: { goal: number } }).calories.goal = 0;
+    });
+
+    afterEach(() => {
+      user.nutrition = saved;
+      delete user.biologicalSex;
+    });
+
+    it('shows a short notice with "Completar perfil" and no empty goal', () => {
+      const { screen } = renderProfile();
+
+      expect(screen.getByText('Falta informar o seu sexo para calcular a sua meta de calorias.')).toBeTruthy();
+      expect(screen.getByLabelText('Completar perfil')).toBeTruthy();
+      expect(screen.queryByText('0 kcal/dia')).toBeNull();
+    });
+
+    it('"Completar perfil" opens Editar perfil', () => {
+      const { navigation, screen } = renderProfile();
+
+      fireEvent.press(screen.getByLabelText('Completar perfil'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('EditProfile');
+    });
   });
 
   it('opens the profile editor', () => {

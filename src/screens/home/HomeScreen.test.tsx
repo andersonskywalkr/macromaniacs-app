@@ -211,6 +211,51 @@ describe('HomeScreen', () => {
     expect(mockRefetchProgress).not.toHaveBeenCalled();
   });
 
+  describe('old account without sex (backend returns nutrition: null)', () => {
+    const user = mockUser as { nutrition?: unknown; biologicalSex?: string | null };
+    const saved = mockUser.nutrition;
+
+    beforeEach(() => {
+      user.nutrition = undefined;
+      user.biologicalSex = null;
+      mockProgress = {
+        data: progressOf({ calories: 0, protein: 0, carbohydrates: 0, fat: 0 }),
+        isLoading: false,
+        isError: false,
+      };
+      (mockProgress.data as { calories: { goal: number } }).calories.goal = 0;
+    });
+
+    afterEach(() => {
+      user.nutrition = saved;
+      delete user.biologicalSex;
+    });
+
+    it('shows a short notice with "Completar perfil" instead of an empty goal', () => {
+      const { screen } = renderHome();
+
+      expect(screen.getByText('Falta informar o seu sexo para calcular a sua meta de calorias.')).toBeTruthy();
+      expect(screen.getByLabelText('Completar perfil')).toBeTruthy();
+      expect(screen.queryByText('Não foi possível carregar seu consumo de hoje.')).toBeNull();
+    });
+
+    it('"Completar perfil" opens Editar perfil', () => {
+      const { navigation, screen } = renderHome();
+
+      fireEvent.press(screen.getByLabelText('Completar perfil'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('ProfileTab', { screen: 'EditProfile' });
+    });
+
+    it('does not show the notice once the sex is known', () => {
+      user.biologicalSex = 'MALE';
+      user.nutrition = saved;
+      const { screen } = renderHome();
+
+      expect(screen.queryByLabelText('Completar perfil')).toBeNull();
+    });
+  });
+
   it('shows a retry only in the calories card when the progress query fails', () => {
     mockProgress = { data: undefined, isLoading: false, isError: true };
     const { screen } = renderHome();

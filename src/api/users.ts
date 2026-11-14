@@ -10,8 +10,8 @@ export type UpdateMyProfileRequest = {
   displayName?: string | null;
   username?: string;
   dateOfBirth?: string | null;
-  // Valor já no formato da API (ver api/sexMapping.ts).
-  biologicalSex?: string | null;
+  // O app só envia FEMALE ou MALE (nunca NOT_INFORMED; ver api/sexMapping.ts).
+  biologicalSex?: 'FEMALE' | 'MALE';
   goal?: UserProfile['goal'];
   activityLevel?: UserProfile['activityLevel'];
   heightCm?: number;
@@ -27,8 +27,8 @@ function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), MOCK_LATENCY_MS));
 }
 
-// O backend devolve `biologicalSex` como texto; o app trabalha com os 3
-// valores conhecidos (valor desconhecido vira null).
+// O backend devolve `biologicalSex` como texto; o app trabalha com FEMALE e
+// MALE (NOT_INFORMED, ausente ou desconhecido vira null: perfil sem sexo).
 type ApiUserProfile = Omit<UserProfile, 'biologicalSex'> & { biologicalSex: string | null };
 
 function fromApiProfile(profile: ApiUserProfile): UserProfile {
@@ -52,6 +52,11 @@ export async function updateMyProfile(
     setMockOnboardingCompleted(true);
     return delay(updateMockProfile(patch));
   }
-  const { data } = await httpClient.patch<ApiUserProfile>(v1('/users/me'), patch);
+  // Defesa extra: NOT_INFORMED (ou qualquer valor fora de FEMALE/MALE) nunca
+  // vai ao backend; o campo é simplesmente omitido.
+  const { biologicalSex, ...rest } = patch;
+  const body: UpdateMyProfileRequest =
+    biologicalSex === 'FEMALE' || biologicalSex === 'MALE' ? { ...rest, biologicalSex } : rest;
+  const { data } = await httpClient.patch<ApiUserProfile>(v1('/users/me'), body);
   return fromApiProfile(data);
 }

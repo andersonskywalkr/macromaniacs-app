@@ -53,9 +53,15 @@ describe('onboarding validation', () => {
     });
   });
 
-  it('sends the device timezone and the API value for "prefer not to say"', () => {
-    const request = buildOnboardingRequest({ ...validData, sex: 'PREFER_NOT_TO_SAY' }, today);
-    expect(request.biologicalSex).toBe('NOT_INFORMED');
+  it('does not build a request without a sex (it is required)', () => {
+    expect(() => buildOnboardingRequest({ ...validData, sex: null }, today)).toThrow(/feminino ou masculino/);
+  });
+
+  it('sends the device timezone and only FEMALE or MALE as the sex', () => {
+    expect(buildOnboardingRequest({ ...validData, sex: 'MALE' }, today).biologicalSex).toBe('MALE');
+    const request = buildOnboardingRequest({ ...validData, sex: 'FEMALE' }, today);
+    expect(request.biologicalSex).toBe('FEMALE');
+    expect(JSON.stringify(request)).not.toContain('NOT_INFORMED');
     expect(typeof request.timezone).toBe('string');
     expect(request.timezone).toBeTruthy();
   });

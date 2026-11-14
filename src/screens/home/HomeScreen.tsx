@@ -19,6 +19,7 @@ import { useMyGroups } from '@/queries/useMyGroups';
 import { useGroupRanking } from '@/queries/useGroupRanking';
 import { formatFriendlyDate } from '@/utils/formatDate';
 import { resolveCalorieGoal } from '@/utils/nutritionFallback';
+import { CompleteProfileNotice } from '@/components/CompleteProfileNotice';
 import { goalHitLabel, summarizePerformance } from '@/utils/performance';
 import { resolveTimezone, todayAsLocalDate } from '@/utils/today';
 import { resolveMacroGoals, summarizeCalories } from '@/utils/dailyProgress';
@@ -57,11 +58,19 @@ export function HomeScreen({ navigation }: Props) {
   const todayLabel = formatFriendlyDate(todayAsLocalDate(resolveTimezone(currentUser.timezone)));
   const rankingEntries = (ranking.data ?? []).slice(0, 3);
 
-  // Meta calórica: a do backend (perfil); se ele não calcular (ex.: "Prefiro
-  // não informar"), a calculada pelo app; por fim, a meta do progresso do dia.
+  // Meta calórica: a do backend (perfil); se ele não trouxer, a meta do
+  // progresso do dia. Conta antiga sem sexo não tem cálculo: avisa para completar.
   const calorieGoal = resolveCalorieGoal(currentUser) ?? progress.data?.calories.goal ?? null;
 
   function renderCaloriesCard() {
+    if (!calorieGoal && !currentUser!.biologicalSex) {
+      return (
+        <CompleteProfileNotice
+          onPress={() => navigation.navigate('ProfileTab', { screen: 'EditProfile' })}
+        />
+      );
+    }
+
     if (progress.isLoading) {
       return <ActivityIndicator color={tokens.primary} accessibilityLabel="Carregando seu consumo" />;
     }

@@ -24,7 +24,7 @@ function delay<T>(value: T): Promise<T> {
 
 // GET /v1/progress/daily?date=AAAA-MM-DD (não existe /progress/today).
 // `fallbackCalorieGoal`: meta calculada pelo app, usada quando o backend
-// devolve targetCalories nulo (ex.: quem escolheu "Prefiro não informar").
+// devolve targetCalories nulo (ex.: conta antiga sem sexo informado).
 export async function getProgressToday(
   timezone?: string | null,
   fallbackCalorieGoal: number | null = null,

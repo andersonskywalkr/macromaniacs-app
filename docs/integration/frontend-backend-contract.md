@@ -20,7 +20,7 @@ abaixo usa dados simulados.
 | Paginação | `items` + `meta.page`, `meta.limit`, `meta.totalItems` e `meta.totalPages`. O cliente tolera metadados ausentes por compatibilidade, mas percorre as páginas informadas. |
 | Erro | `{ statusCode, code/error, message, timestamp, path, correlationId? }`; `message` pode ser texto ou lista. |
 | Cancelamento | Requisição cancelada vira `REQUEST_CANCELLED`, não erro de rede. |
-| Fonte nutricional | TMB, TDEE e meta calórica vêm somente do backend. `NOT_INFORMED` pode produzir `nutrition: null`; o app não inventa uma meta. |
+| Fonte nutricional | TMB, TDEE e meta calórica vêm somente do backend. O app oferece só `FEMALE` e `MALE` (campo obrigatório no Onboarding e no Editar perfil) e **nunca envia `NOT_INFORMED`** (o `PATCH` omite qualquer valor fora desses dois). Conta antiga com `NOT_INFORMED` ou sem sexo vem com `nutrition: null`: o app não inventa uma meta, lê o sexo como ausente, mostra o aviso "Completar perfil" na Home e no Perfil e exige escolher o sexo no Editar perfil. |
 
 ## Matriz de fluxos
 

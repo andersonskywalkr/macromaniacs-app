@@ -1,22 +1,21 @@
 import type { BiologicalSex } from './types/domain';
 
 // ÚNICO lugar que liga o valor usado no app ao valor enviado/recebido pelo
-// backend no campo `biologicalSex`. O backend aceita FEMALE, MALE e
-// NOT_INFORMED; "Prefiro não informar" é PREFER_NOT_TO_SAY dentro do app.
-const APP_TO_API: Record<BiologicalSex, string> = {
+// backend no campo `biologicalSex`. O app só envia FEMALE ou MALE: as fórmulas
+// de TMB, TDEE e meta do backend dependem disso, e com NOT_INFORMED ele devolve
+// `nutrition: null`.
+const APP_TO_API: Record<BiologicalSex, 'FEMALE' | 'MALE'> = {
   FEMALE: 'FEMALE',
   MALE: 'MALE',
-  PREFER_NOT_TO_SAY: 'NOT_INFORMED',
 };
 
-export function toApiSex(sex: BiologicalSex): string {
+export function toApiSex(sex: BiologicalSex): 'FEMALE' | 'MALE' {
   return APP_TO_API[sex];
 }
 
-// Valor desconhecido (ou ausente) vira null: o usuário escolhe de novo.
+// SÓ LEITURA. Conta criada antes desta regra pode vir do backend com
+// NOT_INFORMED (ou sem sexo): isso vira null — "perfil sem sexo", que o app
+// pede para completar. Qualquer valor desconhecido também vira null.
 export function fromApiSex(value: string | null | undefined): BiologicalSex | null {
-  const entry = (Object.entries(APP_TO_API) as [BiologicalSex, string][]).find(
-    ([, apiValue]) => apiValue === value,
-  );
-  return entry ? entry[0] : null;
+  return value === 'FEMALE' || value === 'MALE' ? value : null;
 }

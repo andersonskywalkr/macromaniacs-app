@@ -9,7 +9,7 @@ const base: UserProfile = {
   username: 'anderson',
   displayName: 'Anderson',
   dateOfBirth: '2001-06-15', // 25 anos em 15/06/2026
-  biologicalSex: 'PREFER_NOT_TO_SAY',
+  biologicalSex: null, // conta antiga sem sexo: o backend devolve nutrition: null
   goal: 'MAINTAIN',
   activityLevel: 'MODERATE',
   targetWeightKg: null,

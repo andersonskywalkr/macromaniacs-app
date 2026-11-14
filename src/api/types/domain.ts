@@ -167,9 +167,10 @@ export interface RankingEntry {
   streak?: number;
 }
 
-// O terceiro valor cobre quem prefere não informar (campo biologicalSex da
-// API). O valor enviado ao backend sai de api/sexMapping.ts.
-export type BiologicalSex = 'FEMALE' | 'MALE' | 'PREFER_NOT_TO_SAY';
+// Sexo escolhido no app: só FEMALE ou MALE (as fórmulas nutricionais do
+// backend dependem disso). Conta antiga que veio do backend com NOT_INFORMED ou
+// sem sexo fica com `biologicalSex: null` no perfil (ver api/sexMapping.ts).
+export type BiologicalSex = 'FEMALE' | 'MALE';
 export type NutritionGoal =
   | 'LOSE_WEIGHT'
   | 'GAIN_MUSCLE'

@@ -8,7 +8,7 @@ const profile: UserProfile = {
   username: 'anderson',
   displayName: 'Anderson',
   dateOfBirth: '1998-04-12',
-  biologicalSex: 'PREFER_NOT_TO_SAY',
+  biologicalSex: 'FEMALE',
   goal: 'LOSE_WEIGHT',
   activityLevel: 'MODERATE',
   targetWeightKg: 75.5,
@@ -28,7 +28,7 @@ describe('profileToFormData', () => {
       birthDate: '12/04/1998',
       heightCm: '178',
       weightKg: '82,5',
-      sex: 'PREFER_NOT_TO_SAY',
+      sex: 'FEMALE',
       goal: 'LOSE_WEIGHT',
       activityLevel: 'MODERATE',
       targetWeightKg: '75,5',
@@ -56,10 +56,10 @@ describe('profileToFormData', () => {
       dateOfBirth: '1998-04-12',
       heightCm: 178,
       currentWeightKg: 82.5,
-      biologicalSex: 'NOT_INFORMED',
+      biologicalSex: 'FEMALE',
     });
     expect(validateOnboarding({ ...form, weightKg: '10' }, today)).toMatch(/peso/);
-    expect(validateOnboarding({ ...form, sex: null }, today)).toMatch(/Selecione/);
+    expect(validateOnboarding({ ...form, sex: null }, today)).toMatch(/feminino ou masculino/);
   });
 
   it('keeps the 18 to 120 year rule', () => {

@@ -9,13 +9,11 @@ import type {
 // backend devolve (nutrition.bmrKcalPerDay / tdeeKcalPerDay).
 
 // Mifflin-St Jeor: TMB = 10 x peso(kg) + 6,25 x altura(cm) - 5 x idade + constante.
-// ATENÇÃO: a constante -78 de "Prefiro não informar" é só uma aproximação de
-// engenharia (média de +5 e -161). Precisa ser validada pelos alunos de
-// Nutrição antes de valer para o produto final.
+// Só existem as duas constantes: o app só aceita feminino e masculino (a conta
+// sem sexo não tem cálculo, igual ao backend).
 export const BMR_SEX_CONSTANT: Record<BiologicalSex, number> = {
   MALE: 5,
   FEMALE: -161,
-  PREFER_NOT_TO_SAY: -78,
 };
 
 export const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {

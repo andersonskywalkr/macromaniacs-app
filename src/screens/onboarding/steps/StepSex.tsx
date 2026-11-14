@@ -26,7 +26,7 @@ export function StepSex({ data, onChange }: Props) {
       ))}
 
       <Text style={[styles.notice, { color: tokens.textSecondary }]}>
-        Usado apenas no cálculo do gasto de energia do corpo. Você pode preferir não informar.
+        Obrigatório: usado para calcular o seu gasto de energia e a sua meta de calorias.
       </Text>
     </View>
   );
