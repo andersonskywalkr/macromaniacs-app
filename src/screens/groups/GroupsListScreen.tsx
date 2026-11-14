@@ -5,6 +5,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,6 +36,10 @@ import {
 
 import { KeyboardAwareScreen, KeyboardAwareScrollView } from '@/components/KeyboardAwareScreen';
 type Props = NativeStackScreenProps<GroupStackParamList, 'GroupsList'>;
+
+// Largura efetiva (largura da tela ÷ escala da fonte do sistema) abaixo da qual
+// "Entrar em grupo" e "Criar grupo" ficam empilhados em vez de lado a lado.
+const ACTIONS_STACK_BELOW_WIDTH = 340;
 
 function GroupCard({
   group,
@@ -117,6 +122,10 @@ function GroupCard({
 // Lista, entrada por convite e criação de grupos reais.
 export function GroupsListScreen({ navigation }: Props) {
   const { tokens } = useTheme();
+  // Tela estreita ou fonte do sistema ampliada: a largura "efetiva" (em sp)
+  // diminui e os dois botões passam a ficar um embaixo do outro.
+  const { width, fontScale } = useWindowDimensions();
+  const stackActions = width / fontScale < ACTIONS_STACK_BELOW_WIDTH;
   const groups = useMyGroups();
   const join = useJoinGroup();
   const create = useCreateGroup();
@@ -236,27 +245,34 @@ export function GroupsListScreen({ navigation }: Props) {
       >
         <Text style={[styles.title, { color: tokens.text }]}>Grupos</Text>
 
-        <View style={styles.actionsRow}>
+        {/* Rótulos curtos ("Cancelar" no lugar de "Cancelar entrada/criação"): o
+            botão do formulário aberto fica preenchido, para o contexto ficar claro. */}
+        <View testID="group-actions" style={stackActions ? styles.actionsColumn : styles.actionsRow}>
           <Button
-            label={joinOpen ? 'Cancelar entrada' : 'Entrar em grupo'}
-            variant="secondary"
+            label={joinOpen ? 'Cancelar' : 'Entrar em grupo'}
+            variant={joinOpen ? 'primary' : 'secondary'}
             onPress={() => {
               setJoinOpen((open) => !open);
               setCreateOpen(false);
               setJoinError(null);
             }}
-            accessibilityHint="Mostra o campo do código de convite"
-            style={styles.actionButton}
+            accessibilityHint={
+              joinOpen ? 'Fecha o campo do código de convite' : 'Mostra o campo do código de convite'
+            }
+            style={stackActions ? styles.actionButtonStacked : styles.actionButton}
           />
           <Button
-            label={createOpen ? 'Cancelar criação' : 'Criar grupo'}
-            variant="secondary"
+            label={createOpen ? 'Cancelar' : 'Criar grupo'}
+            variant={createOpen ? 'primary' : 'secondary'}
             onPress={() => {
               setCreateOpen((open) => !open);
               setJoinOpen(false);
               setCreateError(null);
             }}
-            style={styles.actionButton}
+            accessibilityHint={
+              createOpen ? 'Fecha o formulário de novo grupo' : 'Mostra o formulário de novo grupo'
+            }
+            style={stackActions ? styles.actionButtonStacked : styles.actionButton}
           />
         </View>
 
@@ -323,7 +339,9 @@ export function GroupsListScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  actionButton: { flex: 1 },
+  actionButton: { flex: 1, paddingHorizontal: spacing.sm },
+  actionButtonStacked: { alignSelf: 'stretch' },
+  actionsColumn: { flexDirection: 'column', gap: spacing.sm },
   actionsRow: { flexDirection: 'row', gap: spacing.sm },
   cardHeader: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   cardTitleWrap: { flex: 1, minWidth: 0 },

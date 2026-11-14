@@ -1,6 +1,6 @@
 import React from 'react';
-import { Share } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Dimensions, Share, StyleSheet } from 'react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { GroupsListScreen } from './GroupsListScreen';
 import { GroupProfileScreen } from './GroupProfileScreen';
 import { RankingFullScreen } from './RankingFullScreen';
@@ -173,6 +173,56 @@ describe('GroupsListScreen', () => {
     fireEvent.press(screen.getByLabelText('Entrar'));
 
     expect(await screen.findByText('Código inválido. Confira com quem te convidou.')).toBeTruthy();
+  });
+
+  it('uses short labels: the open form turns its button into "Cancelar" and the other keeps its name', () => {
+    const { screen } = renderList();
+    expect(screen.getByLabelText('Entrar em grupo')).toBeTruthy();
+    expect(screen.getByLabelText('Criar grupo')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Entrar em grupo'));
+    expect(screen.getByLabelText('Código de convite')).toBeTruthy();
+    expect(screen.getAllByLabelText('Cancelar')).toHaveLength(1);
+    expect(screen.getByLabelText('Criar grupo')).toBeTruthy();
+    expect(screen.queryByText('Cancelar entrada')).toBeNull();
+
+    // abrir o outro formulário troca o "Cancelar" de lugar
+    fireEvent.press(screen.getByLabelText('Criar grupo'));
+    expect(screen.queryByLabelText('Código de convite')).toBeNull();
+    expect(screen.getByLabelText('Entrar em grupo')).toBeTruthy();
+    expect(screen.getAllByLabelText('Cancelar')).toHaveLength(1);
+    expect(screen.queryByText('Cancelar criação')).toBeNull();
+
+    fireEvent.press(screen.getByLabelText('Cancelar'));
+    expect(screen.queryByLabelText('Cancelar')).toBeNull();
+    expect(screen.getByLabelText('Criar grupo')).toBeTruthy();
+  });
+
+  describe('action buttons layout', () => {
+    const original = Dimensions.get('window');
+
+    afterEach(() => {
+      act(() => Dimensions.set({ window: original }));
+    });
+
+    const actionsDirection = (screen: ReturnType<typeof renderList>['screen']) => {
+      return StyleSheet.flatten(screen.getByTestId('group-actions').props.style).flexDirection;
+    };
+
+    it('keeps the two buttons side by side on a normal screen', () => {
+      Dimensions.set({ window: { width: 392, height: 800, scale: 2.75, fontScale: 1 } });
+      expect(actionsDirection(renderList().screen)).toBe('row');
+    });
+
+    it('stacks them on a narrow screen', () => {
+      Dimensions.set({ window: { width: 320, height: 640, scale: 2, fontScale: 1 } });
+      expect(actionsDirection(renderList().screen)).toBe('column');
+    });
+
+    it('stacks them when the system font is enlarged', () => {
+      Dimensions.set({ window: { width: 392, height: 800, scale: 2.75, fontScale: 1.4 } });
+      expect(actionsDirection(renderList().screen)).toBe('column');
+    });
   });
 });
 

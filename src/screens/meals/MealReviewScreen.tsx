@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   error: { fontFamily: fontFamily(600), fontSize: 13, marginBottom: spacing.sm, textAlign: 'center' },
   footer: { gap: spacing.sm, padding: spacing.lg, paddingTop: spacing.sm },
   footerActions: { flexDirection: 'row', gap: spacing.sm },
-  footerButton: { flex: 1 },
+  footerButton: { flex: 1, paddingHorizontal: spacing.sm },
   fullWidth: { alignSelf: 'stretch' },
   header: {
     alignItems: 'center',
