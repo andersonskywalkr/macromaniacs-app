@@ -1,9 +1,13 @@
 import {
+  BARCODE_PENALTY,
   COMPOSITE_WORDS,
   FLAVOR_WORDS,
+  GENERIC_SOURCES,
+  GENERIC_SOURCE_BONUS,
   SCORE,
   normalizeForSearch,
   rankFoodsByRelevance,
+  scoreFood,
   scoreFoodName,
 } from './foodRelevance';
 
@@ -155,5 +159,99 @@ describe('tie-breaking and edge cases', () => {
   it('keeps the other fields of the items', () => {
     const items = [{ name: 'Arroz integral', id: 'x', extra: 1 }];
     expect(rankFoodsByRelevance(items, 'arroz')[0]).toBe(items[0]);
+  });
+});
+
+describe('source and barcode (generic foods over packaged products)', () => {
+  const food = (name: string, source?: string, barcode?: string | null) => ({ name, source, barcode });
+  const order = (list: { name: string }[], query: string) => names(rankFoodsByRelevance(list, query));
+
+  it('between two names of the same level, the generic food comes before the one with a barcode', () => {
+    // mesmo nível de nome (começa com "arroz"); o alfabético e o tamanho favoreceriam o de marca
+    const ranked = order(
+      [food('Arroz Alfa', 'OPEN_FOOD_FACTS', '7891234567895'), food('Arroz Zeta', 'TBCA', null)],
+      'arroz',
+    );
+    expect(ranked).toEqual(['Arroz Zeta', 'Arroz Alfa']);
+  });
+
+  it('puts USDA and manual entries above Open Food Facts at the same name level', () => {
+    for (const generic of ['TBCA', 'USDA', 'MANUAL']) {
+      const ranked = order([food('Banana A', 'OPEN_FOOD_FACTS', null), food('Banana B', generic, null)], 'banana');
+      expect(ranked).toEqual(['Banana B', 'Banana A']);
+    }
+  });
+
+  it('the barcode alone also demotes a little (same source, with and without barcode)', () => {
+    const ranked = order([food('Arroz A', 'MANUAL', '7891234567895'), food('Arroz B', 'MANUAL', null)], 'arroz');
+    expect(ranked).toEqual(['Arroz B', 'Arroz A']);
+  });
+
+  it('a name equal to the query still ranks above a similar generic, even from Open Food Facts', () => {
+    const ranked = order(
+      [food('Arroz integral cozido', 'TBCA', null), food('Arroz', 'OPEN_FOOD_FACTS', '7891234567895')],
+      'arroz',
+    );
+    expect(ranked).toEqual(['Arroz', 'Arroz integral cozido']);
+    expect(scoreFood(food('Arroz', 'OPEN_FOOD_FACTS', '789'), 'arroz')).toBeGreaterThan(
+      scoreFood(food('Arroz integral cozido', 'USDA', null), 'arroz'),
+    );
+  });
+
+  it('a name that starts with the query still ranks above one that only contains it, whatever the source', () => {
+    const ranked = order(
+      [food('Bolo de banana', 'TBCA', null), food('Banana prata', 'OPEN_FOOD_FACTS', '7891234567895')],
+      'banana',
+    );
+    expect(ranked).toEqual(['Banana prata', 'Bolo de banana']);
+  });
+
+  it('keeps the weights small: below the gaps between name levels', () => {
+    const maxAdjustment = GENERIC_SOURCE_BONUS + BARCODE_PENALTY;
+    expect(maxAdjustment).toBeGreaterThan(0);
+    expect(maxAdjustment).toBeLessThan(SCORE.startsWithWord - SCORE.startsWithPrefix);
+    expect(maxAdjustment).toBeLessThan(SCORE.exact - SCORE.startsWithWord);
+    expect(GENERIC_SOURCES).toEqual(['TBCA', 'USDA', 'MANUAL']);
+  });
+
+  it('only demotes the barcode for simple queries (long or flavored queries are left alone)', () => {
+    const packaged = food('Biscoito sabor chocolate recheado crocante', 'OPEN_FOOD_FACTS', '7891234567895');
+    const plain = food('Biscoito sabor chocolate recheado crocante', 'OPEN_FOOD_FACTS', null);
+    // consulta com "sabor": sem rebaixamento
+    expect(scoreFood(packaged, 'biscoito sabor chocolate')).toBe(scoreFood(plain, 'biscoito sabor chocolate'));
+    // consulta longa (mais de 3 palavras): sem rebaixamento
+    expect(scoreFood(packaged, 'biscoito chocolate recheado crocante')).toBe(
+      scoreFood(plain, 'biscoito chocolate recheado crocante'),
+    );
+    // consulta simples: rebaixa
+    expect(scoreFood(packaged, 'biscoito')).toBe(scoreFood(plain, 'biscoito') - BARCODE_PENALTY);
+  });
+
+  it('keeps the generic bonus even for non-simple queries', () => {
+    const generic = food('Arroz com frango grelhado e legumes', 'TBCA', null);
+    expect(scoreFood(generic, 'arroz com frango grelhado e legumes')).toBe(SCORE.exact + GENERIC_SOURCE_BONUS);
+  });
+
+  it('items without source/barcode (mock, old data) are scored by name only', () => {
+    expect(scoreFood({ name: 'Arroz integral' }, 'arroz')).toBe(scoreFoodName('Arroz integral', 'arroz'));
+    expect(scoreFood(food('Arroz integral', undefined, null), 'arroz')).toBe(scoreFoodName('Arroz integral', 'arroz'));
+    expect(scoreFood(food('Arroz integral', 'FONTE_NOVA', ''), 'arroz')).toBe(scoreFoodName('Arroz integral', 'arroz'));
+    expect(order([{ name: 'Banana prata' }, { name: 'Banana' }], 'banana')).toEqual(['Banana', 'Banana prata']);
+  });
+
+  it('keeps the old order when every item has the same origin (all Open Food Facts with barcode)', () => {
+    const list = [
+      food('Arroz Zeta', 'OPEN_FOOD_FACTS', '1'),
+      food('Arroz Alfa', 'OPEN_FOOD_FACTS', '2'),
+      food('Arroz', 'OPEN_FOOD_FACTS', '3'),
+    ];
+    expect(order(list, 'arroz')).toEqual(['Arroz', 'Arroz Alfa', 'Arroz Zeta']);
+  });
+
+  it('does not change the input list or reorder anything outside the call (page by page stays as is)', () => {
+    const list = [food('Arroz B', 'OPEN_FOOD_FACTS', '1'), food('Arroz A', 'TBCA', null)];
+    const copy = [...list];
+    rankFoodsByRelevance(list, 'arroz');
+    expect(list).toEqual(copy);
   });
 });

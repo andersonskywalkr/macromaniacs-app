@@ -34,6 +34,20 @@ export const SIMPLE_QUERY_MAX_WORDS = 3;
 export const PENALTY_PER_WORD = 40;
 export const MAX_PENALTY = 120;
 
+// Fontes "genéricas" (alimento sem marca): TBCA (tabela brasileira), USDA e
+// cadastro manual. Os demais (Open Food Facts = produtos de marca) não ganham o bônus.
+export const GENERIC_SOURCES: readonly string[] = ['TBCA', 'USDA', 'MANUAL'];
+
+// Pesos de desempate entre itens de nome parecido, PEQUENOS de propósito: bem
+// abaixo da distância entre os níveis de nome (SCORE), para que o nome continue
+// sendo o critério dominante (um nome igual à consulta, mesmo de marca, fica
+// acima de um genérico apenas parecido).
+// - bônus para fonte genérica;
+// - rebaixamento leve de item com código de barras (produto embalado), só
+//   quando a consulta é um alimento simples (mesma regra das penalidades acima).
+export const GENERIC_SOURCE_BONUS = 10;
+export const BARCODE_PENALTY = 10;
+
 // Pontos de cada nível de relevância (maior = mais relevante).
 export const SCORE = {
   exact: 1000,
@@ -95,11 +109,15 @@ function baseScore(name: string, queryNormalized: string, queryWords: string[]):
   return SCORE.other + partial * 10;
 }
 
-function penalty(name: string, queryWords: string[]): number {
-  if (queryWords.length === 0 || queryWords.length > SIMPLE_QUERY_MAX_WORDS) return 0;
-
+// Consulta de alimento simples: poucas palavras e sem "sabor", "molho", "com"...
+function isSimpleQuery(queryWords: string[]): boolean {
+  if (queryWords.length === 0 || queryWords.length > SIMPLE_QUERY_MAX_WORDS) return false;
   const queryHas = (list: readonly string[]) => list.some((word) => queryWords.includes(word));
-  if (queryHas(FLAVOR_WORDS) || queryHas(COMPOSITE_WORDS)) return 0;
+  return !queryHas(FLAVOR_WORDS) && !queryHas(COMPOSITE_WORDS);
+}
+
+function penalty(name: string, queryWords: string[]): number {
+  if (!isSimpleQuery(queryWords)) return 0;
 
   const nameWords = words(normalizeForSearch(name));
   const hits =
@@ -116,12 +134,31 @@ export function scoreFoodName(name: string, query: string): number {
   return baseScore(name, queryNormalized, queryWords) - penalty(name, queryWords);
 }
 
+type RankableFood = Pick<FoodItem, 'name'> & Partial<Pick<FoodItem, 'source' | 'barcode'>>;
+
+// Ajuste pela origem do item: fonte genérica ganha um bônus; com código de
+// barras (produto embalado) perde um pouco, se a consulta for um alimento
+// simples. Item sem `source`/`barcode` (mock, dados antigos) não muda.
+function sourceAdjustment(food: RankableFood, queryWords: string[]): number {
+  let adjustment = 0;
+  if (food.source && GENERIC_SOURCES.includes(food.source)) adjustment += GENERIC_SOURCE_BONUS;
+  if (food.barcode && isSimpleQuery(queryWords)) adjustment -= BARCODE_PENALTY;
+  return adjustment;
+}
+
+// Pontuação final do alimento: nome (dominante) + ajuste pequeno pela origem.
+export function scoreFood(food: RankableFood, query: string): number {
+  const queryNormalized = normalizeForSearch(query);
+  if (queryNormalized === '') return 0;
+  return scoreFoodName(food.name, query) + sourceAdjustment(food, words(queryNormalized));
+}
+
 // Ordena por relevância. Desempate: nome mais curto primeiro, depois ordem
 // alfabética e, por fim, a ordem original (ordenação estável). Não altera a
 // lista recebida.
-export function rankFoodsByRelevance<T extends Pick<FoodItem, 'name'>>(foods: readonly T[], query: string): T[] {
+export function rankFoodsByRelevance<T extends RankableFood>(foods: readonly T[], query: string): T[] {
   return foods
-    .map((food, index) => ({ food, index, score: scoreFoodName(food.name, query) }))
+    .map((food, index) => ({ food, index, score: scoreFood(food, query) }))
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (a.food.name.length !== b.food.name.length) return a.food.name.length - b.food.name.length;
