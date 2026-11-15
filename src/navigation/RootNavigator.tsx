@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
@@ -6,6 +6,7 @@ import { AuthStackNavigator } from './AuthStack';
 import { AppTabsNavigator } from './AppTabs';
 import { OnboardingStackNavigator } from './OnboardingStack';
 import { useTheme } from '@/theme/ThemeProvider';
+import { buildNavigationTheme } from './navigationTheme';
 
 /**
  * Guarda de navegação — seção 118.3.
@@ -23,7 +24,8 @@ export function RootNavigator() {
   const status = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
   const bootstrap = useAuthStore((s) => s.bootstrap);
-  const { tokens } = useTheme();
+  const { tokens, mode } = useTheme();
+  const navigationTheme = useMemo(() => buildNavigationTheme(mode, tokens), [mode, tokens]);
 
   useEffect(() => {
     bootstrap();
@@ -38,7 +40,7 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       {status === 'unauthenticated' && <AuthStackNavigator />}
       {status === 'authenticated' && !user?.onboardingCompleted && (
         <OnboardingStackNavigator />

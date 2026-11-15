@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { ThemedRoot } from '@/theme/AppSystemBars';
 import { FONT_FILES, FONT_LOAD_TIMEOUT_MS } from '@/theme/fonts';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { startOfflineSync } from '@/offline/sync';
@@ -51,8 +51,11 @@ export default function App() {
       <KeyboardProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
-            <StatusBar style="auto" />
-            <RootNavigator />
+            {/* Raiz com a cor do tema do app + barra de status com estilo explícito
+                (tema do APP, não do sistema). */}
+            <ThemedRoot>
+              <RootNavigator />
+            </ThemedRoot>
           </ThemeProvider>
         </QueryClientProvider>
       </KeyboardProvider>

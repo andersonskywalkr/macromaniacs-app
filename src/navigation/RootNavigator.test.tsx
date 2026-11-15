@@ -10,10 +10,15 @@ jest.mock('@/store/authStore', () => ({
     selector(mockAuthState),
 }));
 jest.mock('@/theme/ThemeProvider', () => ({
-  useTheme: () => ({ tokens: { background: '#000', primary: '#fff' } }),
+  useTheme: () => ({
+    mode: 'dark',
+    tokens: { background: '#000', primary: '#fff', text: '#fff', card: '#111' },
+  }),
 }));
 jest.mock('@react-navigation/native', () => ({
   NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+  DefaultTheme: { dark: false, colors: {}, fonts: {} },
+  DarkTheme: { dark: true, colors: {}, fonts: {} },
 }));
 jest.mock('./AuthStack', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');

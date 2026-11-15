@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
-import { Appearance } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { colors, ColorTokens, ThemeMode } from './tokens';
+import { resolveThemeMode, syncNativeColorScheme } from './systemBars';
 import { useThemeStore } from '@/store/themeStore';
 
 interface ThemeContextValue {
@@ -19,12 +20,18 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const preference = useThemeStore((s) => s.preference); // 'light' | 'dark' | 'system'
-  // Appearance.getColorScheme() também pode retornar 'unspecified' (RN 0.88)
-  // quando a plataforma não informa um tema — tratamos como 'light', igual
-  // ao fallback de null.
-  const systemScheme: ThemeMode = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
+  // useColorScheme() reage à troca do tema do sistema com o app aberto (o
+  // listener antigo não re-renderizava). Pode ser 'unspecified' (RN 0.88) ou
+  // nulo quando a plataforma não informa: conta como 'light'.
+  const systemScheme = useColorScheme();
 
-  const resolvedMode: ThemeMode = preference === 'system' ? systemScheme : preference;
+  const resolvedMode: ThemeMode = resolveThemeMode(preference, systemScheme);
+
+  // O app pede ao sistema o tema escolhido (ou "seguir o sistema"): barra de
+  // navegação, diálogos e teclado acompanham o tema do APP.
+  useEffect(() => {
+    syncNativeColorScheme(preference);
+  }, [preference]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -34,16 +41,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }),
     [resolvedMode],
   );
-
-  // Re-renderiza se o usuário mudar o tema do SO enquanto o preference é 'system'
-  useEffect(() => {
-    const sub = Appearance.addChangeListener(() => {
-      if (useThemeStore.getState().preference === 'system') {
-        useThemeStore.setState({}); // força recomputo dos seletores
-      }
-    });
-    return () => sub.remove();
-  }, []);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
