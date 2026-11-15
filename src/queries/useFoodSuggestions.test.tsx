@@ -2,7 +2,8 @@ import React from 'react';
 import { act, renderHook } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFoodSuggestions } from './useFoodSuggestions';
-import { suggestFoods } from '@/api/foods';
+import { suggestFoods, type FoodSuggestions } from '@/api/foods';
+import { SUGGESTION_DEBOUNCE_MS } from '@/utils/foodSuggestions';
 
 jest.mock('@/api/foods', () => ({ suggestFoods: jest.fn() }));
 
@@ -24,6 +25,8 @@ function wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
+const answer = (items: ReturnType<typeof food>[], localOnly = false): FoodSuggestions => ({ items, localOnly });
+
 function flush(ms = 0) {
   return act(async () => {
     await jest.advanceTimersByTimeAsync(ms);
@@ -35,7 +38,7 @@ describe('useFoodSuggestions', () => {
     jest.useFakeTimers();
     jest.clearAllMocks();
     queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: 0 } } });
-    mockSuggest.mockResolvedValue([food('1', 'Frango frito')]);
+    mockSuggest.mockResolvedValue(answer([food('1', 'Frango frito')]));
   });
 
   afterEach(() => {
@@ -55,7 +58,7 @@ describe('useFoodSuggestions', () => {
     expect(result.current.suggestions).toEqual([]);
   });
 
-  it('waits for a typing pause (300 ms) and searches only once', async () => {
+  it('waits for a typing pause and searches only once', async () => {
     const { result, rerender } = renderHook(({ text }) => useFoodSuggestions(text), {
       wrapper,
       initialProps: { text: '' },
@@ -66,7 +69,7 @@ describe('useFoodSuggestions', () => {
     rerender({ text: 'fra' });
     await flush(200);
     rerender({ text: 'fran' });
-    await flush(299);
+    await flush(SUGGESTION_DEBOUNCE_MS - 1);
     expect(mockSuggest).not.toHaveBeenCalled();
 
     await flush(2);
@@ -77,10 +80,10 @@ describe('useFoodSuggestions', () => {
   });
 
   it('ignores a late answer for an old text (only the latest text shows)', async () => {
-    let resolveOld: (foods: ReturnType<typeof food>[]) => void = () => undefined;
+    let resolveOld: (value: FoodSuggestions) => void = () => undefined;
     mockSuggest.mockImplementation((query: string) => {
       if (query === 'fra') return new Promise((resolve) => (resolveOld = resolve));
-      return Promise.resolve([food('2', 'Frango grelhado')]);
+      return Promise.resolve(answer([food('2', 'Frango grelhado')]));
     });
 
     const { result, rerender } = renderHook(({ text }) => useFoodSuggestions(text), {
@@ -88,17 +91,17 @@ describe('useFoodSuggestions', () => {
       initialProps: { text: '' },
     });
     rerender({ text: 'fra' });
-    await flush(300); // dispara a busca de "fra" (que fica pendente)
+    await flush(SUGGESTION_DEBOUNCE_MS); // dispara a busca de "fra" (que fica pendente)
     expect(mockSuggest).toHaveBeenCalledWith('fra', expect.anything());
 
     rerender({ text: 'fran' });
-    await flush(300);
+    await flush(SUGGESTION_DEBOUNCE_MS);
     await flush(0);
     expect(result.current.suggestions.map((f) => f.name)).toEqual(['Frango grelhado']);
 
     // a resposta de "fra" chega atrasada: não pode virar a lista
     await act(async () => {
-      resolveOld([food('1', 'Fraldas de pano')]);
+      resolveOld(answer([food('1', 'Fraldas de pano')]));
     });
     await flush(0);
 
@@ -106,26 +109,26 @@ describe('useFoodSuggestions', () => {
   });
 
   it('keeps the previous list while the new text loads, marking it as loading', async () => {
-    let resolveNew: (foods: ReturnType<typeof food>[]) => void = () => undefined;
+    let resolveNew: (value: FoodSuggestions) => void = () => undefined;
     mockSuggest.mockImplementation((query: string) =>
-      query === 'frango' ? new Promise((resolve) => (resolveNew = resolve)) : Promise.resolve([food('1', 'Frango frito')]),
+      query === 'frango' ? new Promise((resolve) => (resolveNew = resolve)) : Promise.resolve(answer([food('1', 'Frango frito')])),
     );
 
     const { result, rerender } = renderHook(({ text }) => useFoodSuggestions(text), {
       wrapper,
       initialProps: { text: 'fran' },
     });
-    await flush(300);
+    await flush(SUGGESTION_DEBOUNCE_MS);
     expect(result.current.suggestions).toHaveLength(1);
 
     rerender({ text: 'frango' });
-    await flush(300);
+    await flush(SUGGESTION_DEBOUNCE_MS);
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.suggestions.map((f) => f.name)).toEqual(['Frango frito']);
 
     await act(async () => {
-      resolveNew([food('3', 'Frango assado')]);
+      resolveNew(answer([food('3', 'Frango assado')]));
     });
     await flush(0);
     expect(result.current.isLoading).toBe(false);
@@ -136,11 +139,35 @@ describe('useFoodSuggestions', () => {
     mockSuggest.mockRejectedValue(new Error('sem rede'));
     const { result } = renderHook(() => useFoodSuggestions('frango'), { wrapper });
 
-    await flush(300);
+    await flush(SUGGESTION_DEBOUNCE_MS);
     await flush(0);
 
     expect(result.current.isError).toBe(true);
     expect(result.current.suggestions).toEqual([]);
+  });
+
+  it('reports local-only results (external sources unavailable or rate limit)', async () => {
+    mockSuggest.mockResolvedValue(answer([food('1', 'Frango frito')], true));
+    const { result: hook } = renderHook(() => useFoodSuggestions('frango'), { wrapper });
+
+    await flush(SUGGESTION_DEBOUNCE_MS);
+    await flush(0);
+
+    expect(hook.current.localOnly).toBe(true);
+    expect(hook.current.suggestions).toHaveLength(1);
+  });
+
+  it('is not local-only by default', async () => {
+    const { result: hook } = renderHook(() => useFoodSuggestions('frango'), { wrapper });
+
+    await flush(SUGGESTION_DEBOUNCE_MS);
+    await flush(0);
+
+    expect(hook.current.localOnly).toBe(false);
+  });
+
+  it('waits longer than a plain filter before asking (the quick search also asks the external sources)', () => {
+    expect(SUGGESTION_DEBOUNCE_MS).toBeGreaterThanOrEqual(500);
   });
 
   it('empties the list when the text goes below 2 characters', async () => {
@@ -148,7 +175,7 @@ describe('useFoodSuggestions', () => {
       wrapper,
       initialProps: { text: 'fr' },
     });
-    await flush(300);
+    await flush(SUGGESTION_DEBOUNCE_MS);
     expect(result.current.suggestions).toHaveLength(1);
 
     rerender({ text: 'f' });

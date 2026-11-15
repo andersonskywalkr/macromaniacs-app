@@ -189,6 +189,11 @@ export function FoodSearchScreen({ navigation }: Props) {
         <Text style={[styles.resultsTitle, { color: tokens.textSecondary }]}>
           {foods.length === 1 ? '1 resultado' : `${foods.length} resultados`}
         </Text>
+        {search.externalUnavailable && (
+          <Text style={[styles.sourceNote, { color: tokens.textSecondary }]}>
+            Fontes externas indisponíveis agora: mostrando só alimentos já salvos. Tente de novo mais tarde para ver mais opções.
+          </Text>
+        )}
         {foods.map((food) => (
           <FoodResultRow
             key={food.id}
@@ -258,6 +263,8 @@ export function FoodSearchScreen({ navigation }: Props) {
               suggestions={suggestions.suggestions}
               isLoading={suggestions.isLoading}
               isSettled={suggestions.isSettled}
+              localOnly={suggestions.localOnly}
+              isError={suggestions.isError}
               onSearchFull={() => runFullSearch(text)}
               onPick={handlePickSuggestion}
             />
@@ -316,5 +323,6 @@ const styles = StyleSheet.create({
     minHeight: touchTarget.minSize,
     paddingHorizontal: spacing.lg,
   },
+  sourceNote: { fontFamily: fontFamily(600), fontSize: 12.5, lineHeight: 18 },
   title: { fontFamily: fontFamily(800), fontSize: 22 },
 });

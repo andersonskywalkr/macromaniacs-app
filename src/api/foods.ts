@@ -5,7 +5,9 @@ import { mockFoods } from '@/mocks/data';
 import { unwrapItems, type Paginated, type PaginationMeta } from './adapters/common';
 import { fromApiFood, toApiManualFood, type ApiFood } from './adapters/foods';
 import { ApiError } from './ApiError';
-import { rankSuggestions, SUGGESTION_LIMIT } from '@/utils/foodSuggestions';
+import { SUGGESTION_LIMIT } from '@/utils/foodSuggestions';
+import { rankFoodsByRelevance } from '@/utils/foodRelevance';
+import { canCallExternal, recordExternalCall } from './externalBudget';
 import type { FoodItem } from './types/domain';
 
 // Ignora maiúsculas e acentos na busca do mock ("feijao" acha "Feijão").
@@ -16,8 +18,16 @@ function normalize(text: string): string {
     .toLowerCase();
 }
 
-// Tamanho da página de resultados da busca.
-const FOODS_PAGE_LIMIT = 20;
+// Tamanho da página de resultados da busca: 50, o máximo aceito pelo backend.
+// O backend ordena por nome (sem relevância), então um conjunto maior aumenta a
+// chance de o alimento mais relevante vir junto e subir na reordenação feita no
+// app (utils/foodRelevance.ts). Todas as páginas usam o MESMO tamanho (a
+// paginação do backend é por página: mudar o limite no meio embaralharia os itens).
+export const FOODS_PAGE_LIMIT = 50;
+
+// Consultar as fontes externas é mais lento que ler o banco: prazo maior que o
+// padrão do cliente (10 s) só nessas requisições.
+export const EXTERNAL_SEARCH_TIMEOUT_MS = 25_000;
 
 function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), MOCK_LATENCY_MS));
@@ -25,7 +35,8 @@ function delay<T>(value: T): Promise<T> {
 
 export interface SearchFoodsOptions {
   // false = só alimentos já guardados no banco (sem consultar o Open Food
-  // Facts, que tem limite de 10 consultas por minuto). Omitido = busca completa.
+  // Facts, que tem limite de 10 consultas por minuto). true = consulta as
+  // fontes externas (e guarda no banco). Omitido = o padrão do backend (busca completa).
   external?: boolean;
   limit?: number;
   signal?: AbortSignal;
@@ -35,6 +46,9 @@ export interface SearchFoodsOptions {
 export interface FoodSearchPage {
   items: FoodItem[];
   meta: PaginationMeta;
+  // As fontes externas estavam indisponíveis (503): o resultado traz só os
+  // alimentos já salvos.
+  externalUnavailable?: boolean;
 }
 
 // GET /v1/foods?q= (2 a 100 letras; a tela bloqueia busca menor) — seção 51.
@@ -49,8 +63,8 @@ export async function searchFoodsPage(
 ): Promise<FoodSearchPage> {
   if (USE_MOCK) {
     const term = normalize(query.trim());
-    // O limite vale para a requisição real; no mock, suggestFoods reordena e
-    // só depois corta em 8 (assim a melhor sugestão não fica de fora).
+    // No mock, suggestFoods também pede 50, reordena por relevância e só depois
+    // corta em 8 (assim a melhor sugestão não fica de fora).
     const filtered = mockFoods.filter((f) => normalize(`${f.name} ${f.brand ?? ''}`).includes(term));
     const limit = options.limit ?? FOODS_PAGE_LIMIT;
     const page = options.page ?? 1;
@@ -59,14 +73,34 @@ export async function searchFoodsPage(
       meta: { page, limit, totalItems: filtered.length, totalPages: Math.max(1, Math.ceil(filtered.length / limit)) },
     });
   }
+  try {
+    return await requestFoodsPage(query, options);
+  } catch (error) {
+    // 503 = provedores externos indisponíveis. Em vez de quebrar a tela, tenta
+    // de novo só com os alimentos já salvos e avisa que foi assim.
+    if (error instanceof ApiError && error.statusCode === 503 && options.external !== false) {
+      const local = await requestFoodsPage(query, { ...options, external: false });
+      return { ...local, externalUnavailable: true };
+    }
+    throw error;
+  }
+}
+
+async function requestFoodsPage(query: string, options: SearchFoodsOptions): Promise<FoodSearchPage> {
+  // Qualquer consulta que pode ir às fontes externas entra no orçamento de
+  // 10 por minuto (ver externalBudget.ts).
+  const usesExternal = options.external !== false;
+  if (usesExternal) recordExternalCall();
+
   const { data } = await httpClient.get<Paginated<ApiFood> | ApiFood[]>(v1('/foods'), {
     params: {
       q: query.trim(),
       page: options.page ?? 1,
       limit: options.limit ?? FOODS_PAGE_LIMIT,
-      ...(options.external === false ? { external: false } : {}),
+      ...(options.external !== undefined ? { external: options.external } : {}),
     },
     signal: options.signal,
+    ...(usesExternal ? { timeout: EXTERNAL_SEARCH_TIMEOUT_MS } : {}),
   });
   const items = unwrapItems(data).map(fromApiFood);
   return {
@@ -82,11 +116,27 @@ export async function searchFoods(
   return (await searchFoodsPage(query, options)).items;
 }
 
-// Sugestões da busca: até 8, só do banco (external=false), reordenadas
-// (começa com o texto, depois palavra que começa, depois o resto).
-export async function suggestFoods(query: string, signal?: AbortSignal): Promise<FoodItem[]> {
-  const foods = await searchFoods(query, { external: false, limit: SUGGESTION_LIMIT, signal });
-  return rankSuggestions(foods, query, SUGGESTION_LIMIT);
+export interface FoodSuggestions {
+  items: FoodItem[];
+  // Só alimentos já salvos (fontes externas indisponíveis ou orçamento de
+  // consultas por minuto esgotado): a tela avisa e a busca completa segue disponível.
+  localOnly: boolean;
+}
+
+// Pesquisa rápida: busca 50 itens (nas fontes externas também, enquanto o
+// orçamento por minuto permitir), reordena por relevância NO APP e mostra os 8
+// melhores. A relevância só atua sobre o que veio nesses 50.
+export async function suggestFoods(query: string, signal?: AbortSignal): Promise<FoodSuggestions> {
+  const askExternal = !USE_MOCK && canCallExternal();
+  const page = await searchFoodsPage(query, {
+    external: USE_MOCK ? undefined : askExternal,
+    limit: FOODS_PAGE_LIMIT,
+    signal,
+  });
+  return {
+    items: rankFoodsByRelevance(page.items, query).slice(0, SUGGESTION_LIMIT),
+    localOnly: !USE_MOCK && (!askExternal || page.externalUnavailable === true),
+  };
 }
 
 // GET /v1/foods/barcode/:barcode — seção 51

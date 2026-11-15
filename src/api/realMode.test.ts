@@ -50,8 +50,9 @@ describe('foods (real mode)', () => {
     const foods = await searchFoods('  arroz ');
 
     expect(get).toHaveBeenCalledWith('/v1/foods', {
-      params: { q: 'arroz', page: 1, limit: 20 },
+      params: { q: 'arroz', page: 1, limit: 50 },
       signal: undefined,
+      timeout: 25_000, // consulta que pode ir às fontes externas: prazo maior
     });
     expect(foods).toHaveLength(1);
     expect(foods[0]).toMatchObject({

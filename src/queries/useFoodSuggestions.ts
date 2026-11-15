@@ -3,8 +3,8 @@ import { suggestFoods } from '@/api/foods';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { isSuggestionQuery, SUGGESTION_DEBOUNCE_MS } from '@/utils/foodSuggestions';
 
-// Sugestões enquanto digita: espera uma pausa de ~300 ms, busca até 8 e cancela
-// a requisição anterior. O resultado é sempre o do texto mais recente (a chave
+// Sugestões enquanto digita: espera uma pausa (SUGGESTION_DEBOUNCE_MS), busca 50
+// itens, mostra os 8 mais relevantes e cancela a requisição anterior. O resultado é sempre o do texto mais recente (a chave
 // da consulta muda com o texto, então resposta atrasada de texto antigo nunca
 // vira a lista). A lista anterior continua na tela enquanto a nova carrega.
 export function useFoodSuggestions(text: string) {
@@ -22,7 +22,9 @@ export function useFoodSuggestions(text: string) {
   });
 
   return {
-    suggestions: active ? (query.data ?? []) : [],
+    suggestions: active ? (query.data?.items ?? []) : [],
+    // Só alimentos já salvos (fontes externas indisponíveis ou limite por minuto).
+    localOnly: active && (query.data?.localOnly ?? false),
     // Pausa de digitação ou requisição em andamento.
     isLoading: active && (query.isFetching || trimmed !== debounced),
     isError: active && query.isError,

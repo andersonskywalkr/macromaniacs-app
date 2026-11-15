@@ -1,11 +1,11 @@
-import type { FoodItem } from '@/api/types/domain';
-
 // Sugestões rápidas da busca de alimento (guia rápida enquanto digita).
 
 export const SUGGESTION_MIN_LENGTH = 2;
 export const SUGGESTION_MAX_LENGTH = 100;
 export const SUGGESTION_LIMIT = 8;
-export const SUGGESTION_DEBOUNCE_MS = 300;
+// Pausa de digitação antes de consultar: a pesquisa rápida também consulta as
+// fontes externas (limite de 10 por minuto), então espera mais que um simples filtro.
+export const SUGGESTION_DEBOUNCE_MS = 600;
 
 // Um caractere vira UM caractere (minúsculo, sem acento): assim a posição no
 // texto normalizado é a mesma posição no original (necessário para o destaque).
@@ -23,24 +23,6 @@ export function normalizeText(text: string): string {
 export function isSuggestionQuery(query: string): boolean {
   const length = query.trim().length;
   return length >= SUGGESTION_MIN_LENGTH && length <= SUGGESTION_MAX_LENGTH;
-}
-
-// 0 = nome começa com o texto; 1 = alguma palavra do nome começa com o texto;
-// 2 = o resto.
-export function suggestionGroup(name: string, query: string): 0 | 1 | 2 {
-  const normalizedName = normalizeText(name);
-  const normalizedQuery = normalizeText(query.trim());
-  if (normalizedName.startsWith(normalizedQuery)) return 0;
-  const words = normalizedName.split(/[^a-z0-9]+/).filter(Boolean);
-  if (words.some((word) => word.startsWith(normalizedQuery))) return 1;
-  return 2;
-}
-
-// Reordena SEM trocar a ordem entre itens do mesmo grupo (ordenação estável).
-export function rankSuggestions(foods: FoodItem[], query: string, limit = SUGGESTION_LIMIT): FoodItem[] {
-  const groups: FoodItem[][] = [[], [], []];
-  for (const food of foods) groups[suggestionGroup(food.name, query)].push(food);
-  return groups.flat().slice(0, limit);
 }
 
 export interface HighlightSegment {

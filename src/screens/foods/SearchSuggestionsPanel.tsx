@@ -26,17 +26,24 @@ interface SuggestionsProps {
   suggestions: FoodItem[];
   isLoading: boolean;
   isSettled: boolean;
+  // Só alimentos já salvos (fontes externas indisponíveis ou limite por minuto).
+  localOnly?: boolean;
+  // A consulta das sugestões falhou (rede, erro do servidor).
+  isError?: boolean;
   onSearchFull: () => void;
   onPick: (food: FoodItem) => void;
 }
 
 // Lista logo abaixo do campo: primeiro "Buscar por 'texto'", depois até 8
-// sugestões. Erro de rede é silencioso (a busca completa segue disponível).
+// sugestões (as mais relevantes). Falhas viram uma mensagem discreta; a busca
+// completa segue disponível.
 export function SuggestionsList({
   text,
   suggestions,
   isLoading,
   isSettled,
+  localOnly = false,
+  isError = false,
   onSearchFull,
   onPick,
 }: SuggestionsProps) {
@@ -78,6 +85,18 @@ export function SuggestionsList({
           </View>
         </Pressable>
       ))}
+
+      {isError && (
+        <Text accessibilityRole="alert" style={[styles.empty, { color: tokens.textSecondary }]}>
+          Não foi possível carregar as sugestões agora. Toque em Buscar para tentar em todas as fontes.
+        </Text>
+      )}
+
+      {!isError && localOnly && (
+        <Text style={[styles.note, { color: tokens.textSecondary }]}>
+          Fontes externas indisponíveis agora: mostrando só alimentos já salvos.
+        </Text>
+      )}
 
       {isSettled && suggestions.length === 0 && (
         <Text style={[styles.empty, { color: tokens.textSecondary }]}>
@@ -158,6 +177,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 15 },
   nameMatch: { fontFamily: fontFamily(800) },
   nameRest: { fontFamily: fontFamily(500) },
+  note: { fontFamily: fontFamily(600), fontSize: 12, lineHeight: 17, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   remove: { alignItems: 'center', height: touchTarget.minSize, justifyContent: 'center', width: touchTarget.minSize },
   removeLabel: { fontFamily: fontFamily(700), fontSize: 16 },
   row: {

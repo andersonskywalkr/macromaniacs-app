@@ -1,11 +1,18 @@
+import { useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { searchFoodsPage } from '@/api/foods';
+import { rankFoodsByRelevance } from '@/utils/foodRelevance';
 import { MIN_FOOD_QUERY_LENGTH } from '@/utils/nutrition';
 
 /**
  * Busca de alimentos. IMPORTANTE: `enabled` deve ser controlado pela tela
  * (ex.: só true depois que o usuário aperta "Buscar"), nunca disparado a
  * cada tecla digitada — regra da seção 28/108 (limite do Open Food Facts).
+ *
+ * Relevância: o backend ordena por nome. Cada página (50 itens) é reordenada
+ * por relevância SÓ dentro dela, e as páginas seguintes entram depois das já
+ * exibidas, sem reembaralhar o que a pessoa já viu. A relevância só atua sobre
+ * os itens já carregados.
  */
 export function useFoodsSearch(query: string, enabled: boolean) {
   const result = useInfiniteQuery({
@@ -19,5 +26,14 @@ export function useFoodsSearch(query: string, enabled: boolean) {
     },
     enabled: enabled && query.trim().length >= MIN_FOOD_QUERY_LENGTH,
   });
-  return { ...result, data: result.data?.pages.flatMap((page) => page.items) };
+
+  const pages = result.data?.pages;
+  const data = useMemo(
+    () => (pages ? pages.flatMap((page) => rankFoodsByRelevance(page.items, query)) : undefined),
+    [pages, query],
+  );
+  // Alguma página veio só com alimentos já salvos (503 nas fontes externas).
+  const externalUnavailable = pages?.some((page) => page.externalUnavailable === true) ?? false;
+
+  return { ...result, data, externalUnavailable };
 }

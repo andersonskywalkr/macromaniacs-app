@@ -13,7 +13,7 @@ const food = (id: string, name: string) => ({
   nutritionPer100g: { calories: 100, protein: 10, carbohydrates: 5, fat: 2, fiber: 0 },
 });
 
-let mockSearchResult: { data?: unknown[]; isLoading: boolean; isError: boolean };
+let mockSearchResult: { data?: unknown[]; isLoading: boolean; isError: boolean; externalUnavailable?: boolean };
 const mockUseFoodsSearch = jest.fn();
 
 let mockSuggestions: {
@@ -21,6 +21,7 @@ let mockSuggestions: {
   isLoading: boolean;
   isError: boolean;
   isSettled: boolean;
+  localOnly?: boolean;
 };
 let mockHistoryItems: string[];
 const mockHistoryAdd = jest.fn();
@@ -240,14 +241,45 @@ describe('FoodSearchScreen suggestions and history', () => {
     ).toBeTruthy();
   });
 
-  it('keeps a silent error: no message, and the full search is still there', () => {
+  it('shows a friendly message on an error, and the full search is still there', () => {
     mockSuggestions = { suggestions: [], isLoading: false, isError: true, isSettled: false };
     const { screen } = renderScreen();
 
     fireEvent.changeText(field(screen), 'frango');
 
     expect(screen.getByLabelText('Buscar por frango')).toBeTruthy();
-    expect(screen.queryByText(/Não foi possível/)).toBeNull();
+    expect(screen.getByText(/Não foi possível carregar as sugestões agora/)).toBeTruthy();
+  });
+
+  it('says when only the saved foods are shown (external sources unavailable), keeping the list', () => {
+    mockSuggestions = {
+      suggestions: [food('2', 'Frango frito')],
+      isLoading: false,
+      isError: false,
+      isSettled: true,
+      localOnly: true,
+    };
+    const { screen } = renderScreen();
+
+    fireEvent.changeText(field(screen), 'frango');
+
+    expect(screen.getByText('Fontes externas indisponíveis agora: mostrando só alimentos já salvos.')).toBeTruthy();
+    expect(screen.getByLabelText('Frango frito, 100 calorias por 100 gramas')).toBeTruthy();
+  });
+
+  it('does not show the local-only note when everything worked', () => {
+    mockSuggestions = {
+      suggestions: [food('2', 'Frango frito')],
+      isLoading: false,
+      isError: false,
+      isSettled: true,
+      localOnly: false,
+    };
+    const { screen } = renderScreen();
+
+    fireEvent.changeText(field(screen), 'frango');
+
+    expect(screen.queryByText(/Fontes externas indisponíveis/)).toBeNull();
   });
 
   it('shows a small loading indicator without hiding the previous list', () => {
