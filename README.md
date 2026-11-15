@@ -1,4 +1,4 @@
-﻿# MacroManiacs
+# MacroManiacs
 
 Aplicativo mobile (Android e iOS) de **acompanhamento nutricional com gamificação e grupos**. A pessoa registra o que come, vê quanto falta para a meta de calorias e macros do dia, mantém uma sequência de dias e compete com amigos em grupos.
 
